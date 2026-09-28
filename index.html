@@ -1,0 +1,1364 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>FORMÁ Financiero · FORMÁ Educacional</title>
+<meta name="description" content="Controla tu presupuesto mensual con FORMÁ Financiero">
+<meta name="theme-color" content="#5B21B6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  /* FORMÁ Educacional — paleta oficial */
+  --purple:   #6B21D6;
+  --purple2:  #7C3AED;
+  --purple3:  #9333EA;
+  --magenta:  #C026D3;
+  --royal:    #2563EB;
+  --gold:     #E8C547;
+  --gold2:    #F5D55A;
+  --orange:   #FF6B00; /* ELEVA & NEGOCIO */
+
+  /* aliases para el UI */
+  --brand:    var(--purple);
+  --brand2:   var(--purple2);
+  --brand3:   var(--purple3);
+  --brand-lt: #EDE9FE;
+  --brand-bg: #F5F3FF;
+
+  --green:#16A34A;--green-lt:#DCFCE7;
+  --red:#DC2626;--red-lt:#FEE2E2;
+  --amber:#D97706;--amber-lt:#FEF3C7;
+
+  --bg:#F5F3FF;--surface:#FFFFFF;--border:#E5E7EB;--border2:#D1D5DB;
+  --text:#111827;--text2:#6B7280;--text3:#9CA3AF;
+  --radius:14px;--shadow:0 1px 8px rgba(0,0,0,.08);--shadow2:0 4px 20px rgba(0,0,0,.12);
+
+  /* gradientes de marca */
+  --grad-main: linear-gradient(135deg, var(--purple) 0%, var(--magenta) 50%, var(--royal) 100%);
+  --grad-btn:  linear-gradient(135deg, var(--purple), var(--purple2));
+  --grad-hero: linear-gradient(135deg, var(--purple) 0%, var(--purple2) 60%, var(--royal) 100%);
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#0C0A1E;--surface:#14112A;--border:#252040;--border2:#312C55;
+    --text:#F0EAFA;--text2:#9B8EC4;--text3:#6B5D8A;
+    --brand-lt:#2D1B69;--brand-bg:#1A1035;
+    --green-lt:#052E16;--red-lt:#3B0A0A;--amber-lt:#3B1F00;
+  }
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'Sora',sans-serif}
+
+/* ─── LOADING ─── */
+#loading-screen{display:flex;align-items:center;justify-content:center;min-height:100dvh;background:var(--grad-main)}
+.loader-wrap{text-align:center;color:#fff}
+.loader-logo{font-size:44px;margin-bottom:12px}
+.loader-name{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.loader-sub{font-size:13px;opacity:.7;margin-top:4px}
+.loader-spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;margin:24px auto 0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ─── AUTH ─── */
+#auth-screen{display:none;min-height:100dvh;background:var(--grad-main);align-items:center;justify-content:center;padding:20px;flex-direction:column}
+.auth-brand{text-align:center;color:#fff;margin-bottom:28px}
+.auth-brand .ab-logo{font-size:36px;margin-bottom:6px}
+.auth-brand .ab-name{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.auth-brand .ab-tagline{font-size:13px;opacity:.75;margin-top:3px}
+.auth-card{background:var(--surface);border-radius:20px;padding:28px 22px;width:100%;max-width:390px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.auth-tabs{display:flex;background:var(--bg);border-radius:10px;padding:3px;margin-bottom:22px}
+.at{flex:1;padding:9px;text-align:center;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;border:none;background:none;color:var(--text2);transition:.2s;font-family:inherit}
+.at.active{background:var(--surface);color:var(--brand);box-shadow:var(--shadow)}
+
+.fld{margin-bottom:14px}
+.fld label{display:block;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.inp-wrap{position:relative}
+.inp-wrap input{width:100%;padding:12px 40px 12px 14px;border:1.5px solid var(--border2);border-radius:10px;font-size:15px;font-family:inherit;outline:none;background:var(--surface);color:var(--text);transition:.2s}
+.inp-wrap input:focus{border-color:var(--brand)}
+.inp-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:2px;line-height:1}
+.inp-simple{width:100%;padding:12px 14px;border:1.5px solid var(--border2);border-radius:10px;font-size:15px;font-family:inherit;outline:none;background:var(--surface);color:var(--text);transition:.2s}
+.inp-simple:focus{border-color:var(--brand)}
+
+.role-row{display:flex;gap:8px;margin-bottom:16px}
+.role-btn{flex:1;padding:10px 6px;border:2px solid var(--border2);border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);transition:.2s;font-family:inherit;text-align:center}
+.role-btn.active{border-color:var(--brand);background:var(--brand-lt);color:var(--brand)}
+
+.btn-primary{width:100%;padding:14px;background:var(--grad-btn);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;transition:.15s;font-family:'Sora',sans-serif;letter-spacing:.2px}
+.btn-primary:hover{filter:brightness(1.08)}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{opacity:.6;cursor:not-allowed}
+
+.divider-or{display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text3);font-size:12px}
+.divider-or::before,.divider-or::after{content:'';flex:1;height:1px;background:var(--border)}
+
+.btn-google{width:100%;padding:12px;border:1.5px solid var(--border2);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:.15s}
+.btn-google:hover{background:var(--bg);border-color:var(--brand)}
+.google-icon{width:18px;height:18px}
+
+.auth-msg{font-size:13px;text-align:center;margin-top:10px;padding:8px 10px;border-radius:8px;display:none}
+.auth-err{background:var(--red-lt);color:var(--red)}
+.auth-ok{background:var(--green-lt);color:var(--green)}
+.auth-footer{text-align:center;color:rgba(255,255,255,.6);font-size:11px;margin-top:20px}
+.auth-footer strong{color:rgba(255,255,255,.9)}
+
+/* ─── SELLO ELEVA ─── */
+.eleva-badge{display:flex;align-items:center;gap:7px;background:rgba(255,255,255,.12);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.2);border-radius:99px;padding:5px 10px 5px 5px;width:fit-content}
+.eleva-sello{width:26px;height:26px;border-radius:50%;background:#FF6B00;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 6px rgba(255,107,0,.4)}
+.eleva-sello svg{width:14px;height:14px}
+.eleva-text{font-size:10px;font-weight:700;color:rgba(255,255,255,.9);letter-spacing:.4px;line-height:1.2}
+.eleva-text span{display:block;font-weight:400;opacity:.7;font-size:9px}
+
+/* sello en topbar (app) */
+.tb-eleva{display:flex;align-items:center;gap:5px}
+.tb-eleva-dot{width:20px;height:20px;border-radius:50%;background:#FF6B00;display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 1px 4px rgba(255,107,0,.5)}
+.tb-eleva-dot svg{width:10px;height:10px}
+.tb-eleva-label{font-size:10px;font-weight:600;opacity:.8;letter-spacing:.2px}
+
+/* ─── APP ─── */
+#app-screen{display:none;flex-direction:column;min-height:100dvh;padding-bottom:72px}
+
+.topbar{background:var(--grad-main);color:#fff;padding:14px 16px 18px}
+.tb-inner{display:flex;align-items:center;gap:10px}
+.tb-avatar{width:36px;height:36px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.tb-info{flex:1;min-width:0}
+.tb-info h1{font-size:15px;font-weight:700}
+.tb-info p{font-size:12px;opacity:.75;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-logout{background:rgba(255,255,255,.15);border:none;color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+.panel{display:none;padding:14px}
+.panel.active{display:block}
+
+#bnav{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-top:1px solid var(--border);display:flex;padding-bottom:env(safe-area-inset-bottom,0);z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,.06)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:7px 4px 8px;border:none;background:none;cursor:pointer;color:var(--text3);font-family:inherit;transition:.15s}
+.nb .ni{font-size:20px;margin-bottom:2px}
+.nb .nl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.nb.active{color:var(--brand)}
+
+.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow)}
+
+.mnav{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.mnav h2{font-size:17px;font-weight:700}
+.marrow{width:32px;height:32px;border-radius:50%;background:var(--surface);border:1px solid var(--border2);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;color:var(--text);box-shadow:var(--shadow)}
+
+.hero{background:var(--grad-hero);color:#fff;border-radius:var(--radius);padding:20px 18px;margin-bottom:12px}
+.hero-label{font-size:11px;font-weight:600;opacity:.75;text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.hero-amount{font-size:36px;font-weight:800;letter-spacing:-1.5px;line-height:1}
+.hero-sub{font-size:13px;opacity:.7;margin-top:6px}
+.hero.negative .hero-amount{color:#FCA5A5}
+
+.statgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{background:var(--surface);border-radius:12px;padding:14px 12px;box-shadow:var(--shadow)}
+.stat-label{font-size:11px;color:var(--text2);font-weight:500;margin-bottom:5px}
+.stat-val{font-size:20px;font-weight:800}
+.stat-val.g{color:var(--green)}.stat-val.r{color:var(--red)}
+
+.prog{margin-bottom:10px}
+.prog-header{display:flex;justify-content:space-between;margin-bottom:5px}
+.prog-header .pname{font-size:13px;font-weight:500}
+.prog-header .pamt{font-size:12px;color:var(--text2)}
+.prog-track{background:var(--bg);border-radius:99px;height:7px;overflow:hidden}
+.prog-fill{height:7px;border-radius:99px;transition:width .6s ease}
+.pf-g{background:var(--green)}.pf-y{background:var(--amber)}.pf-r{background:var(--red)}
+
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sh-title{font-size:15px;font-weight:700}
+.btn-sm{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:var(--brand-lt);color:var(--brand);font-family:inherit}
+
+.tx{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--bg)}
+.tx:last-child{border-bottom:none}
+.tx-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.tx-icon.i{background:var(--green-lt)}.tx-icon.e{background:var(--red-lt)}
+.tx-body{flex:1;min-width:0}
+.tx-desc{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx-meta{font-size:11px;color:var(--text2);margin-top:2px}
+.tx-amt{font-size:14px;font-weight:700;flex-shrink:0}
+.tx-amt.i{color:var(--green)}.tx-amt.e{color:var(--red)}
+
+.empty{text-align:center;padding:24px 12px;color:var(--text2)}
+.empty .ei{font-size:36px;margin-bottom:8px}
+.empty p{font-size:13px;line-height:1.5}
+
+/* ─── REGISTRAR — nuevo diseño simple ─── */
+.reg-type-row{display:flex;gap:8px;margin-bottom:18px}
+.rtype-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;border:2px solid var(--border2);background:var(--surface);color:var(--text2);font-family:inherit;transition:.2s}
+.rtype-btn.gas.active{border-color:var(--red);background:var(--red-lt);color:var(--red)}
+.rtype-btn.ing.active{border-color:var(--green);background:var(--green-lt);color:var(--green)}
+/* monto grande */
+.reg-amount-wrap{text-align:center;margin-bottom:20px;padding:20px 16px;background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);cursor:text}
+.reg-currency{font-size:18px;color:var(--text2);font-weight:600;margin-bottom:6px}
+.reg-amount-display{font-size:52px;font-weight:800;font-family:'Sora',sans-serif;letter-spacing:-2px;color:var(--text);min-height:64px;line-height:1;transition:.2s}
+.reg-amount-display.empty{color:var(--text3)}
+.reg-amount-wrap:focus-within{box-shadow:0 0 0 2.5px var(--brand),var(--shadow2)}
+.reg-amount-input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;top:0;left:0}
+/* categorías rápidas — iconos grandes */
+.quick-cats-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.quick-cats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px}
+.qcat{display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;border:2px solid transparent;border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);transition:.15s;font-family:inherit;-webkit-tap-highlight-color:transparent}
+.qcat .qi{font-size:28px;line-height:1}
+.qcat:active{transform:scale(.93)}
+.qcat.active{border-color:var(--brand);background:var(--brand-lt);color:var(--brand)}
+.ver-todas-btn{width:100%;padding:9px;border:1.5px dashed var(--border2);border-radius:10px;background:none;color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:14px;transition:.15s}
+.ver-todas-btn:hover{border-color:var(--brand);color:var(--brand)}
+/* todas las categorías (expandido) */
+.all-cats-wrap{display:none;background:var(--bg);border-radius:var(--radius);padding:12px;margin-bottom:14px}
+.all-cats-wrap.open{display:block}
+.all-cats-section{margin-bottom:12px}
+.acs-header{font-size:11px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.4px;margin-bottom:7px}
+.acs-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.acat{display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 3px;border:1.5px solid transparent;border-radius:9px;font-size:10px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);transition:.15s;font-family:inherit}
+.acat .ai{font-size:20px}
+.acat.active{border-color:var(--brand);background:var(--brand-lt);color:var(--brand)}
+/* descripción + fecha opcionales */
+.reg-opts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.reg-opt-input{width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:10px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:.2s}
+.reg-opt-input:focus{border-color:var(--brand)}
+.reg-desc-input{width:100%;padding:10px 12px;border:1.5px solid var(--border2);border-radius:10px;font-size:14px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;transition:.2s;margin-bottom:8px}
+.reg-desc-input:focus{border-color:var(--brand)}
+.save-btn{width:100%;padding:16px;background:var(--grad-btn);color:#fff;border:none;border-radius:var(--radius);font-size:17px;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif;transition:.15s;letter-spacing:.2px}
+.save-btn:active{transform:scale(.98)}
+.save-btn:disabled{opacity:.6;cursor:not-allowed}
+/* grupos en modal presupuesto */
+.cat-group{margin-bottom:8px}
+.cat-group-hdr{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--brand-lt);border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;color:var(--brand);font-family:inherit;transition:.15s}
+.cat-group-hdr.open{border-radius:10px 10px 0 0;background:var(--brand);color:#fff}
+.cat-group-body{grid-template-columns:repeat(3,1fr);gap:6px;padding:8px;background:var(--bg);border-radius:0 0 10px 10px;border:1.5px solid var(--brand-lt);border-top:none}
+.cg-arr{font-size:10px}
+/* grupos en modal presupuesto */
+.orc-group-hdr{font-size:12px;font-weight:700;color:var(--brand);text-transform:uppercase;letter-spacing:.5px;padding:10px 0 4px;border-bottom:1px solid var(--brand-lt);margin-bottom:4px;margin-top:6px}
+/* .reg-input deprecated — replaced by new design */
+
+.chips{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto;padding-bottom:2px}
+.chips::-webkit-scrollbar{display:none}
+.chip{padding:5px 12px;border-radius:99px;font-size:12px;font-weight:500;cursor:pointer;border:1.5px solid var(--border2);background:var(--surface);color:var(--text2);white-space:nowrap;flex-shrink:0;font-family:inherit}
+.chip.active{border-color:var(--brand);background:var(--brand-lt);color:var(--brand)}
+
+/* BANCO */
+.bank-hero{background:linear-gradient(135deg,#1E3A8A,#2563EB);color:#fff;border-radius:var(--radius);padding:22px 18px;text-align:center;margin-bottom:12px}
+.bank-hero h2{font-size:18px;font-weight:700;margin-bottom:6px}
+.bank-hero p{font-size:13px;opacity:.8;line-height:1.5;margin-bottom:16px}
+.btn-connect{background:#fff;color:#1E3A8A;border:none;padding:12px 28px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.btn-connect:active{transform:scale(.97)}
+.btn-connect:disabled{opacity:.6;cursor:not-allowed}
+.bank-note{font-size:11px;opacity:.55;margin-top:8px}
+.info-banner{background:var(--green-lt);border-radius:10px;padding:12px 14px;font-size:13px;color:#14532D;line-height:1.5;margin-bottom:12px}
+.info-banner.warn{background:var(--amber-lt);color:#92400E}
+.conn-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.conn-logo{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.conn-body{flex:1}
+.conn-name{font-size:14px;font-weight:600}
+.conn-sub{font-size:12px;color:var(--text2)}
+.badge-ok{font-size:11px;padding:3px 8px;border-radius:99px;background:var(--green-lt);color:var(--green);font-weight:600}
+
+/* ALUMNOS */
+.inv-box{background:var(--brand-lt);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.inv-title{font-size:13px;font-weight:700;margin-bottom:8px}
+.inv-code{font-size:22px;font-weight:800;color:var(--brand);text-align:center;padding:10px;background:var(--surface);border-radius:8px;letter-spacing:3px;cursor:pointer;user-select:all;border:1.5px dashed var(--brand)}
+.inv-hint{font-size:11px;color:var(--text2);text-align:center;margin-top:6px}
+.stu-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border-radius:12px;margin-bottom:8px;box-shadow:var(--shadow)}
+.stu-av{width:40px;height:40px;border-radius:50%;background:var(--grad-main);color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0}
+.stu-body{flex:1;min-width:0}
+.stu-name{font-size:14px;font-weight:600}
+.stu-meta{font-size:12px;color:var(--text2)}
+.stu-bal{font-size:15px;font-weight:700;flex-shrink:0}
+
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:none;align-items:flex-end;justify-content:center}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:20px 20px 0 0;padding:24px 16px;width:100%;max-width:480px;max-height:88dvh;overflow-y:auto}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.modal-sub{font-size:13px;color:var(--text2);margin-bottom:16px}
+.orc-row{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg);border-radius:10px;margin-bottom:8px}
+.orc-label{flex:1;font-size:13px;font-weight:500}
+.orc-spent{font-size:12px;color:var(--text2);min-width:68px;text-align:right;flex-shrink:0}
+.orc-input{width:104px;padding:7px 10px;border:1.5px solid var(--border2);border-radius:8px;font-size:14px;font-family:inherit;text-align:right;background:var(--surface);color:var(--text);outline:none;flex-shrink:0}
+.orc-input:focus{border-color:var(--brand)}
+.btn-cancel{width:100%;padding:12px;background:none;border:none;color:var(--text2);font-size:14px;cursor:pointer;margin-top:8px;font-family:inherit}
+
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-120px);background:#1F2937;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:.3s;pointer-events:none;white-space:nowrap;max-width:92vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.app-footer{text-align:center;padding:10px 16px;font-size:10px;color:var(--text3)}
+.app-footer strong{color:var(--brand2)}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;background:var(--bg);color:var(--text2)}
+</style>
+</head>
+<body>
+
+<!-- CARGANDO -->
+<div id="loading-screen">
+  <div class="loader-wrap">
+    <div class="loader-logo">📊</div>
+    <div class="loader-name">FORMÁ Financiero</div>
+    <div class="loader-sub">FORMA EDUCACIONAL</div>
+    <div class="loader-spin"></div>
+  </div>
+</div>
+
+<!-- AUTENTICACIÓN -->
+<div id="auth-screen">
+  <!-- Sello ELEVA -->
+  <div style="display:flex;justify-content:center;margin-bottom:18px">
+    <div class="eleva-badge">
+      <div class="eleva-sello">
+        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <text x="3" y="15" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white">E</text>
+        </svg>
+      </div>
+      <div class="eleva-text">
+        ELEVA &amp; NEGOCIO
+        <span>Desarrollado por</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-brand">
+    <div class="ab-logo">📊</div>
+    <div class="ab-name">FORMÁ Financiero</div>
+    <div class="ab-tagline">Transformación financiera · FORMÁ Educacional</div>
+  </div>
+
+  <div class="auth-card">
+    <div class="auth-tabs">
+      <button class="at active" onclick="switchTab('login')">Entrar</button>
+      <button class="at" onclick="switchTab('signup')">Crear cuenta</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="login-form">
+      <div class="fld">
+        <label>Correo electrónico</label>
+        <input class="inp-simple" type="email" id="l-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="fld">
+        <label>Contraseña</label>
+        <div class="inp-wrap">
+          <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+          <button class="inp-eye" onclick="togglePwd('l-pass',this)" type="button">👁</button>
+        </div>
+      </div>
+      <button class="btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+      <div class="divider-or">o</div>
+      <button class="btn-google" onclick="doGoogleAuth()">
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Continuar con Google
+      </button>
+      <div class="auth-msg auth-err" id="login-err"></div>
+    </div>
+
+    <!-- REGISTRO -->
+    <div id="signup-form" style="display:none">
+      <div class="fld"><label>Soy</label></div>
+      <div class="role-row">
+        <button class="role-btn active" id="role-s" onclick="setRole('student')">🎓 Alumno</button>
+        <button class="role-btn" id="role-t" onclick="setRole('teacher')">👨‍🏫 Profesor</button>
+      </div>
+      <div class="fld">
+        <label>Nombre completo</label>
+        <input class="inp-simple" type="text" id="s-name" placeholder="Tu nombre completo" autocomplete="name">
+      </div>
+      <div class="fld">
+        <label>Correo electrónico</label>
+        <input class="inp-simple" type="email" id="s-email" placeholder="tu@email.com" autocomplete="email">
+      </div>
+      <div class="fld">
+        <label>Contraseña</label>
+        <div class="inp-wrap">
+          <input type="password" id="s-pass" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          <button class="inp-eye" onclick="togglePwd('s-pass',this)" type="button">👁</button>
+        </div>
+      </div>
+      <div class="fld" id="code-field" style="display:none">
+        <label>Código del profesor (opcional)</label>
+        <input class="inp-simple" type="text" id="s-code" placeholder="ELEVA•••••" style="text-transform:uppercase;letter-spacing:2px" maxlength="10" oninput="this.value=this.value.toUpperCase()">
+      </div>
+      <button class="btn-primary" id="btn-signup" onclick="doSignup()">Crear cuenta</button>
+      <div class="divider-or">o</div>
+      <button class="btn-google" onclick="doGoogleAuth()">
+        <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+        Registrarse con Google
+      </button>
+      <div class="auth-msg auth-err" id="signup-err"></div>
+      <div class="auth-msg auth-ok" id="signup-ok"></div>
+    </div>
+  </div>
+
+  <div class="auth-footer">© 2025 FORMÁ Educacional · Todos los derechos reservados</div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="topbar">
+    <div class="tb-inner">
+      <div class="tb-avatar" id="tb-avatar">?</div>
+      <div class="tb-info">
+        <h1 id="tb-greeting">FORMÁ Financiero</h1>
+        <p id="tb-role">Cargando...</p>
+      </div>
+      <div class="tb-eleva" title="ELEVA &amp; NEGOCIO">
+        <div class="tb-eleva-dot">
+          <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+            <text x="3" y="15" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white">E</text>
+          </svg>
+        </div>
+      </div>
+      <button class="tb-logout" onclick="doLogout()" title="Salir">↩</button>
+    </div>
+  </div>
+
+  <!-- RESUMEN -->
+  <div class="panel active" id="p-resumo">
+    <div class="mnav">
+      <button class="marrow" onclick="changeMonth(-1)">‹</button>
+      <h2 id="month-label">—</h2>
+      <button class="marrow" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="hero" id="hero-card">
+      <div class="hero-label">Saldo disponible</div>
+      <div class="hero-amount" id="hero-bal">$ 0,00</div>
+      <div class="hero-sub" id="hero-sub">—</div>
+    </div>
+    <div class="statgrid">
+      <div class="stat"><div class="stat-label">💰 Ingresos</div><div class="stat-val g" id="s-inc">$ 0</div></div>
+      <div class="stat"><div class="stat-label">💸 Gastos</div><div class="stat-val r" id="s-exp">$ 0</div></div>
+    </div>
+    <div class="card">
+      <div class="sh"><span class="sh-title">📊 Por categoría</span><button class="btn-sm" onclick="openOrcModal()">Definir presupuesto</button></div>
+      <div id="cat-breakdown"><div class="empty"><div class="ei">📝</div><p>Sin gastos este mes.<br>Toca ➕ para registrar.</p></div></div>
+    </div>
+    <div class="card">
+      <div class="sh"><span class="sh-title">🕐 Últimas</span><button class="btn-sm" onclick="goPanel('historico')">Ver todas</button></div>
+      <div id="recent-txs"><div class="empty"><p>Ninguna transacción aún</p></div></div>
+    </div>
+    <div class="app-footer">FORMA EDUCACIONAL · Desarrollado por <strong>ELEVA &amp; NEGOCIO</strong></div>
+  </div>
+
+  <!-- REGISTRAR — diseño simple -->
+  <div class="panel" id="p-registrar">
+    <!-- Gasto / Ingreso -->
+    <div class="reg-type-row">
+      <button class="rtype-btn gas active" id="tt-e" onclick="setTxType('expense')">💸 Gasto</button>
+      <button class="rtype-btn ing" id="tt-i" onclick="setTxType('income')">💰 Ingreso</button>
+    </div>
+
+    <!-- Monto grande, toca para editar -->
+    <div class="reg-amount-wrap" onclick="document.getElementById('tx-amt').focus()">
+      <div class="reg-currency">¿Cuánto?</div>
+      <div class="reg-amount-display empty" id="amt-display">0,00</div>
+      <input class="reg-amount-input" id="tx-amt" type="number" placeholder="0" step="0.01" min="0" inputmode="decimal"
+        oninput="updateAmtDisplay(this.value)" onfocus="this.parentElement.querySelector('.reg-amount-display').classList.add('focused')">
+    </div>
+
+    <!-- Categorías rápidas -->
+    <div class="quick-cats-label" id="qcat-label">Categoría</div>
+    <div class="quick-cats" id="quick-cats"></div>
+    <button class="ver-todas-btn" id="ver-todas-btn" onclick="toggleAllCats()">＋ Ver todas las categorías</button>
+
+    <!-- Todas las categorías (expandido) -->
+    <div class="all-cats-wrap" id="all-cats-wrap"></div>
+
+    <!-- Descripción + Fecha en fila -->
+    <input class="reg-desc-input" type="text" id="tx-desc" placeholder="Descripción (opcional)">
+    <div class="reg-opts">
+      <input class="reg-opt-input" type="date" id="tx-date">
+      <button class="save-btn" id="save-btn" onclick="saveTx()">✓ Guardar</button>
+    </div>
+  </div>
+
+  <!-- HISTORIAL -->
+  <div class="panel" id="p-historico">
+    <div class="chips">
+      <button class="chip active" onclick="setFilter(null,this)">Todo</button>
+      <button class="chip" onclick="setFilter('income',this)">Ingresos</button>
+      <button class="chip" onclick="setFilter('expense',this)">Gastos</button>
+    </div>
+    <div id="tx-list"></div>
+  </div>
+
+  <!-- BANCO -->
+  <div class="panel" id="p-banco">
+    <div class="bank-hero">
+      <h2>🏦 Conectar banco</h2>
+      <p>Importa transacciones automáticamente vía Open Finance Brasil (Pluggy)</p>
+      <button class="btn-connect" id="bank-btn" onclick="connectBank()">🔗 Conectar banco</button>
+      <div class="bank-note">Tecnología Pluggy · Conexión segura y cifrada</div>
+    </div>
+    <div class="info-banner" id="bank-banner" style="display:none"></div>
+    <div id="bank-accs"><div class="empty"><div class="ei">🏦</div><p>Ningún banco conectado aún</p></div></div>
+    <button id="sync-btn" style="display:none;width:100%;padding:12px;background:var(--brand-lt);color:var(--brand);border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px" onclick="syncBanks()">🔄 Sincronizar transacciones</button>
+  </div>
+
+  <!-- ALUMNOS (solo profesor) -->
+  <div class="panel" id="p-alunos">
+    <div class="inv-box">
+      <div class="inv-title">📨 Comparte con tus alumnos</div>
+      <div class="inv-code" id="inv-code" onclick="copyCode()">•••••••••</div>
+      <div class="inv-hint">Código de invitación · Toca para copiar · Los alumnos lo usan al crear cuenta</div>
+    </div>
+    <div class="sh">
+      <span class="sh-title">👥 Mis alumnos este mes</span>
+      <span class="tag" id="stu-count">0</span>
+    </div>
+    <div id="stu-list"><div class="empty"><div class="ei">👥</div><p>Ningún alumno vinculado aún.<br>Comparte el código de arriba.</p></div></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div id="bnav">
+    <button class="nb active" id="nb-resumo" onclick="goPanel('resumo')"><span class="ni">📊</span><span class="nl">Resumen</span></button>
+    <button class="nb" id="nb-registrar" onclick="goPanel('registrar')"><span class="ni">➕</span><span class="nl">Registrar</span></button>
+    <button class="nb" id="nb-historico" onclick="goPanel('historico')"><span class="ni">📋</span><span class="nl">Historial</span></button>
+    <button class="nb" id="nb-banco" onclick="goPanel('banco')"><span class="ni">🏦</span><span class="nl">Banco</span></button>
+    <button class="nb" id="nb-alunos" onclick="goPanel('alunos')" style="display:none"><span class="ni">👥</span><span class="nl">Alumnos</span></button>
+  </div>
+</div>
+
+<!-- MODAL PRESUPUESTO -->
+<div class="overlay" id="orc-overlay">
+  <div class="modal">
+    <div class="modal-title">📊 Presupuesto mensual</div>
+    <div class="modal-sub" id="orc-month-sub">Define el límite de gasto por categoría</div>
+    <div id="orc-cats"></div>
+    <button class="btn-primary" onclick="saveOrc()">Guardar presupuesto</button>
+    <button class="btn-cancel" onclick="closeOrcModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast-el"></div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════
+const SB_URL  = 'https://ipcqlltatvpvrqceqiox.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwY3FsbHRhdHZwdnJxY2VxaW94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDgyNDYsImV4cCI6MjEwMzIyNDI0Nn0.lpmDZZ6mf2s7Zrv8lsYs7oLW8mxApyASYogQTVpv4pk';
+const PLUGGY_ID     = '1b359996-6cd4-4cbe-a45a-927b101174d9';
+const PLUGGY_SECRET = 'kKJhMc8OX0kBxOh3oEbTFCE_-6BMJaEXVOBamTFGlzU';
+const PLUGGY_API    = 'https://api.pluggy.ai';
+
+const sb = supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true}});
+
+// ═══════════════════════════════════════════════════
+// CATEGORÍAS
+// ═══════════════════════════════════════════════════
+// ── GRUPOS de categorías (para presupuesto detallado) ──
+const CAT_GROUPS=[
+  {
+    id:'servicios',l:'Servicios Básicos',i:'🏠',
+    subs:[
+      {id:'alquiler',l:'Alquiler / Hipoteca',i:'🏠'},
+      {id:'agua',l:'Agua',i:'💧'},
+      {id:'luz',l:'Luz / Energía',i:'⚡'},
+      {id:'internet',l:'Internet Casa',i:'📶'},
+      {id:'gas',l:'Gas',i:'🔥'},
+      {id:'celular',l:'Plan Celular',i:'📱'},
+      {id:'condominio',l:'Condominio',i:'🏢'},
+      {id:'tv',l:'TV / Streaming',i:'📺'},
+    ]
+  },
+  {
+    id:'seguros',l:'Seguros',i:'🛡️',
+    subs:[
+      {id:'seg-carro',l:'Seguro Carro',i:'🚗'},
+      {id:'seg-casa',l:'Seguro Casa',i:'🏡'},
+      {id:'seg-vida',l:'Seguro de Vida',i:'❤️'},
+      {id:'seg-salud',l:'Seguro de Salud',i:'🏥'},
+      {id:'parcela-carro',l:'Parcela Carro',i:'🚘'},
+      {id:'parcela-casa',l:'Parcela Casa',i:'🏘️'},
+    ]
+  },
+  {
+    id:'alimentacion',l:'Alimentación Hogar',i:'🛒',
+    subs:[
+      {id:'supermercado',l:'Supermercado / Atacado',i:'🛒'},
+      {id:'carne',l:'Carne / Pescado',i:'🥩'},
+      {id:'verduras',l:'Verduras / Legumbres',i:'🥦'},
+      {id:'frutas',l:'Frutas',i:'🍎'},
+      {id:'panaderia',l:'Pan / Panadería',i:'🍞'},
+      {id:'lacteos',l:'Lácteos / Huevos',i:'🥚'},
+      {id:'bebidas',l:'Bebidas / Agua',i:'🧃'},
+      {id:'snacks',l:'Snacks / Varios',i:'🍫'},
+    ]
+  },
+  {
+    id:'educacion',l:'Educación',i:'📚',
+    subs:[
+      {id:'universidad',l:'Universidad / Cursos',i:'🎓'},
+      {id:'materiales',l:'Materiales / Libros',i:'📖'},
+      {id:'transp-estud',l:'Transporte Estudiante',i:'🎒'},
+      {id:'idiomas',l:'Idiomas',i:'🌎'},
+      {id:'capacitacion',l:'Capacitación / Online',i:'💻'},
+    ]
+  },
+  {
+    id:'ocio',l:'Ocio & Lazer',i:'🎉',
+    subs:[
+      {id:'restaurantes',l:'Restaurantes / Delivery',i:'🍽️'},
+      {id:'cine',l:'Cine / Teatro',i:'🎬'},
+      {id:'eventos',l:'Eventos / Shows',i:'🎤'},
+      {id:'viajes',l:'Viajes / Vacaciones',i:'✈️'},
+      {id:'estacionamiento',l:'Estacionamiento / Peaje',i:'🅿️'},
+      {id:'hobbies',l:'Hobbies',i:'🎨'},
+      {id:'juegos',l:'Juegos / Apps',i:'🎮'},
+      {id:'bar',l:'Bar / Salidas',i:'🍻'},
+    ]
+  },
+  {
+    id:'cuidado',l:'Cuidado Personal',i:'💆',
+    subs:[
+      {id:'peluqueria',l:'Peluquería / Barbería',i:'💇'},
+      {id:'salon',l:'Salón de Belleza',i:'💅'},
+      {id:'academia',l:'Academia / Gym',i:'🏋️'},
+      {id:'farmacia',l:'Farmacia / Medicamentos',i:'💊'},
+      {id:'dentista',l:'Dentista',i:'🦷'},
+      {id:'medico',l:'Médico / Consultas',i:'🩺'},
+      {id:'estetica',l:'Estética / Spa',i:'✨'},
+      {id:'higiene',l:'Higiene Personal',i:'🧴'},
+    ]
+  },
+  {
+    id:'compras',l:'Compras Personales',i:'🛍️',
+    subs:[
+      {id:'ropa',l:'Ropa / Calzados',i:'👗'},
+      {id:'zapatos',l:'Zapatos',i:'👟'},
+      {id:'electronico',l:'Electrónicos',i:'📱'},
+      {id:'muebles',l:'Muebles / Decoración',i:'🛋️'},
+      {id:'juguetes',l:'Juguetes / Niños',i:'🧸'},
+      {id:'accesorios',l:'Accesorios',i:'👜'},
+      {id:'online',l:'Compras Online',i:'📦'},
+    ]
+  },
+  {
+    id:'transporte',l:'Transporte',i:'🚌',
+    subs:[
+      {id:'gasolina',l:'Gasolina / Combustible',i:'⛽'},
+      {id:'uber',l:'Uber / Cabify',i:'🚖'},
+      {id:'taxi',l:'Taxi',i:'🚕'},
+      {id:'mecanica',l:'Mecánica / Mantenimiento',i:'🔧'},
+      {id:'bus',l:'Bus / Metro / Tren',i:'🚌'},
+      {id:'lavado',l:'Lavado de Carro',i:'🚿'},
+      {id:'multa',l:'Multas / IPVA',i:'📋'},
+    ]
+  },
+  {
+    id:'regalos',l:'Regalos & Donaciones',i:'🎁',
+    subs:[
+      {id:'cumpleanos',l:'Cumpleaños / Regalos',i:'🎂'},
+      {id:'ofrendas',l:'Ofrendas / Diezmos',i:'🙏'},
+      {id:'donaciones',l:'Donaciones',i:'❤️‍🔥'},
+      {id:'mascotas',l:'Mascotas / Animales',i:'🐾'},
+      {id:'vet',l:'Veterinaria',i:'🐕'},
+      {id:'mascotas-higiene',l:'Higiene Animal',i:'🛁'},
+      {id:'navidad',l:'Navidad / Fiestas',i:'🎄'},
+    ]
+  },
+  {
+    id:'finanzas',l:'Finanzas & Deudas',i:'💳',
+    subs:[
+      {id:'tarjeta',l:'Tarjeta de Crédito',i:'💳'},
+      {id:'prestamo',l:'Préstamo / Financiamiento',i:'🏦'},
+      {id:'ahorro',l:'Ahorro / Inversión',i:'💰'},
+      {id:'impuestos',l:'Impuestos / Tasas',i:'📄'},
+      {id:'pension',l:'Pensión / INSS',i:'👴'},
+    ]
+  },
+  {
+    id:'hogar',l:'Hogar & Casa',i:'🏠',
+    subs:[
+      {id:'limpieza',l:'Limpieza / Productos',i:'🧹'},
+      {id:'reparacion',l:'Reparaciones',i:'🔨'},
+      {id:'jardin',l:'Jardín / Plantas',i:'🌱'},
+      {id:'electrodomesticos',l:'Electrodomésticos',i:'🫙'},
+      {id:'empleada',l:'Empleada / Servicios',i:'🧺'},
+    ]
+  },
+  {
+    id:'trabajo',l:'Trabajo & Negocio',i:'💼',
+    subs:[
+      {id:'equipo-trabajo',l:'Equipo de Trabajo',i:'🖥️'},
+      {id:'oficina',l:'Oficina / Coworking',i:'🏢'},
+      {id:'herramientas',l:'Herramientas / Software',i:'⚙️'},
+      {id:'marketing',l:'Marketing / Publicidad',i:'📣'},
+      {id:'contador',l:'Contador / Asesoría',i:'📊'},
+    ]
+  },
+  {
+    id:'hormiga',l:'Gastos Hormiga 🐜',i:'🐜',
+    subs:[
+      {id:'cafe',l:'Café / Cafetería',i:'☕'},
+      {id:'golosinas',l:'Golosinas / Dulces',i:'🍬'},
+      {id:'cigarros',l:'Cigarros / Tabaco',i:'🚬'},
+      {id:'loteria',l:'Lotería / Apuestas',i:'🎰'},
+      {id:'propinas',l:'Propinas',i:'💸'},
+      {id:'vending',l:'Máquina / Kiosco',i:'🎪'},
+      {id:'app-sub',l:'Suscripciones Apps',i:'📲'},
+      {id:'impulso',l:'Compra Impulsiva',i:'😅'},
+      {id:'perdido',l:'Dinero Perdido / No sé',i:'🤷'},
+      {id:'minucias',l:'Gastos Pequeños Varios',i:'🐜'},
+    ]
+  },
+];
+
+// Lista plana para compatibilidad con el resto del código
+const EXP_CATS = CAT_GROUPS.flatMap(g => g.subs);
+const INC_CATS=[
+  {id:'salario',l:'Salario / Sueldo',i:'💼'},
+  {id:'freelance',l:'Freelance / Servicios',i:'💻'},
+  {id:'negocio',l:'Negocio / Ventas',i:'🏪'},
+  {id:'inversion',l:'Inversión / Dividendos',i:'📈'},
+  {id:'alquiler-i',l:'Alquiler (ingreso)',i:'🏠'},
+  {id:'pension-i',l:'Pensión / Jubilación',i:'👴'},
+  {id:'bono',l:'Bono / Premio',i:'🎯'},
+  {id:'otros-i',l:'Otros Ingresos',i:'💵'},
+];
+function catInfo(type,id){
+  return[...EXP_CATS,...INC_CATS].find(c=>c.id===id)||{i:'💰',l:id||'—'};
+}
+
+// ═══════════════════════════════════════════════════
+// ESTADO
+// ═══════════════════════════════════════════════════
+let user=null, profile=null;
+let month=todayMonth();
+let txs=[], budgets={};
+let txFilter=null, txType='expense', selCat='alimentacion';
+let pluggyKey=null, connItems=[];
+
+// ═══════════════════════════════════════════════════
+// UTILIDADES
+// ═══════════════════════════════════════════════════
+function fmt(v){return'$ '+Number(v||0).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function todayMonth(){return new Date().toISOString().slice(0,7)}
+function todayStr(){return new Date().toISOString().slice(0,10)}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+function initials(n){return(n||'?').trim().split(' ').filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('')}
+function monthLabel(m){
+  const[y,mo]=m.split('-');
+  return['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'][+mo-1]+' '+y;
+}
+function toast(msg,ok=true){
+  const el=document.getElementById('toast-el');
+  el.textContent=msg;el.style.background=ok?'#1F2937':'#DC2626';
+  el.classList.add('show');clearTimeout(el._t);
+  el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+function showEl(id,type='flex'){document.getElementById(id).style.display=type}
+function hideEl(id){document.getElementById(id).style.display='none'}
+
+// ═══════════════════════════════════════════════════
+// AUTENTICACIÓN
+// ═══════════════════════════════════════════════════
+function switchTab(tab){
+  document.getElementById('login-form').style.display=tab==='login'?'block':'none';
+  document.getElementById('signup-form').style.display=tab==='signup'?'block':'none';
+  document.querySelectorAll('.at').forEach((b,i)=>b.classList.toggle('active',(tab==='login'&&i===0)||(tab==='signup'&&i===1)));
+}
+function setRole(r){
+  document.getElementById('role-s').classList.toggle('active',r==='student');
+  document.getElementById('role-t').classList.toggle('active',r==='teacher');
+  document.getElementById('code-field').style.display=r==='student'?'block':'none';
+}
+function togglePwd(id,btn){
+  const inp=document.getElementById(id);
+  const show=inp.type==='password';
+  inp.type=show?'text':'password';
+  btn.textContent=show?'🙈':'👁';
+}
+
+async function doGoogleAuth(){
+  try{
+    const{error}=await sb.auth.signInWithOAuth({
+      provider:'google',
+      options:{
+        redirectTo: window.location.origin + window.location.pathname
+      }
+    });
+    if(error)throw error;
+  }catch(e){
+    toast('Error con Google: '+e.message,false);
+  }
+}
+
+async function doLogin(){
+  const email=document.getElementById('l-email').value.trim();
+  const pass=document.getElementById('l-pass').value;
+  const errEl=document.getElementById('login-err');
+  errEl.style.display='none';
+  if(!email||!pass){errEl.textContent='Ingresa correo y contraseña';errEl.style.display='block';return}
+  const btn=document.getElementById('btn-login');
+  btn.disabled=true;btn.textContent='Entrando...';
+  const{error}=await sb.auth.signInWithPassword({email,password:pass});
+  if(error){
+    const msg=error.message==='Invalid login credentials'?'Correo o contraseña incorrectos':
+              error.message==='Email not confirmed'?'Confirma tu correo antes de entrar':
+              error.message;
+    errEl.textContent=msg;errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Entrar';
+  }
+}
+
+async function doSignup(){
+  const name=document.getElementById('s-name').value.trim();
+  const email=document.getElementById('s-email').value.trim();
+  const pass=document.getElementById('s-pass').value;
+  const code=document.getElementById('s-code')?.value.trim().toUpperCase()||'';
+  const role=document.getElementById('role-t').classList.contains('active')?'teacher':'student';
+  const errEl=document.getElementById('signup-err');
+  const okEl=document.getElementById('signup-ok');
+  errEl.style.display='none';okEl.style.display='none';
+  if(!name||!email||!pass){errEl.textContent='Completa todos los campos';errEl.style.display='block';return}
+  if(pass.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres';errEl.style.display='block';return}
+  const btn=document.getElementById('btn-signup');
+  btn.disabled=true;btn.textContent='Creando cuenta...';
+  const{data,error}=await sb.auth.signUp({
+    email,password:pass,
+    options:{data:{full_name:name,forma_role:role,invite_code:code||null}}
+  });
+  if(error){
+    errEl.textContent=error.message==='User already registered'?'Este correo ya está registrado':error.message;
+    errEl.style.display='block';
+    btn.disabled=false;btn.textContent='Crear cuenta';return;
+  }
+  if(data.session){
+    // onAuthStateChange lo maneja
+  }else{
+    okEl.textContent='✅ ¡Cuenta creada! Revisa tu correo para confirmar antes de entrar.';
+    okEl.style.display='block';
+  }
+  btn.disabled=false;btn.textContent='Crear cuenta';
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  user=null;profile=null;
+  hideEl('app-screen');
+  showEl('auth-screen');
+}
+
+// ═══════════════════════════════════════════════════
+// SESIÓN
+// ═══════════════════════════════════════════════════
+sb.auth.onAuthStateChange(async(event,session)=>{
+  if(session?.user){
+    user=session.user;
+    await loadProfile();
+    showApp();
+  }else{
+    hideEl('loading-screen');
+    showEl('auth-screen');
+  }
+});
+
+sb.auth.getSession().then(({data:{session}})=>{
+  if(!session){hideEl('loading-screen');showEl('auth-screen');}
+});
+
+async function loadProfile(){
+  let{data}=await sb.from('forma_profiles').select('*').eq('id',user.id).single();
+  if(!data){
+    const meta=user.user_metadata||{};
+    const role=meta.forma_role||'student';
+    const name=meta.full_name||user.email.split('@')[0];
+    const code=role==='teacher'?'ELEVA'+user.id.slice(0,5).toUpperCase():null;
+    await sb.from('forma_profiles').upsert({id:user.id,full_name:name,role,invite_code:code});
+    const r2=await sb.from('forma_profiles').select('*').eq('id',user.id).single();
+    data=r2.data;
+  }
+  if(data?.role==='student'&&!data?.teacher_id){
+    const meta=user.user_metadata||{};
+    const code=meta.invite_code;
+    if(code){
+      const{data:teacher}=await sb.from('forma_profiles').select('id').eq('invite_code',code).eq('role','teacher').single();
+      if(teacher) await sb.from('forma_profiles').update({teacher_id:teacher.id}).eq('id',user.id);
+    }
+  }
+  profile=data;
+}
+
+// ═══════════════════════════════════════════════════
+// APP PRINCIPAL
+// ═══════════════════════════════════════════════════
+function showApp(){
+  hideEl('loading-screen');
+  hideEl('auth-screen');
+  showEl('app-screen');
+  const name=(profile?.full_name||user.email).split(' ')[0];
+  document.getElementById('tb-greeting').textContent='Hola, '+name+'!';
+  document.getElementById('tb-role').textContent=profile?.role==='teacher'?'👨‍🏫 Profesor · FORMA EDUCACIONAL':'🎓 Alumno · FORMA EDUCACIONAL';
+  document.getElementById('tb-avatar').textContent=initials(profile?.full_name||user.email);
+  if(profile?.role==='teacher'){
+    document.getElementById('nb-alunos').style.display='flex';
+    document.getElementById('inv-code').textContent=profile.invite_code||('ELEVA'+user.id.slice(0,5).toUpperCase());
+  }
+  document.getElementById('month-label').textContent=monthLabel(month);
+  document.getElementById('tx-date').value=todayStr();
+  renderQuickCats();
+  renderAllCats();
+  loadMonthData();
+  loadConnItems();
+}
+
+// ═══════════════════════════════════════════════════
+// NAVEGACIÓN
+// ═══════════════════════════════════════════════════
+function goPanel(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  document.getElementById('nb-'+id).classList.add('active');
+  if(id==='resumo') renderResume();
+  if(id==='historico') renderTxList();
+  if(id==='alunos') loadStudents();
+  if(id==='registrar') setTimeout(()=>document.getElementById('tx-amt').focus(),200);
+}
+
+// ═══════════════════════════════════════════════════
+// MES
+// ═══════════════════════════════════════════════════
+function changeMonth(dir){
+  let[y,m]=month.split('-').map(Number);
+  m+=dir;if(m>12){m=1;y++}if(m<1){m=12;y--}
+  month=y+'-'+String(m).padStart(2,'0');
+  document.getElementById('month-label').textContent=monthLabel(month);
+  loadMonthData();
+}
+
+// ═══════════════════════════════════════════════════
+// DATOS
+// ═══════════════════════════════════════════════════
+async function loadMonthData(){
+  const[{data:t},{data:b}]=await Promise.all([
+    sb.from('forma_transactions').select('*').eq('user_id',user.id)
+      .gte('date',month+'-01').lte('date',month+'-31').order('date',{ascending:false}),
+    sb.from('forma_budgets').select('*').eq('user_id',user.id).eq('month',month)
+  ]);
+  txs=t||[];
+  budgets={};(b||[]).forEach(r=>{budgets[r.category]=r.planned});
+  renderResume();
+  renderTxList();
+}
+
+// ═══════════════════════════════════════════════════
+// RESUMEN
+// ═══════════════════════════════════════════════════
+function renderResume(){
+  const inc=txs.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+  const exp=txs.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+  const bal=inc-exp;
+  document.getElementById('hero-bal').textContent=fmt(bal);
+  document.getElementById('hero-sub').textContent=fmt(inc)+' de ingresos · '+fmt(exp)+' gastado';
+  document.getElementById('s-inc').textContent=fmt(inc);
+  document.getElementById('s-exp').textContent=fmt(exp);
+  document.getElementById('hero-card').classList.toggle('negative',bal<0);
+
+  const bycat={};
+  txs.filter(t=>t.type==='expense').forEach(t=>{bycat[t.category]=(bycat[t.category]||0)+Number(t.amount)});
+  const cats=Object.keys(bycat).sort((a,b)=>bycat[b]-bycat[a]);
+  const cb=document.getElementById('cat-breakdown');
+  cb.innerHTML=cats.length?cats.map(c=>{
+    const ci=EXP_CATS.find(x=>x.id===c)||{i:'📦',l:c};
+    const spent=bycat[c],pl=budgets[c]||0;
+    const pct=pl>0?Math.min(100,spent/pl*100):0;
+    const cls=pct>100?'pf-r':pct>80?'pf-y':'pf-g';
+    return`<div class="prog">
+      <div class="prog-header"><span class="pname">${ci.i} ${ci.l}</span><span class="pamt">${fmt(spent)}${pl?` / ${fmt(pl)}`:''}</span></div>
+      ${pl?`<div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct}%"></div></div>`:''}
+    </div>`;
+  }).join(''):'<div class="empty"><div class="ei">📝</div><p>Sin gastos este mes.<br>Toca ➕ para registrar.</p></div>';
+
+  const rt=document.getElementById('recent-txs');
+  rt.innerHTML=txs.slice(0,4).map(txHTML).join('')||'<div class="empty"><p>Ninguna transacción aún</p></div>';
+}
+
+function txHTML(t){
+  const c=catInfo(t.type,t.category);
+  return`<div class="tx">
+    <div class="tx-icon ${t.type==='income'?'i':'e'}">${c.i}</div>
+    <div class="tx-body">
+      <div class="tx-desc">${t.description||c.l}</div>
+      <div class="tx-meta">${c.l} · ${t.date}</div>
+    </div>
+    <div class="tx-amt ${t.type==='income'?'i':'e'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
+  </div>`;
+}
+
+function setFilter(type,btn){
+  txFilter=type;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  btn.classList.add('active');
+  renderTxList();
+}
+function renderTxList(){
+  const list=txFilter?txs.filter(t=>t.type===txFilter):txs;
+  const el=document.getElementById('tx-list');
+  el.innerHTML=list.length?'<div class="card">'+list.map(txHTML).join('')+'</div>':
+    '<div class="empty"><div class="ei">📭</div><p>Ninguna transacción encontrada</p></div>';
+}
+
+// ═══════════════════════════════════════════════════
+// REGISTRAR — diseño simple
+// ═══════════════════════════════════════════════════
+
+// Categorías que aparecen directamente (las más usadas)
+const QUICK_EXP=[
+  {id:'supermercado',l:'Mercado',i:'🛒'},
+  {id:'restaurantes',l:'Comida',i:'🍽️'},
+  {id:'gasolina',l:'Gasolina',i:'⛽'},
+  {id:'luz',l:'Luz',i:'⚡'},
+  {id:'uber',l:'Uber',i:'🚖'},
+  {id:'farmacia',l:'Farmacia',i:'💊'},
+  {id:'cafe',l:'Café',i:'☕'},
+  {id:'celular',l:'Celular',i:'📱'},
+  {id:'ropa',l:'Ropa',i:'👗'},
+  {id:'academia',l:'Gym',i:'🏋️'},
+  {id:'impulso',l:'Impulso',i:'😅'},
+  {id:'alquiler',l:'Alquiler',i:'🏠'},
+];
+const QUICK_INC=[
+  {id:'salario',l:'Salario',i:'💼'},
+  {id:'freelance',l:'Freelance',i:'💻'},
+  {id:'negocio',l:'Negocio',i:'🏪'},
+  {id:'bono',l:'Bono',i:'🎯'},
+  {id:'inversion',l:'Inversión',i:'📈'},
+  {id:'alquiler-i',l:'Alquiler',i:'🏠'},
+  {id:'pension-i',l:'Pensión',i:'👴'},
+  {id:'otros-i',l:'Otros',i:'💵'},
+];
+
+function updateAmtDisplay(v){
+  const el=document.getElementById('amt-display');
+  if(!v||parseFloat(v)===0){el.textContent='0,00';el.classList.add('empty');}
+  else{el.textContent=parseFloat(v).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});el.classList.remove('empty');}
+}
+
+function setTxType(type){
+  txType=type;
+  document.getElementById('tt-e').className='rtype-btn gas'+(type==='expense'?' active':'');
+  document.getElementById('tt-i').className='rtype-btn ing'+(type==='income'?' active':'');
+  selCat=type==='expense'?'supermercado':'salario';
+  // cerrar "ver todas"
+  document.getElementById('all-cats-wrap').classList.remove('open');
+  document.getElementById('ver-todas-btn').textContent='＋ Ver todas las categorías';
+  renderQuickCats();
+  renderAllCats();
+}
+
+function selQuickCat(id){
+  selCat=id;
+  renderQuickCats();
+  renderAllCats();
+}
+
+function renderQuickCats(){
+  const cats=txType==='income'?QUICK_INC:QUICK_EXP;
+  document.getElementById('quick-cats').innerHTML=cats.map(c=>`
+    <button class="qcat${c.id===selCat?' active':''}" onclick="selQuickCat('${c.id}')">
+      <span class="qi">${c.i}</span>${c.l}
+    </button>`).join('');
+}
+
+let allCatsOpen=false;
+function toggleAllCats(){
+  allCatsOpen=!allCatsOpen;
+  const wrap=document.getElementById('all-cats-wrap');
+  const btn=document.getElementById('ver-todas-btn');
+  wrap.classList.toggle('open',allCatsOpen);
+  btn.textContent=allCatsOpen?'▲ Ocultar categorías':'＋ Ver todas las categorías';
+  if(allCatsOpen) renderAllCats();
+}
+
+function renderAllCats(){
+  const wrap=document.getElementById('all-cats-wrap');
+  if(!wrap.classList.contains('open')) return;
+  const groups=txType==='income'
+    ?[{id:'ingresos',l:'Ingresos',i:'💵',subs:INC_CATS}]
+    :CAT_GROUPS;
+  wrap.innerHTML=groups.map(g=>`
+    <div class="all-cats-section">
+      <div class="acs-header">${g.i} ${g.l}</div>
+      <div class="acs-grid">
+        ${g.subs.map(c=>`
+          <button class="acat${c.id===selCat?' active':''}" onclick="selQuickCat('${c.id}')">
+            <span class="ai">${c.i}</span>${c.l}
+          </button>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+// renderCatGrid kept for compat (budget modal still uses CAT_GROUPS)
+function renderCatGrid(){ renderQuickCats(); }
+
+async function saveTx(){
+  const amt=parseFloat(document.getElementById('tx-amt').value);
+  const desc=document.getElementById('tx-desc').value.trim();
+  const date=document.getElementById('tx-date').value;
+  if(!amt||amt<=0){
+    document.getElementById('tx-amt').focus();
+    document.getElementById('amt-display').style.animation='shake .3s';
+    setTimeout(()=>document.getElementById('amt-display').style.animation='',400);
+    toast('Ingresa el monto primero',false);return;
+  }
+  if(!date){toast('Selecciona la fecha',false);return}
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='...';
+  const{error}=await sb.from('forma_transactions').insert({
+    user_id:user.id,date,description:desc||null,
+    amount:amt,type:txType,category:selCat,source:'manual'
+  });
+  if(error){toast('Error: '+error.message,false);}
+  else{
+    toast('✅ ¡Guardado!');
+    document.getElementById('tx-amt').value='';
+    document.getElementById('amt-display').textContent='0,00';
+    document.getElementById('amt-display').classList.add('empty');
+    document.getElementById('tx-desc').value='';
+    // mantener categoría seleccionada — no resetear
+  }
+  btn.disabled=false;btn.textContent='✓ Guardar';
+  if(!error&&date.slice(0,7)===month) await loadMonthData();
+}
+
+// ═══════════════════════════════════════════════════
+// PRESUPUESTO MODAL
+// ═══════════════════════════════════════════════════
+function openOrcModal(){
+  const spent={};
+  txs.filter(t=>t.type==='expense').forEach(t=>{spent[t.category]=(spent[t.category]||0)+Number(t.amount)});
+  document.getElementById('orc-month-sub').textContent='Presupuesto para '+monthLabel(month);
+  document.getElementById('orc-cats').innerHTML=CAT_GROUPS.map(g=>`
+    <div class="orc-group-hdr">${g.i} ${g.l}</div>
+    ${g.subs.map(c=>`
+    <div class="orc-row">
+      <span class="orc-label">${c.i} ${c.l}</span>
+      <span class="orc-spent">${spent[c.id]?fmt(spent[c.id]):''}</span>
+      <input class="orc-input" type="number" id="oc-${c.id}" placeholder="$0" value="${budgets[c.id]||''}" min="0" step="10" inputmode="decimal">
+    </div>`).join('')}
+  `).join('');
+  document.getElementById('orc-overlay').classList.add('open');
+}
+function closeOrcModal(){document.getElementById('orc-overlay').classList.remove('open')}
+
+async function saveOrc(){
+  const rows=EXP_CATS.map(c=>({user_id:user.id,month,category:c.id,planned:parseFloat(document.getElementById('oc-'+c.id).value)||0})).filter(r=>r.planned>0);
+  if(rows.length){
+    const{error}=await sb.from('forma_budgets').upsert(rows,{onConflict:'user_id,month,category'});
+    if(error){toast('Error: '+error.message,false);return}
+  }
+  rows.forEach(r=>{budgets[r.category]=r.planned});
+  toast('✅ ¡Presupuesto guardado!');
+  closeOrcModal();
+  renderResume();
+}
+
+// ═══════════════════════════════════════════════════
+// BANCO / PLUGGY — CONEXIÓN REAL
+// ═══════════════════════════════════════════════════
+async function loadConnItems(){
+  connItems=JSON.parse(localStorage.getItem('forma_conns_'+user.id)||'[]');
+  renderBankPanel();
+}
+
+function renderBankPanel(){
+  const el=document.getElementById('bank-accs');
+  const syncBtn=document.getElementById('sync-btn');
+  const banner=document.getElementById('bank-banner');
+
+  // Mostrar banner informativo
+  banner.className='info-banner';
+  banner.innerHTML='✅ <strong>Modo sandbox activo</strong> — Puedes conectar bancos de prueba ahora mismo. El acceso a bancos reales estará disponible cuando Pluggy apruebe tu solicitud de producción (1-2 días hábiles).';
+  banner.style.display='block';
+
+  if(!connItems.length){
+    el.innerHTML='<div class="empty"><div class="ei">🏦</div><p>Ningún banco conectado aún.<br>Toca el botón de arriba para comenzar.</p></div>';
+    syncBtn.style.display='none';return;
+  }
+  el.innerHTML=connItems.map(it=>`
+    <div class="conn-item">
+      <div class="conn-logo" style="background:${it.color||'var(--brand)'}">${(it.name||'B').slice(0,2).toUpperCase()}</div>
+      <div class="conn-body"><div class="conn-name">${it.name||'Banco'}</div><div class="conn-sub">Open Finance · Conectado</div></div>
+      <span class="badge-ok">✅ Activo</span>
+    </div>`).join('');
+  syncBtn.style.display='block';
+}
+
+async function getPluggyKey(){
+  if(pluggyKey) return pluggyKey;
+  try{
+    const r=await fetch(PLUGGY_API+'/auth',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({clientId:PLUGGY_ID,clientSecret:PLUGGY_SECRET})
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.message||'Error de autenticación Pluggy')}
+    const d=await r.json();
+    pluggyKey=d.apiKey;
+    return pluggyKey;
+  }catch(e){
+    throw new Error('No se pudo conectar con Pluggy: '+e.message);
+  }
+}
+
+async function connectBank(){
+  const btn=document.getElementById('bank-btn');
+  btn.textContent='⏳ Conectando...';btn.disabled=true;
+  try{
+    const key=await getPluggyKey();
+    const r=await fetch(PLUGGY_API+'/connect_token',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','X-API-KEY':key},
+      body:JSON.stringify({})
+    });
+    if(!r.ok){const e=await r.json();throw new Error(e.message||'Error al obtener token')}
+    const{accessToken}=await r.json();
+
+    // Cargar el widget de Pluggy si no está cargado
+    if(!window.PluggyConnect){
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src='https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js';
+        s.onload=res;s.onerror=()=>rej(new Error('No se pudo cargar el widget de Pluggy'));
+        document.head.appendChild(s);
+      });
+    }
+
+    new PluggyConnect({
+      connectToken:accessToken,
+      includeSandbox:true,  // Permite bancos de prueba
+      onSuccess:async(item)=>{
+        const it={
+          id:Date.now().toString(36),
+          itemId:item.item.id,
+          name:item.item.connector?.name||'Banco',
+          color:item.item.connector?.primaryColor||'#5B21B6'
+        };
+        if(!connItems.find(x=>x.itemId===it.itemId)){
+          connItems.push(it);
+          localStorage.setItem('forma_conns_'+user.id,JSON.stringify(connItems));
+        }
+        renderBankPanel();
+        toast('✅ ¡Banco conectado! Importando transacciones...');
+        await syncBanks();
+      },
+      onError:(e)=>{
+        console.error('Pluggy error:',e);
+        toast('Error al conectar: '+(e.message||'Error desconocido'),false);
+      },
+      onClose:()=>{}
+    }).init();
+  }catch(e){
+    toast('Error: '+e.message,false);
+    console.error(e);
+  }
+  btn.textContent='🔗 Conectar banco';btn.disabled=false;
+}
+
+async function syncBanks(){
+  if(!connItems.length)return;
+  const syncBtn=document.getElementById('sync-btn');
+  syncBtn.textContent='⏳ Sincronizando...';syncBtn.disabled=true;
+  toast('🔄 Sincronizando transacciones...');
+  try{
+    const key=await getPluggyKey();
+    let added=0;
+    for(const it of connItems){
+      // Obtener cuentas del banco conectado
+      const accResp=await fetch(`${PLUGGY_API}/accounts?itemId=${it.itemId}`,{headers:{'X-API-KEY':key}});
+      if(!accResp.ok) continue;
+      const{results:accs=[]}=await accResp.json();
+
+      for(const acc of accs){
+        // Obtener transacciones de los últimos 3 meses
+        const since=new Date();since.setMonth(since.getMonth()-3);
+        const from=since.toISOString().slice(0,10);
+        const txResp=await fetch(`${PLUGGY_API}/transactions?accountId=${acc.id}&from=${from}&pageSize=500`,{headers:{'X-API-KEY':key}});
+        if(!txResp.ok) continue;
+        const{results:ptxs=[]}=await txResp.json();
+
+        for(const pt of ptxs){
+          const extId='pluggy_'+pt.id;
+          // Verificar si ya existe
+          const{count}=await sb.from('forma_transactions')
+            .select('*',{count:'exact',head:true})
+            .eq('external_id',extId).eq('user_id',user.id);
+          if(!count){
+            const txDate=pt.date.slice(0,10);
+            await sb.from('forma_transactions').insert({
+              user_id:user.id,
+              date:txDate,
+              description:pt.description||pt.descriptionRaw||'',
+              amount:Math.abs(pt.amount),
+              type:pt.type==='DEBIT'?'expense':'income',
+              category:autoCat(pt.description,pt.type),
+              source:'pluggy',
+              external_id:extId
+            });
+            added++;
+          }
+        }
+      }
+    }
+    toast(added>0?`✅ ${added} transacciones importadas!`:'✅ Todo sincronizado');
+    await loadMonthData();
+  }catch(e){
+    toast('Error al sincronizar: '+e.message,false);
+    console.error(e);
+  }
+  syncBtn.textContent='🔄 Sincronizar transacciones';syncBtn.disabled=false;
+}
+
+function autoCat(d,t){
+  if(t!=='DEBIT')return'salario';
+  d=(d||'').toLowerCase();
+  if(/ifood|restaurante|lanche|pizza|mercado|padaria|comida|supermercado/.test(d))return'alimentacion';
+  if(/uber|99|taxi|onibus|metro|gasolina|posto|combustivel/.test(d))return'transporte';
+  if(/aluguel|condominio|luz|energia|agua|gas|iptu/.test(d))return'vivienda';
+  if(/farmacia|medico|hospital|clinica|plano|saude/.test(d))return'salud';
+  if(/escola|faculdade|curso|livro|udemy|coursera/.test(d))return'educacion';
+  if(/netflix|spotify|cinema|game|teatro|show/.test(d))return'ocio';
+  if(/amazon|shopee|roupa|vestuario|zara/.test(d))return'ropa';
+  if(/tim|claro|vivo|oi|internet|telefon/.test(d))return'cuentas';
+  return'otros';
+}
+
+// ═══════════════════════════════════════════════════
+// ALUMNOS
+// ═══════════════════════════════════════════════════
+function copyCode(){
+  const code=document.getElementById('inv-code').textContent;
+  navigator.clipboard.writeText(code).then(()=>toast('✅ Código copiado: '+code));
+}
+
+async function loadStudents(){
+  if(profile?.role!=='teacher')return;
+  const curMonth=todayMonth();
+  const{data:students}=await sb.from('forma_profiles').select('*').eq('teacher_id',user.id);
+  document.getElementById('stu-count').textContent=(students||[]).length+' alumno'+((students||[]).length!==1?'s':'');
+  const el=document.getElementById('stu-list');
+  if(!students?.length){
+    el.innerHTML='<div class="empty"><div class="ei">👥</div><p>Ningún alumno vinculado aún.<br>Comparte el código de arriba.</p></div>';return;
+  }
+  const withBal=await Promise.all(students.map(async s=>{
+    const{data:t}=await sb.from('forma_transactions').select('type,amount').eq('user_id',s.id).gte('date',curMonth+'-01');
+    const inc=(t||[]).filter(x=>x.type==='income').reduce((a,x)=>a+Number(x.amount),0);
+    const exp=(t||[]).filter(x=>x.type==='expense').reduce((a,x)=>a+Number(x.amount),0);
+    return{...s,bal:inc-exp};
+  }));
+  el.innerHTML=withBal.map(s=>`
+    <div class="stu-row">
+      <div class="stu-av">${initials(s.full_name)}</div>
+      <div class="stu-body">
+        <div class="stu-name">${s.full_name}</div>
+        <div class="stu-meta">Este mes · saldo actual</div>
+      </div>
+      <div class="stu-bal" style="color:${s.bal>=0?'var(--green)':'var(--red)'}">${fmt(s.bal)}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// MODAL CERRAR AL CLICK FUERA
+// ═══════════════════════════════════════════════════
+document.getElementById('orc-overlay').addEventListener('click',function(e){if(e.target===this)closeOrcModal()});
+</script>
+</body>
+</html>
