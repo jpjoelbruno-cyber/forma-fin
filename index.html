@@ -6,6 +6,11 @@
 <title>FORMÁ Financiero · FORMÁ Educacional</title>
 <meta name="description" content="Controla tu presupuesto mensual con FORMÁ Financiero">
 <meta name="theme-color" content="#5B21B6">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FORMÁ Fin">
+<link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;FORM%C3%81 Financiero&quot;,&quot;short_name&quot;:&quot;FORM%C3%81&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%235B21B6&quot;,&quot;theme_color&quot;:&quot;%235B21B6&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%236B21D6'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='110' font-family='Arial'%3E📊%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -279,9 +284,86 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 .toast{position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-120px);background:#1F2937;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;font-weight:600;z-index:9999;transition:.3s;pointer-events:none;white-space:nowrap;max-width:92vw}
 .toast.show{transform:translateX(-50%) translateY(0)}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* ─── TECLADO NUMÉRICO PROPIO ─── */
+.numpad-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;animation:fadeIn .2s}
+.numpad-overlay.open{display:flex}
+.numpad-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;margin:0 auto;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0));animation:slideUp .25s ease-out}
+.numpad-display{text-align:center;padding:10px 0 18px}
+.numpad-cat-row{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:4px}
+.numpad-cat-icon{font-size:22px}
+.numpad-cat-name{font-size:13px;font-weight:600;color:var(--text2)}
+.numpad-amount{font-size:48px;font-weight:800;font-family:'Sora',sans-serif;letter-spacing:-2px;color:var(--text);min-height:58px;line-height:1}
+.numpad-amount.empty{color:var(--text3)}
+.numpad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.nk{height:64px;border-radius:14px;border:none;background:var(--bg);font-size:24px;font-weight:600;cursor:pointer;font-family:'Sora',sans-serif;color:var(--text);transition:.1s;-webkit-tap-highlight-color:transparent}
+.nk:active{background:var(--border2);transform:scale(.94)}
+.nk.nk-del{background:var(--brand-lt);color:var(--brand);font-size:20px}
+.nk.nk-ok{background:var(--grad-btn);color:#fff;font-size:16px;font-weight:700;font-family:'Sora',sans-serif}
+.nk.nk-zero{grid-column:span 2}
+
+/* ─── SHEET DETALLE TRANSACCIÓN ─── */
+.tx-detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;display:none;align-items:flex-end;animation:fadeIn .2s}
+.tx-detail-overlay.open{display:flex}
+.tx-detail-sheet{background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;margin:0 auto;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0));animation:slideUp .25s ease-out}
+.tx-detail-handle{width:36px;height:4px;border-radius:2px;background:var(--border2);margin:0 auto 16px}
+.tx-detail-icon{width:56px;height:56px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px}
+.tx-detail-icon.e{background:var(--red-lt)}.tx-detail-icon.i{background:var(--green-lt)}
+.tx-detail-amt{font-size:32px;font-weight:800;font-family:'Sora',sans-serif;text-align:center;letter-spacing:-1px;margin-bottom:4px}
+.tx-detail-amt.e{color:var(--red)}.tx-detail-amt.i{color:var(--green)}
+.tx-detail-desc{text-align:center;font-size:14px;color:var(--text2);margin-bottom:16px}
+.tx-detail-rows{background:var(--bg);border-radius:12px;padding:4px 0;margin-bottom:16px}
+.tx-detail-row{display:flex;justify-content:space-between;padding:10px 14px;font-size:14px}
+.tx-detail-row:not(:last-child){border-bottom:1px solid var(--border)}
+.tx-detail-row span:first-child{color:var(--text2)}
+.tx-detail-row span:last-child{font-weight:600}
+.tx-detail-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn-edit-tx{padding:13px;border-radius:12px;border:1.5px solid var(--border2);background:var(--surface);color:var(--text);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-del-tx{padding:13px;border-radius:12px;border:none;background:var(--red-lt);color:var(--red);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+
+/* ─── ONBOARDING ─── */
+.onboard-overlay{position:fixed;inset:0;background:var(--grad-main);z-index:500;display:none;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.onboard-overlay.open{display:flex}
+.onboard-card{background:var(--surface);border-radius:24px;padding:28px 22px;width:100%;max-width:390px;box-shadow:0 24px 64px rgba(0,0,0,.3)}
+.onboard-step-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px}
+.od{width:8px;height:8px;border-radius:50%;background:var(--border2);transition:.3s}
+.od.active{background:var(--brand);width:22px;border-radius:4px}
+.onboard-emoji{font-size:48px;text-align:center;margin-bottom:12px}
+.onboard-title{font-size:20px;font-weight:800;font-family:'Sora',sans-serif;text-align:center;margin-bottom:6px}
+.onboard-sub{font-size:14px;color:var(--text2);text-align:center;line-height:1.5;margin-bottom:22px}
+.onboard-input{width:100%;padding:14px;font-size:24px;font-weight:700;border:2px solid var(--border2);border-radius:12px;text-align:center;font-family:'Sora',sans-serif;outline:none;background:var(--bg);color:var(--text);margin-bottom:16px}
+.onboard-input:focus{border-color:var(--brand)}
+.onboard-cats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.ob-cat{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:2px solid var(--border);border-radius:12px;font-size:11px;font-weight:600;cursor:pointer;background:var(--surface);color:var(--text2);transition:.15s;font-family:inherit}
+.ob-cat .oi{font-size:24px}
+.ob-cat.active{border-color:var(--brand);background:var(--brand-lt);color:var(--brand)}
+.onboard-btn{width:100%;padding:15px;background:var(--grad-btn);color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;font-family:'Sora',sans-serif}
+.onboard-skip{width:100%;padding:10px;background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;margin-top:6px;font-family:inherit}
 .app-footer{text-align:center;padding:10px 16px;font-size:10px;color:var(--text3)}
 .app-footer strong{color:var(--brand2)}
 .tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500;background:var(--bg);color:var(--text2)}
+
+/* METAS */
+.goal-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.goal-item:last-child{border-bottom:none}
+.goal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.goal-name{font-size:14px;font-weight:600}
+.goal-pct{font-size:13px;font-weight:700;color:var(--brand)}
+.goal-track{background:var(--bg);border-radius:99px;height:8px;overflow:hidden;margin-bottom:4px}
+.goal-fill{height:8px;border-radius:99px;background:var(--grad-btn);transition:width .6s ease}
+.goal-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text2)}
+.goal-del{background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;padding:2px 4px}
+
+/* NAV TAB METAS */
+.nb-goals-dot{width:6px;height:6px;border-radius:50%;background:var(--brand);position:absolute;top:6px;right:calc(50% - 14px);display:none}
+
+/* install banner */
+.install-banner{display:none;align-items:center;gap:10px;background:var(--brand-lt);border:1.5px solid var(--brand);border-radius:12px;padding:12px 14px;margin:12px 14px 0;cursor:pointer}
+.install-banner.show{display:flex}
+.install-banner p{flex:1;font-size:13px;font-weight:600;color:var(--brand)}
+.install-banner button{padding:8px 14px;border-radius:8px;border:none;background:var(--grad-btn);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -431,6 +513,23 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
       <div class="sh"><span class="sh-title">🕐 Últimas</span><button class="btn-sm" onclick="goPanel('historico')">Ver todas</button></div>
       <div id="recent-txs"><div class="empty"><p>Ninguna transacción aún</p></div></div>
     </div>
+
+    <!-- GRÁFICO EVOLUCIÓN -->
+    <div class="card" id="chart-card">
+      <div class="sh"><span class="sh-title">📈 Evolución</span><span style="font-size:11px;color:var(--text3)">últimos 6 meses</span></div>
+      <canvas id="evo-chart" height="160" style="width:100%;display:block"></canvas>
+      <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;font-weight:600">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></span>Ingresos</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--red);display:inline-block"></span>Gastos</span>
+      </div>
+    </div>
+
+    <!-- METAS DE AHORRO -->
+    <div class="card">
+      <div class="sh"><span class="sh-title">🎯 Metas de ahorro</span><button class="btn-sm" onclick="openGoalModal()">+ Nueva</button></div>
+      <div id="goals-list"><div class="empty" style="padding:12px 0"><p style="font-size:13px">Sin metas aún.<br>Crea tu primera meta de ahorro.</p></div></div>
+    </div>
+
     <div class="app-footer">FORMA EDUCACIONAL · Desarrollado por <strong>ELEVA &amp; NEGOCIO</strong></div>
   </div>
 
@@ -442,12 +541,10 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
       <button class="rtype-btn ing" id="tt-i" onclick="setTxType('income')">💰 Ingreso</button>
     </div>
 
-    <!-- Monto grande, toca para editar -->
-    <div class="reg-amount-wrap" onclick="document.getElementById('tx-amt').focus()">
+    <!-- Monto grande, toca para abrir numpad -->
+    <div class="reg-amount-wrap" onclick="openNumpad()">
       <div class="reg-currency">¿Cuánto?</div>
       <div class="reg-amount-display empty" id="amt-display">0,00</div>
-      <input class="reg-amount-input" id="tx-amt" type="number" placeholder="0" step="0.01" min="0" inputmode="decimal"
-        oninput="updateAmtDisplay(this.value)" onfocus="this.parentElement.querySelector('.reg-amount-display').classList.add('focused')">
     </div>
 
     <!-- Categorías rápidas -->
@@ -513,6 +610,36 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
   </div>
 </div>
 
+<!-- INSTALL BANNER -->
+<div class="install-banner" id="install-banner" onclick="doInstall()">
+  <span style="font-size:22px">📲</span>
+  <p>¡Instala FORMÁ como app!</p>
+  <button onclick="event.stopPropagation();doInstall()">Instalar</button>
+  <button onclick="event.stopPropagation();dismissInstall()" style="background:none;color:var(--text2);border:none;font-size:18px;cursor:pointer;padding:4px">✕</button>
+</div>
+
+<!-- MODAL METAS DE AHORRO -->
+<div class="overlay" id="goal-overlay">
+  <div class="modal">
+    <div class="modal-title">🎯 Nueva meta de ahorro</div>
+    <div class="modal-sub">Define una meta y haz seguimiento de tu progreso</div>
+    <div class="fld"><label>Nombre de la meta</label>
+      <input class="inp-simple" id="goal-name" placeholder="Ej: Viaje, Emergencia, iPhone...">
+    </div>
+    <div class="fld"><label>Monto objetivo ($)</label>
+      <input class="inp-simple" id="goal-target" type="number" placeholder="$ 0" min="0" step="10" inputmode="decimal">
+    </div>
+    <div class="fld"><label>Ya ahorré ($) — opcional</label>
+      <input class="inp-simple" id="goal-saved" type="number" placeholder="$ 0" min="0" step="10" inputmode="decimal">
+    </div>
+    <div class="fld"><label>Fecha límite — opcional</label>
+      <input class="inp-simple" id="goal-date" type="date">
+    </div>
+    <button class="btn-primary" onclick="saveGoal()">Crear meta</button>
+    <button class="btn-cancel" onclick="closeGoalModal()">Cancelar</button>
+  </div>
+</div>
+
 <!-- MODAL PRESUPUESTO -->
 <div class="overlay" id="orc-overlay">
   <div class="modal">
@@ -521,6 +648,81 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <div id="orc-cats"></div>
     <button class="btn-primary" onclick="saveOrc()">Guardar presupuesto</button>
     <button class="btn-cancel" onclick="closeOrcModal()">Cancelar</button>
+  </div>
+</div>
+
+<!-- TECLADO NUMÉRICO -->
+<div class="numpad-overlay" id="numpad-overlay" onclick="if(event.target===this)closeNumpad()">
+  <div class="numpad-sheet">
+    <div class="numpad-display">
+      <div class="numpad-cat-row">
+        <span class="numpad-cat-icon" id="np-icon">💸</span>
+        <span class="numpad-cat-name" id="np-cat">Categoría</span>
+      </div>
+      <div class="numpad-amount empty" id="np-amt">0,00</div>
+    </div>
+    <div class="numpad-grid">
+      <button class="nk" onclick="numpadPress('1')">1</button>
+      <button class="nk" onclick="numpadPress('2')">2</button>
+      <button class="nk" onclick="numpadPress('3')">3</button>
+      <button class="nk" onclick="numpadPress('4')">4</button>
+      <button class="nk" onclick="numpadPress('5')">5</button>
+      <button class="nk" onclick="numpadPress('6')">6</button>
+      <button class="nk" onclick="numpadPress('7')">7</button>
+      <button class="nk" onclick="numpadPress('8')">8</button>
+      <button class="nk" onclick="numpadPress('9')">9</button>
+      <button class="nk" onclick="numpadPress('.')">•</button>
+      <button class="nk nk-zero" onclick="numpadPress('0')">0</button>
+      <button class="nk nk-del" onclick="numpadDel()">⌫</button>
+      <button class="nk nk-ok" style="grid-column:span 3" onclick="numpadOk()">✓ Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- DETALLE TRANSACCIÓN -->
+<div class="tx-detail-overlay" id="tx-detail-overlay" onclick="if(event.target===this)closeTxDetail()">
+  <div class="tx-detail-sheet">
+    <div class="tx-detail-handle"></div>
+    <div class="tx-detail-icon" id="tdd-icon">💸</div>
+    <div class="tx-detail-amt" id="tdd-amt">$ 0,00</div>
+    <div class="tx-detail-desc" id="tdd-desc">—</div>
+    <div class="tx-detail-rows">
+      <div class="tx-detail-row"><span>Categoría</span><span id="tdd-cat">—</span></div>
+      <div class="tx-detail-row"><span>Fecha</span><span id="tdd-date">—</span></div>
+      <div class="tx-detail-row"><span>Tipo</span><span id="tdd-type">—</span></div>
+    </div>
+    <div class="tx-detail-actions">
+      <button class="btn-edit-tx" onclick="editTxOpen()">✏️ Editar</button>
+      <button class="btn-del-tx" onclick="deleteTxConfirm()">🗑️ Eliminar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EDITAR TRANSACCIÓN (sheet) -->
+<div class="tx-detail-overlay" id="tx-edit-overlay" onclick="if(event.target===this)closeTxEdit()">
+  <div class="tx-detail-sheet" style="padding-bottom:calc(24px + env(safe-area-inset-bottom,0))">
+    <div class="tx-detail-handle"></div>
+    <div style="font-size:17px;font-weight:700;margin-bottom:14px;font-family:'Sora',sans-serif">✏️ Editar transacción</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <button class="rtype-btn gas" id="edit-tt-e" onclick="editSetType('expense')">💸 Gasto</button>
+      <button class="rtype-btn ing" id="edit-tt-i" onclick="editSetType('income')">💰 Ingreso</button>
+    </div>
+    <div style="background:var(--bg);border-radius:12px;padding:14px;text-align:center;margin-bottom:12px;cursor:pointer" onclick="openEditNumpad()">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px">Monto</div>
+      <div style="font-size:36px;font-weight:800;font-family:'Sora',sans-serif;letter-spacing:-1px" id="edit-amt-display">0,00</div>
+    </div>
+    <input class="reg-desc-input" id="edit-desc" placeholder="Descripción (opcional)" style="margin-bottom:8px">
+    <input class="reg-opt-input" type="date" id="edit-date" style="width:100%;margin-bottom:14px">
+    <button class="save-btn" onclick="saveTxEdit()">✓ Guardar cambios</button>
+    <button class="btn-cancel" onclick="closeTxEdit()">Cancelar</button>
+  </div>
+</div>
+
+<!-- ONBOARDING -->
+<div class="onboard-overlay" id="onboard-overlay">
+  <div class="onboard-card">
+    <div class="onboard-step-dots" id="ob-dots"></div>
+    <div id="ob-content"></div>
   </div>
 </div>
 
@@ -897,6 +1099,11 @@ function showApp(){
   renderAllCats();
   loadMonthData();
   loadConnItems();
+  renderGoals();
+  setTimeout(()=>renderEvoChart(),600);
+  // Onboarding solo si es primer ingreso
+  const obDone=localStorage.getItem('forma_ob_done_'+user.id);
+  if(!obDone) setTimeout(()=>initOnboarding(),800);
 }
 
 // ═══════════════════════════════════════════════════
@@ -907,10 +1114,10 @@ function goPanel(id){
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
   document.getElementById('nb-'+id).classList.add('active');
-  if(id==='resumo') renderResume();
+  if(id==='resumo'){renderResume();setTimeout(()=>renderEvoChart(),300);renderGoals();}
   if(id==='historico') renderTxList();
   if(id==='alunos') loadStudents();
-  if(id==='registrar') setTimeout(()=>document.getElementById('tx-amt').focus(),200);
+  if(id==='registrar') setTimeout(()=>openNumpad(),300);
 }
 
 // ═══════════════════════════════════════════════════
@@ -973,7 +1180,7 @@ function renderResume(){
 
 function txHTML(t){
   const c=catInfo(t.type,t.category);
-  return`<div class="tx">
+  return`<div class="tx" style="cursor:pointer" onclick="openTxDetail(${JSON.stringify(t).replace(/"/g,'&quot;')})">
     <div class="tx-icon ${t.type==='income'?'i':'e'}">${c.i}</div>
     <div class="tx-body">
       <div class="tx-desc">${t.description||c.l}</div>
@@ -1359,6 +1566,563 @@ async function loadStudents(){
 // MODAL CERRAR AL CLICK FUERA
 // ═══════════════════════════════════════════════════
 document.getElementById('orc-overlay').addEventListener('click',function(e){if(e.target===this)closeOrcModal()});
+document.getElementById('goal-overlay').addEventListener('click',function(e){if(e.target===this)closeGoalModal()});
+
+// ═══════════════════════════════════════════════════
+// TECLADO NUMÉRICO PROPIO (Nubank style)
+// ═══════════════════════════════════════════════════
+let npRaw=''; // string de dígitos sin punto — último 2 son decimales
+let npEditMode=false; // true cuando se usa para editar tx
+
+function openNumpad(editMode=false){
+  npEditMode=editMode;
+  if(!editMode){
+    // Recuperar valor actual si ya había algo
+    const el=document.getElementById('amt-display');
+    const cur=el.textContent.replace(/[^0-9]/g,'');
+    npRaw=cur&&cur!=='000'?cur:'';
+  }
+  const c=catInfo(txType,selCat);
+  document.getElementById('np-icon').textContent=c.i;
+  document.getElementById('np-cat').textContent=c.l;
+  updateNumpadDisplay();
+  document.getElementById('numpad-overlay').classList.add('open');
+}
+
+function openEditNumpad(){
+  // Actualizar icon con tipo de edición
+  const c=catInfo(editTxData?.type||'expense',editTxData?.category||selCat);
+  document.getElementById('np-icon').textContent=c.i;
+  document.getElementById('np-cat').textContent=c.l;
+  npEditMode=true;
+  updateNumpadDisplay();
+  document.getElementById('numpad-overlay').classList.add('open');
+}
+
+function closeNumpad(){
+  document.getElementById('numpad-overlay').classList.remove('open');
+}
+
+function numpadPress(d){
+  if(d==='.'){
+    // Ya tiene decimal implícito (centavos = últimos 2 dígitos)
+    // Ignorar punto — la pantalla siempre muestra 2 decimales
+    return;
+  }
+  if(npRaw.length>=10) return; // máximo 10 dígitos
+  npRaw+=d;
+  updateNumpadDisplay();
+}
+
+function numpadDel(){
+  npRaw=npRaw.slice(0,-1);
+  updateNumpadDisplay();
+}
+
+function updateNumpadDisplay(){
+  const el=document.getElementById('np-amt');
+  if(!npRaw){
+    el.textContent='0,00';
+    el.classList.add('empty');
+    return;
+  }
+  el.classList.remove('empty');
+  const num=parseInt(npRaw,10)/100;
+  el.textContent=num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
+
+function numpadOk(){
+  const num=npRaw?parseInt(npRaw,10)/100:0;
+  if(npEditMode){
+    // Actualizar el campo de edición
+    document.getElementById('edit-amt-display').textContent=
+      num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(editTxData) editTxData._newAmt=num;
+    closeNumpad();
+    return;
+  }
+  // Actualizar campo de registro
+  const display=document.getElementById('amt-display');
+  if(num>0){
+    display.textContent=num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+    display.classList.remove('empty');
+    display.dataset.value=num;
+  }else{
+    display.textContent='0,00';
+    display.classList.add('empty');
+    delete display.dataset.value;
+  }
+  closeNumpad();
+}
+
+// ═══════════════════════════════════════════════════
+// DETALLE / EDITAR / ELIMINAR TRANSACCIÓN
+// ═══════════════════════════════════════════════════
+let currentTxDetail=null;
+let editTxData=null;
+
+function openTxDetail(t){
+  // t puede ser objeto o string (desde onclick attr)
+  const tx=(typeof t==='string')?JSON.parse(t):t;
+  currentTxDetail=tx;
+  const c=catInfo(tx.type,tx.category);
+  const icon=document.getElementById('tdd-icon');
+  icon.textContent=c.i;
+  icon.className='tx-detail-icon '+(tx.type==='income'?'i':'e');
+  const amtEl=document.getElementById('tdd-amt');
+  amtEl.textContent=(tx.type==='income'?'+':'-')+fmt(tx.amount);
+  amtEl.className='tx-detail-amt '+(tx.type==='income'?'i':'e');
+  document.getElementById('tdd-desc').textContent=tx.description||c.l;
+  document.getElementById('tdd-cat').textContent=c.i+' '+c.l;
+  document.getElementById('tdd-date').textContent=tx.date;
+  document.getElementById('tdd-type').textContent=tx.type==='income'?'💰 Ingreso':'💸 Gasto';
+  document.getElementById('tx-detail-overlay').classList.add('open');
+}
+
+function closeTxDetail(){
+  document.getElementById('tx-detail-overlay').classList.remove('open');
+  currentTxDetail=null;
+}
+
+function editTxOpen(){
+  if(!currentTxDetail) return;
+  closeTxDetail();
+  editTxData={...currentTxDetail,_newAmt:Number(currentTxDetail.amount)};
+  // Rellenar campos del editor
+  editSetType(editTxData.type);
+  const display=document.getElementById('edit-amt-display');
+  display.textContent=Number(editTxData.amount).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+  document.getElementById('edit-desc').value=editTxData.description||'';
+  document.getElementById('edit-date').value=editTxData.date;
+  // Prep numpad para edición
+  npRaw=Math.round(Number(editTxData.amount)*100).toString();
+  document.getElementById('tx-edit-overlay').classList.add('open');
+}
+
+function closeTxEdit(){
+  document.getElementById('tx-edit-overlay').classList.remove('open');
+  editTxData=null;
+  npRaw='';
+}
+
+function editSetType(type){
+  if(editTxData) editTxData.type=type;
+  document.getElementById('edit-tt-e').className='rtype-btn gas'+(type==='expense'?' active':'');
+  document.getElementById('edit-tt-i').className='rtype-btn ing'+(type==='income'?' active':'');
+}
+
+async function saveTxEdit(){
+  if(!editTxData) return;
+  const amt=editTxData._newAmt||Number(editTxData.amount);
+  const desc=document.getElementById('edit-desc').value.trim();
+  const date=document.getElementById('edit-date').value;
+  if(!amt||amt<=0){toast('Monto inválido',false);return}
+  if(!date){toast('Fecha requerida',false);return}
+  const{error}=await sb.from('forma_transactions').update({
+    amount:amt,description:desc||null,date,type:editTxData.type
+  }).eq('id',editTxData.id);
+  if(error){toast('Error: '+error.message,false);return}
+  toast('✅ ¡Transacción actualizada!');
+  closeTxEdit();
+  await loadMonthData();
+}
+
+async function deleteTxConfirm(){
+  if(!currentTxDetail) return;
+  const tx=currentTxDetail;
+  // Confirmación inline simple
+  const btn=document.querySelector('.btn-del-tx');
+  if(btn.dataset.confirm!=='1'){
+    btn.textContent='⚠️ ¿Confirmar?';
+    btn.dataset.confirm='1';
+    setTimeout(()=>{btn.textContent='🗑️ Eliminar';btn.dataset.confirm='';},3000);
+    return;
+  }
+  const{error}=await sb.from('forma_transactions').delete().eq('id',tx.id);
+  if(error){toast('Error: '+error.message,false);return}
+  toast('🗑️ Transacción eliminada');
+  closeTxDetail();
+  await loadMonthData();
+}
+
+// ═══════════════════════════════════════════════════
+// ONBOARDING PRIMER USO
+// ═══════════════════════════════════════════════════
+let obStep=0;
+let obData={salary:0,cats:[]};
+const OB_STEPS=[
+  {
+    emoji:'👋',
+    title:'¡Bienvenido a FORMÁ Financiero!',
+    sub:'Controla tus finanzas como un pro. Vamos a configurar tu perfil en 3 pasos rápidos.',
+    cta:'¡Empezar!',
+    skip:true
+  },
+  {
+    emoji:'💰',
+    title:'¿Cuánto ganas al mes?',
+    sub:'Tu ingreso mensual aproximado. Esto nos ayuda a mostrarte tu saldo siempre actualizado.',
+    cta:'Siguiente →',
+    input:true
+  },
+  {
+    emoji:'🎯',
+    title:'¿En qué gastas más?',
+    sub:'Elige tus 3 categorías principales. Las pondremos primero para que registres más rápido.',
+    cta:'¡Listo, empezar!',
+    cats:true
+  }
+];
+
+function initOnboarding(){
+  obStep=0;
+  obData={salary:0,cats:[]};
+  renderOnboardStep();
+  document.getElementById('onboard-overlay').classList.add('open');
+}
+
+function renderOnboardStep(){
+  const step=OB_STEPS[obStep];
+  const total=OB_STEPS.length;
+  // Dots
+  const dots=Array.from({length:total},(_,i)=>`<div class="od${i===obStep?' active':''}"></div>`).join('');
+  document.getElementById('ob-dots').innerHTML=dots;
+
+  let html=`<div class="onboard-emoji">${step.emoji}</div>
+    <div class="onboard-title">${step.title}</div>
+    <div class="onboard-sub">${step.sub}</div>`;
+
+  if(step.input){
+    html+=`<input class="onboard-input" id="ob-salary" type="number" placeholder="$ 0" inputmode="decimal" min="0" step="100">`;
+  }
+  if(step.cats){
+    const cats=[
+      {id:'supermercado',i:'🛒',l:'Mercado'},
+      {id:'restaurantes',i:'🍽️',l:'Comida'},
+      {id:'gasolina',i:'⛽',l:'Gasolina'},
+      {id:'uber',i:'🚖',l:'Uber'},
+      {id:'farmacia',i:'💊',l:'Farmacia'},
+      {id:'academia',i:'🏋️',l:'Gym'},
+      {id:'ropa',i:'👗',l:'Ropa'},
+      {id:'cafe',i:'☕',l:'Café'},
+      {id:'alquiler',i:'🏠',l:'Alquiler'},
+    ];
+    html+=`<div class="onboard-cats">${cats.map(c=>`
+      <button class="ob-cat${obData.cats.includes(c.id)?' active':''}" onclick="obToggleCat('${c.id}',this)">
+        <span class="oi">${c.i}</span>${c.l}
+      </button>`).join('')}</div>`;
+  }
+
+  html+=`<button class="onboard-btn" onclick="obNext()">${step.cta}</button>`;
+  if(step.skip){
+    html+=`<button class="onboard-skip" onclick="obSkip()">Saltar configuración</button>`;
+  }
+  document.getElementById('ob-content').innerHTML=html;
+}
+
+function obToggleCat(id,btn){
+  const idx=obData.cats.indexOf(id);
+  if(idx>=0){obData.cats.splice(idx,1);btn.classList.remove('active');}
+  else if(obData.cats.length<3){obData.cats.push(id);btn.classList.add('active');}
+  else{toast('Máximo 3 categorías',false);}
+}
+
+async function obNext(){
+  const step=OB_STEPS[obStep];
+  if(step.input){
+    const v=parseFloat(document.getElementById('ob-salary')?.value||0);
+    obData.salary=v||0;
+    if(obData.salary>0){
+      // Registrar ingreso inicial si no existe para este mes
+      await sb.from('forma_transactions').insert({
+        user_id:user.id,date:todayStr(),
+        description:'Ingreso mensual inicial',
+        amount:obData.salary,type:'income',category:'salario',source:'manual'
+      }).then(()=>loadMonthData());
+    }
+  }
+  if(obStep<OB_STEPS.length-1){
+    obStep++;
+    renderOnboardStep();
+  }else{
+    obFinish();
+  }
+}
+
+function obSkip(){
+  obFinish();
+}
+
+function obFinish(){
+  // Reordenar QUICK_EXP según preferencias del usuario
+  if(obData.cats.length){
+    obData.cats.reverse().forEach(id=>{
+      const idx=QUICK_EXP.findIndex(c=>c.id===id);
+      if(idx>0){const [item]=QUICK_EXP.splice(idx,1);QUICK_EXP.unshift(item);}
+    });
+    renderQuickCats();
+  }
+  localStorage.setItem('forma_ob_done_'+user.id,'1');
+  document.getElementById('onboard-overlay').classList.remove('open');
+  toast('🎉 ¡Todo listo! Registra tu primer gasto.');
+}
+
+// ═══════════════════════════════════════════════════
+// GRÁFICO DE EVOLUCIÓN (canvas puro)
+// ═══════════════════════════════════════════════════
+async function renderEvoChart(){
+  const canvas=document.getElementById('evo-chart');
+  if(!canvas) return;
+  // Generar últimos 6 meses
+  const months=[];
+  let[y,m]=todayMonth().split('-').map(Number);
+  for(let i=5;i>=0;i--){
+    let mm=m-i; let yy=y;
+    if(mm<1){mm+=12;yy--;}
+    months.push(yy+'-'+String(mm).padStart(2,'0'));
+  }
+  // Cargar datos de cada mes
+  const data=await Promise.all(months.map(async mo=>{
+    const{data:t}=await sb.from('forma_transactions').select('type,amount')
+      .eq('user_id',user.id).gte('date',mo+'-01').lte('date',mo+'-31');
+    const inc=(t||[]).filter(x=>x.type==='income').reduce((a,x)=>a+Number(x.amount),0);
+    const exp=(t||[]).filter(x=>x.type==='expense').reduce((a,x)=>a+Number(x.amount),0);
+    return{mo,inc,exp};
+  }));
+
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||300;
+  const H=160;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.scale(dpr,dpr);
+
+  const pad={t:10,r:10,b:28,l:44};
+  const cw=W-pad.l-pad.r;
+  const ch=H-pad.t-pad.b;
+  const max=Math.max(...data.flatMap(d=>[d.inc,d.exp]),1);
+  const barW=Math.floor(cw/months.length);
+  const bw=Math.floor(barW*0.3);
+  const gap=Math.floor(barW*0.05);
+
+  // Grid
+  const isDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+  const gridColor=isDark?'rgba(255,255,255,.07)':'rgba(0,0,0,.06)';
+  const textColor=isDark?'rgba(255,255,255,.45)':'rgba(0,0,0,.4)';
+  ctx.strokeStyle=gridColor; ctx.lineWidth=1;
+  [0.25,0.5,0.75,1].forEach(p=>{
+    const y=pad.t+ch*(1-p);
+    ctx.beginPath();ctx.moveTo(pad.l,y);ctx.lineTo(W-pad.r,y);ctx.stroke();
+    ctx.fillStyle=textColor;ctx.font='10px DM Sans,sans-serif';ctx.textAlign='right';
+    ctx.fillText('$'+(max*p/1000>=1?(max*p/1000).toFixed(0)+'k':(max*p).toFixed(0)),pad.l-4,y+3);
+  });
+
+  // Barras
+  const GREEN='#16A34A', RED='#DC2626';
+  data.forEach((d,i)=>{
+    const x=pad.l+i*barW+Math.floor(barW/2);
+    // Ingreso
+    const ih=Math.round((d.inc/max)*ch);
+    ctx.fillStyle=GREEN;
+    roundRect(ctx,x-bw-gap,pad.t+ch-ih,bw,ih,3);
+    // Gasto
+    const eh=Math.round((d.exp/max)*ch);
+    ctx.fillStyle=RED;
+    roundRect(ctx,x+gap,pad.t+ch-eh,bw,eh,3);
+    // Label mes
+    const mo=d.mo.slice(5);
+    const names=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    ctx.fillStyle=textColor;ctx.font='10px DM Sans,sans-serif';ctx.textAlign='center';
+    ctx.fillText(names[+mo],x,H-6);
+  });
+}
+
+function roundRect(ctx,x,y,w,h,r){
+  if(h<=0) return;
+  r=Math.min(r,h/2,w/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h);
+  ctx.lineTo(x,y+h);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y,x+r,y);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// ═══════════════════════════════════════════════════
+// METAS DE AHORRO
+// ═══════════════════════════════════════════════════
+function loadGoals(){
+  const raw=localStorage.getItem('forma_goals_'+user.id)||'[]';
+  return JSON.parse(raw);
+}
+function saveGoals(goals){
+  localStorage.setItem('forma_goals_'+user.id,JSON.stringify(goals));
+}
+
+function renderGoals(){
+  const goals=loadGoals();
+  const el=document.getElementById('goals-list');
+  if(!goals.length){
+    el.innerHTML='<div class="empty" style="padding:12px 0"><p style="font-size:13px">Sin metas aún.<br>Crea tu primera meta de ahorro.</p></div>';
+    return;
+  }
+  el.innerHTML=goals.map((g,i)=>{
+    const pct=g.target>0?Math.min(100,Math.round((g.saved/g.target)*100)):0;
+    const left=g.target-g.saved;
+    const daysLeft=g.date?Math.ceil((new Date(g.date)-new Date())/(1000*86400)):null;
+    return`<div class="goal-item">
+      <div class="goal-header">
+        <span class="goal-name">${g.emoji||'🎯'} ${g.name}</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span class="goal-pct">${pct}%</span>
+          <button class="goal-del" onclick="deleteGoal(${i})">🗑</button>
+        </span>
+      </div>
+      <div class="goal-track"><div class="goal-fill" style="width:${pct}%"></div></div>
+      <div class="goal-meta">
+        <span>${fmt(g.saved)} de ${fmt(g.target)}</span>
+        <span>${left>0?'Falta '+fmt(left):'✅ ¡Meta alcanzada!'}${daysLeft!=null?' · '+daysLeft+'d':''}</span>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button onclick="addToGoal(${i},50)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2)">+$50</button>
+        <button onclick="addToGoal(${i},100)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2)">+$100</button>
+        <button onclick="addToGoal(${i},200)" style="flex:1;padding:7px;border-radius:8px;border:1.5px solid var(--border2);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--text2)">+$200</button>
+        <button onclick="addToGoalCustom(${i})" style="flex:1;padding:7px;border-radius:8px;background:var(--brand-lt);border:none;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--brand)">+otro</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openGoalModal(){
+  document.getElementById('goal-name').value='';
+  document.getElementById('goal-target').value='';
+  document.getElementById('goal-saved').value='';
+  document.getElementById('goal-date').value='';
+  document.getElementById('goal-overlay').classList.add('open');
+}
+function closeGoalModal(){document.getElementById('goal-overlay').classList.remove('open')}
+
+const GOAL_EMOJIS={'viaje':'✈️','iphone':'📱','celular':'📱','auto':'🚗','carro':'🚗','casa':'🏠','boda':'💍','emergencia':'🛡️','fondo':'🛡️','vacacion':'🏖️','laptop':'💻','computad':'💻'};
+function goalEmoji(name){
+  const n=(name||'').toLowerCase();
+  return Object.entries(GOAL_EMOJIS).find(([k])=>n.includes(k))?.[1]||'🎯';
+}
+
+function saveGoal(){
+  const name=document.getElementById('goal-name').value.trim();
+  const target=parseFloat(document.getElementById('goal-target').value)||0;
+  const saved=parseFloat(document.getElementById('goal-saved').value)||0;
+  const date=document.getElementById('goal-date').value||null;
+  if(!name){toast('Ingresa el nombre de la meta',false);return}
+  if(!target||target<=0){toast('Ingresa un monto objetivo',false);return}
+  const goals=loadGoals();
+  goals.push({name,target,saved,date,emoji:goalEmoji(name),createdAt:todayStr()});
+  saveGoals(goals);
+  toast('🎯 ¡Meta creada!');
+  closeGoalModal();
+  renderGoals();
+}
+
+function deleteGoal(i){
+  const goals=loadGoals();
+  goals.splice(i,1);
+  saveGoals(goals);
+  renderGoals();
+  toast('Meta eliminada');
+}
+
+function addToGoal(i,amt){
+  const goals=loadGoals();
+  goals[i].saved=Math.min(goals[i].target,(goals[i].saved||0)+amt);
+  saveGoals(goals);
+  renderGoals();
+  if(goals[i].saved>=goals[i].target) toast('🎉 ¡Meta '+goals[i].name+' alcanzada!');
+  else toast('+'+fmt(amt)+' ahorrado 💪');
+}
+
+function addToGoalCustom(i){
+  const v=parseFloat(prompt('¿Cuánto quieres agregar a la meta?')||0);
+  if(v>0) addToGoal(i,v);
+}
+
+// ═══════════════════════════════════════════════════
+// PWA — instalación como app
+// ═══════════════════════════════════════════════════
+let deferredInstall=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredInstall=e;
+  const dismissed=localStorage.getItem('forma_install_dismissed');
+  if(!dismissed) document.getElementById('install-banner').classList.add('show');
+});
+window.addEventListener('appinstalled',()=>{
+  document.getElementById('install-banner').classList.remove('show');
+  toast('✅ ¡FORMÁ instalada como app!');
+});
+async function doInstall(){
+  if(!deferredInstall) return;
+  deferredInstall.prompt();
+  const{outcome}=await deferredInstall.userChoice;
+  if(outcome==='accepted'){document.getElementById('install-banner').classList.remove('show');}
+  deferredInstall=null;
+}
+function dismissInstall(){
+  document.getElementById('install-banner').classList.remove('show');
+  localStorage.setItem('forma_install_dismissed','1');
+}
+
+// ── Registrar Service Worker para PWA ──
+if('serviceWorker' in navigator){
+  const sw=`
+self.addEventListener('install',e=>self.skipWaiting());
+self.addEventListener('activate',e=>clients.claim());
+self.addEventListener('fetch',e=>{
+  if(e.request.mode==='navigate'){
+    e.respondWith(fetch(e.request).catch(()=>caches.match('/index.html')));
+  }
+});`;
+  const blob=new Blob([sw],{type:'application/javascript'});
+  const url=URL.createObjectURL(blob);
+  navigator.serviceWorker.register(url).catch(()=>{});
+}
+
+// Actualizar saveTx para usar el valor del numpad
+const _origSaveTx=saveTx;
+saveTx=async function(){
+  // Obtener monto del display (numpad lo puso ahí)
+  const display=document.getElementById('amt-display');
+  const rawAmt=parseFloat(display.dataset.value||0)||0;
+  if(!rawAmt||rawAmt<=0){
+    display.style.animation='shake .3s';
+    setTimeout(()=>display.style.animation='',400);
+    toast('Ingresa el monto primero',false);return;
+  }
+  const desc=document.getElementById('tx-desc').value.trim();
+  const date=document.getElementById('tx-date').value;
+  if(!date){toast('Selecciona la fecha',false);return}
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true;btn.textContent='...';
+  const{error}=await sb.from('forma_transactions').insert({
+    user_id:user.id,date,description:desc||null,
+    amount:rawAmt,type:txType,category:selCat,source:'manual'
+  });
+  if(error){toast('Error: '+error.message,false);}
+  else{
+    toast('✅ ¡Guardado!');
+    display.textContent='0,00';
+    display.classList.add('empty');
+    delete display.dataset.value;
+    npRaw='';
+    document.getElementById('tx-desc').value='';
+  }
+  btn.disabled=false;btn.textContent='✓ Guardar';
+  if(!error&&date.slice(0,7)===month) await loadMonthData();
+}
 </script>
 </body>
 </html>
