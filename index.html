@@ -735,8 +735,8 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 // ═══════════════════════════════════════════════════
 const SB_URL  = 'https://ipcqlltatvpvrqceqiox.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwY3FsbHRhdHZwdnJxY2VxaW94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDgyNDYsImV4cCI6MjEwMzIyNDI0Nn0.lpmDZZ6mf2s7Zrv8lsYs7oLW8mxApyASYogQTVpv4pk';
-const PLUGGY_ID     = '1b359996-6cd4-4cbe-a45a-927b101174d9';
-const PLUGGY_SECRET = 'kKJhMc8OX0kBxOh3oEbTFCE_-6BMJaEXVOBamTFGlzU';
+// Credenciales Pluggy movidas al backend (api/pluggy-token.js)
+// PLUGGY_ID y PLUGGY_SECRET ya NO están en el frontend — están en Vercel env vars
 const PLUGGY_API    = 'https://api.pluggy.ai';
 
 const sb = supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true}});
@@ -1392,12 +1392,12 @@ function renderBankPanel(){
 async function getPluggyKey(){
   if(pluggyKey) return pluggyKey;
   try{
-    const r=await fetch(PLUGGY_API+'/auth',{
+    // Llama al backend seguro — las credenciales nunca salen del servidor
+    const r=await fetch('/api/pluggy-token',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({clientId:PLUGGY_ID,clientSecret:PLUGGY_SECRET})
+      headers:{'Content-Type':'application/json'}
     });
-    if(!r.ok){const e=await r.json();throw new Error(e.message||'Error de autenticación Pluggy')}
+    if(!r.ok){const e=await r.json();throw new Error(e.error||'Error de autenticación Pluggy')}
     const d=await r.json();
     pluggyKey=d.apiKey;
     return pluggyKey;
