@@ -13,6 +13,7 @@
 <link rel="manifest" href="data:application/json,{&quot;name&quot;:&quot;FORM%C3%81 Financiero&quot;,&quot;short_name&quot;:&quot;FORM%C3%81&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%235B21B6&quot;,&quot;theme_color&quot;:&quot;%235B21B6&quot;,&quot;icons&quot;:[{&quot;src&quot;:&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%236B21D6'/%3E%3Ctext x='96' y='130' text-anchor='middle' font-size='110' font-family='Arial'%3E📊%3C/text%3E%3C/svg%3E&quot;,&quot;sizes&quot;:&quot;192x192&quot;,&quot;type&quot;:&quot;image/svg+xml&quot;}]}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -365,6 +366,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 .install-banner p{flex:1;font-size:13px;font-weight:600;color:var(--brand)}
 .install-banner button{padding:8px 14px;border-radius:8px;border:none;background:var(--grad-btn);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 </style>
+<link rel="stylesheet" href="companion.css?v=20260930b"><link rel="stylesheet" href="experience.css?v=20260930b">
 </head>
 <body>
 
@@ -380,21 +382,6 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 
 <!-- AUTENTICACIÓN -->
 <div id="auth-screen">
-  <!-- Sello ELEVA -->
-  <div style="display:flex;justify-content:center;margin-bottom:18px">
-    <div class="eleva-badge">
-      <div class="eleva-sello">
-        <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <text x="3" y="15" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white">E</text>
-        </svg>
-      </div>
-      <div class="eleva-text">
-        ELEVA &amp; NEGOCIO
-        <span>Desarrollado por</span>
-      </div>
-    </div>
-  </div>
-
   <div class="auth-brand">
     <div class="ab-logo">📊</div>
     <div class="ab-name">FORMÁ Financiero</div>
@@ -422,7 +409,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
       </div>
       <button class="btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
       <div class="divider-or">o</div>
-      <button class="btn-google" onclick="doGoogleAuth()">
+      <button class="btn-google" id="btn-google" onclick="doGoogleAuth()">
         <svg class="google-icon" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
         Continuar con Google
       </button>
@@ -431,11 +418,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 
     <!-- REGISTRO -->
     <div id="signup-form" style="display:none">
-      <div class="fld"><label>Soy</label></div>
-      <div class="role-row">
-        <button class="role-btn active" id="role-s" onclick="setRole('student')">🎓 Alumno</button>
-        <button class="role-btn" id="role-t" onclick="setRole('teacher')">👨‍🏫 Profesor</button>
-      </div>
+      <div class="fld"><label>Cuenta de alumno</label></div>
       <div class="fld">
         <label>Nombre completo</label>
         <input class="inp-simple" type="text" id="s-name" placeholder="Tu nombre completo" autocomplete="name">
@@ -451,10 +434,6 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
           <button class="inp-eye" onclick="togglePwd('s-pass',this)" type="button">👁</button>
         </div>
       </div>
-      <div class="fld" id="code-field" style="display:none">
-        <label>Código del profesor (opcional)</label>
-        <input class="inp-simple" type="text" id="s-code" placeholder="ELEVA•••••" style="text-transform:uppercase;letter-spacing:2px" maxlength="10" oninput="this.value=this.value.toUpperCase()">
-      </div>
       <button class="btn-primary" id="btn-signup" onclick="doSignup()">Crear cuenta</button>
       <div class="divider-or">o</div>
       <button class="btn-google" onclick="doGoogleAuth()">
@@ -466,11 +445,12 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     </div>
   </div>
 
-  <div class="auth-footer">© 2025 FORMÁ Educacional · Todos los derechos reservados</div>
+  <button class="demo-entry" onclick="startDemo()">Ver el aplicativo con datos de ejemplo</button><div class="auth-footer">© 2026 FORMÁ Educacional · Todos los derechos reservados</div>
 </div>
 
 <!-- APP -->
 <div id="app-screen">
+  <div id="demo-banner" hidden>Vista de ejemplo · Datos ficticios <button onclick="location.href=location.pathname">Entrar a mi cuenta</button></div>
   <div class="topbar">
     <div class="tb-inner">
       <div class="tb-avatar" id="tb-avatar">?</div>
@@ -478,59 +458,25 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
         <h1 id="tb-greeting">FORMÁ Financiero</h1>
         <p id="tb-role">Cargando...</p>
       </div>
-      <div class="tb-eleva" title="ELEVA &amp; NEGOCIO">
-        <div class="tb-eleva-dot">
-          <svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <text x="3" y="15" font-family="Arial Black,sans-serif" font-weight="900" font-size="13" fill="white">E</text>
-          </svg>
-        </div>
-      </div>
       <button class="tb-logout" onclick="doLogout()" title="Salir">↩</button>
     </div>
   </div>
 
-  <!-- RESUMEN -->
+  <!-- INICIO SIMPLE + GUÍA -->
   <div class="panel active" id="p-resumo">
-    <div class="mnav">
-      <button class="marrow" onclick="changeMonth(-1)">‹</button>
-      <h2 id="month-label">—</h2>
-      <button class="marrow" onclick="changeMonth(1)">›</button>
-    </div>
-    <div class="hero" id="hero-card">
-      <div class="hero-label">Saldo disponible</div>
-      <div class="hero-amount" id="hero-bal">$ 0,00</div>
-      <div class="hero-sub" id="hero-sub">—</div>
-    </div>
-    <div class="statgrid">
-      <div class="stat"><div class="stat-label">💰 Ingresos</div><div class="stat-val g" id="s-inc">$ 0</div></div>
-      <div class="stat"><div class="stat-label">💸 Gastos</div><div class="stat-val r" id="s-exp">$ 0</div></div>
-    </div>
-    <div class="card">
-      <div class="sh"><span class="sh-title">📊 Por categoría</span><button class="btn-sm" onclick="openOrcModal()">Definir presupuesto</button></div>
-      <div id="cat-breakdown"><div class="empty"><div class="ei">📝</div><p>Sin gastos este mes.<br>Toca ➕ para registrar.</p></div></div>
-    </div>
-    <div class="card">
-      <div class="sh"><span class="sh-title">🕐 Últimas</span><button class="btn-sm" onclick="goPanel('historico')">Ver todas</button></div>
-      <div id="recent-txs"><div class="empty"><p>Ninguna transacción aún</p></div></div>
-    </div>
-
-    <!-- GRÁFICO EVOLUCIÓN -->
-    <div class="card" id="chart-card">
-      <div class="sh"><span class="sh-title">📈 Evolución</span><span style="font-size:11px;color:var(--text3)">últimos 6 meses</span></div>
-      <canvas id="evo-chart" height="160" style="width:100%;display:block"></canvas>
-      <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11px;font-weight:600">
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--green);display:inline-block"></span>Ingresos</span>
-        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:3px;background:var(--red);display:inline-block"></span>Gastos</span>
-      </div>
-    </div>
-
-    <!-- METAS DE AHORRO -->
-    <div class="card">
-      <div class="sh"><span class="sh-title">🎯 Metas de ahorro</span><button class="btn-sm" onclick="openGoalModal()">+ Nueva</button></div>
-      <div id="goals-list"><div class="empty" style="padding:12px 0"><p style="font-size:13px">Sin metas aún.<br>Crea tu primera meta de ahorro.</p></div></div>
-    </div>
-
-    <div class="app-footer">FORMA EDUCACIONAL · Desarrollado por <strong>ELEVA &amp; NEGOCIO</strong></div>
+    <div class="page-heading"><div><span class="eyebrow">TU VIDA FINANCIERA</span><h2>Tu mes, en orden.</h2><p>Un paso a la vez. Empieza con tu presupuesto.</p></div><div class="mnav"><button class="marrow" onclick="changeMonth(-1)" aria-label="Mes anterior">‹</button><h2 id="month-label">—</h2><button class="marrow" onclick="changeMonth(1)" aria-label="Mes siguiente">›</button></div></div>
+    <div class="guide-card"><div><span class="step-kicker" id="guide-step">PASO 1 DE 4</span><h3 id="guide-title">Descubre cuánto cuesta tu mes</h3><p id="guide-copy">Arma tu presupuesto con las categorías que ya conoces.</p></div><button class="action-main" id="guide-action" onclick="openOrcModal()">Armar presupuesto</button><div class="journey"><span id="journey-budget">1 · Presupuesto</span><span id="journey-record">2 · Mi día a día</span><span id="journey-goal">3 · Mis metas</span><span>4 · Aprender</span></div></div>
+    <div class="overview-grid">
+      <div class="hero" id="hero-card"><div class="hero-label">Resultado registrado del mes</div><div class="hero-amount" id="hero-bal">R$ 0,00</div><div class="hero-sub" id="hero-sub">—</div><p class="hero-foot">Ingresos menos gastos · No es saldo bancario</p><button class="hero-register" onclick="goPanel('registrar')">+ Registrar movimiento</button></div>
+      <div class="card thermometer-card"><div class="sh"><span class="sh-title">Termómetro del mes</span><span class="status-pill" id="thermo-status">Sin plan</span></div><div class="thermo-main"><div class="thermo-ring" id="thermo-ring"><div><strong id="thermo-percent">—</strong><span>del presupuesto</span></div></div><div><h3 id="thermo-title">Primero, tu plan</h3><p id="thermo-copy">Define cuánto prevés gastar para acompañar tu mes.</p><small>Compara gastos registrados con gastos previstos.</small></div></div></div>
+      <div class="statgrid finance-stats"><div class="stat"><div class="stat-label">Entró este mes</div><div class="stat-val g" id="s-inc">R$ 0</div></div><div class="stat"><div class="stat-label">Gastaste este mes</div><div class="stat-val r" id="s-exp">R$ 0</div></div></div>
+      <div class="card plan-card"><div class="sh"><span class="sh-title">Mi presupuesto</span><button class="btn-sm" onclick="openOrcModal()">Editar plan</button></div><div id="budget-summary" aria-live="polite"></div></div>
+      <div class="card category-card"><div class="sh"><span class="sh-title">¿En qué se fue mi dinero?</span><span class="eyebrow">GASTOS</span></div><div class="category-visual"><div class="category-donut" id="category-donut"><div><strong id="category-count">0</strong><span>categorías</span></div></div><div id="category-legend"></div></div><details class="category-detail"><summary>Ver todos los gastos por categoría</summary><div id="cat-breakdown"></div></details></div>
+      <div class="card savings-card"><div class="sh"><span class="sh-title">Mis cofrinhos</span><button class="btn-sm" onclick="goPanel('metas')">Ver metas</button></div><div id="goals-preview"><p class="muted-note">Reserva, viaje, familia. Dale un lugar a tu próxima meta.</p><button class="action-main" onclick="openGoalModal()">Crear mi primera meta</button></div></div>
+      <div class="card learn-preview"><div class="lesson-label">TU PRÓXIMO PASO</div><h3>Una reserva, más tranquilidad.</h3><p>Aprende a crear tu reserva de emergencia con una lección corta y una acción concreta.</p><button class="btn-sm" onclick="goPanel('aprender')">Empezar lección · 3 min</button></div>
+      <div class="card recent-card"><div class="sh"><span class="sh-title">Últimos movimientos</span><button class="btn-sm" onclick="goPanel('historico')">Ver historial</button></div><div id="recent-txs"></div></div>
+      <div class="card" id="chart-card"><div class="sh"><span class="sh-title">Tu evolución</span><span class="muted-note">Últimos 6 meses</span></div><canvas id="evo-chart" height="160" style="width:100%;display:block"></canvas><div class="chart-legend"><span>● Ingresos</span><span>● Gastos</span></div></div>
+    </div><div class="app-footer">FORMÁ EDUCACIONAL · FINANZAS PERSONALES</div>
   </div>
 
   <!-- REGISTRAR — diseño simple -->
@@ -573,13 +519,30 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <div id="tx-list"></div>
   </div>
 
+  <!-- PRESUPUESTO ANUAL -->
+  <div class="panel" id="p-metas"><div class="section-head"><h2>Mis cofrinhos</h2><button class="btn-sm" onclick="openGoalModal()">+ Crear meta</button></div><p class="muted-note">Tu dinero permanece en tu banco. Aquí llevas un registro manual de dónde lo guardaste; FORMÁ no verifica saldos ni mueve dinero.</p><div id="goals-list"></div></div>
+  <div class="panel" id="p-aprender"><div class="section-head"><h2>Aprender paso a paso</h2></div><p class="muted-note">Lecciones breves para entender tu presupuesto y construir tu reserva.</p><div id="learning-list"></div></div>
+
+  <!-- PRESUPUESTO ANUAL -->
+  <div class="panel" id="p-anual">
+    <div class="mnav">
+      <button class="marrow" onclick="changeAnnualYear(-1)" aria-label="Año anterior">‹</button>
+      <h2 id="annual-year-label">—</h2>
+      <button class="marrow" onclick="changeAnnualYear(1)" aria-label="Año siguiente">›</button>
+    </div>
+    <div class="card">
+      <div class="sh"><span class="sh-title">Presupuesto y resultado por mes</span></div>
+      <div id="annual-list">Cargando...</div>
+    </div>
+  </div>
+
   <!-- BANCO -->
   <div class="panel" id="p-banco">
     <div class="bank-hero">
       <h2>🏦 Conectar banco</h2>
-      <p>Importa transacciones automáticamente vía Open Finance Brasil (Pluggy)</p>
-      <button class="btn-connect" id="bank-btn" onclick="connectBank()">🔗 Conectar banco</button>
-      <div class="bank-note">Tecnología Pluggy · Conexión segura y cifrada</div>
+      <p>La conexión automática será evaluada después de las pruebas de seguridad. Hoy puedes organizar tu dinero sin compartir credenciales bancarias.</p>
+      <button class="btn-connect" id="bank-btn" disabled>🔒 Conexión bancaria en preparación</button>
+      <div class="bank-note">Nunca escribas contraseñas o números de cuenta en las metas.</div>
     </div>
     <div class="info-banner" id="bank-banner" style="display:none"></div>
     <div id="bank-accs"><div class="empty"><div class="ei">🏦</div><p>Ningún banco conectado aún</p></div></div>
@@ -605,7 +568,9 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <button class="nb active" id="nb-resumo" onclick="goPanel('resumo')"><span class="ni">📊</span><span class="nl">Resumen</span></button>
     <button class="nb" id="nb-registrar" onclick="goPanel('registrar')"><span class="ni">➕</span><span class="nl">Registrar</span></button>
     <button class="nb" id="nb-historico" onclick="goPanel('historico')"><span class="ni">📋</span><span class="nl">Historial</span></button>
-    <button class="nb" id="nb-banco" onclick="goPanel('banco')"><span class="ni">🏦</span><span class="nl">Banco</span></button>
+    <button class="nb" id="nb-metas" onclick="goPanel('metas')"><span class="ni">🎯</span><span class="nl">Metas</span></button>
+    <button class="nb" id="nb-aprender" onclick="goPanel('aprender')"><span class="ni">📚</span><span class="nl">Aprender</span></button>
+    <button class="nb" id="nb-anual" onclick="goPanel('anual')"><span class="ni">📅</span><span class="nl">Año</span></button>
     <button class="nb" id="nb-alunos" onclick="goPanel('alunos')" style="display:none"><span class="ni">👥</span><span class="nl">Alumnos</span></button>
   </div>
 </div>
@@ -626,11 +591,11 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <div class="fld"><label>Nombre de la meta</label>
       <input class="inp-simple" id="goal-name" placeholder="Ej: Viaje, Emergencia, iPhone...">
     </div>
-    <div class="fld"><label>Monto objetivo ($)</label>
+    <div class="fld"><label>Monto objetivo (R$)</label>
       <input class="inp-simple" id="goal-target" type="number" placeholder="$ 0" min="0" step="10" inputmode="decimal">
     </div>
-    <div class="fld"><label>Ya ahorré ($) — opcional</label>
-      <input class="inp-simple" id="goal-saved" type="number" placeholder="$ 0" min="0" step="10" inputmode="decimal">
+    <div class="fld"><label>Quiero separar al mes (R$) — opcional</label>
+      <input class="inp-simple" id="goal-monthly" type="number" placeholder="0" min="0" step="0.01" inputmode="decimal">
     </div>
     <div class="fld"><label>Fecha límite — opcional</label>
       <input class="inp-simple" id="goal-date" type="date">
@@ -640,11 +605,20 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
   </div>
 </div>
 
+<div class="overlay" id="event-overlay"><div class="modal">
+  <div class="modal-title" id="event-title">Anotar dinero guardado</div><div class="modal-sub">Registra lo que hiciste en tu banco. Esta anotación no mueve dinero.</div>
+  <div class="fld"><label>Monto (R$)</label><input class="inp-simple" id="event-amount" type="number" min="0.01" step="0.01" inputmode="decimal"></div>
+  <div class="fld"><label>¿Dónde está?</label><select class="inp-simple" id="event-bank"><option value="nubank">Nubank</option><option value="inter">Inter</option><option value="mercadopago">Mercado Pago</option><option value="picpay">PicPay</option><option value="other">Otro banco o efectivo</option></select></div>
+  <div class="fld"><label>Identificación opcional (ej. cuenta personal)</label><input class="inp-simple" id="event-location" maxlength="80" placeholder="Sin números de cuenta ni contraseñas"></div>
+  <div class="fld"><label>Fecha</label><input class="inp-simple" id="event-date" type="date"></div>
+  <button class="btn-primary" onclick="saveGoalEvent()">Guardar anotación</button><button class="btn-cancel" onclick="document.getElementById('event-overlay').classList.remove('open')">Cancelar</button>
+</div></div>
+
 <!-- MODAL PRESUPUESTO -->
 <div class="overlay" id="orc-overlay">
   <div class="modal">
     <div class="modal-title">📊 Presupuesto mensual</div>
-    <div class="modal-sub" id="orc-month-sub">Define el límite de gasto por categoría</div>
+    <div class="modal-sub" id="orc-month-sub">Planifica ingresos y gastos por categoría</div>
     <div id="orc-cats"></div>
     <button class="btn-primary" onclick="saveOrc()">Guardar presupuesto</button>
     <button class="btn-cancel" onclick="closeOrcModal()">Cancelar</button>
@@ -729,17 +703,20 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 <!-- TOAST -->
 <div class="toast" id="toast-el"></div>
 
+<script src="/config.js"></script>
 <script>
 // ═══════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════
-const SB_URL  = 'https://ipcqlltatvpvrqceqiox.supabase.co';
-const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwY3FsbHRhdHZwdnJxY2VxaW94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDgyNDYsImV4cCI6MjEwMzIyNDI0Nn0.lpmDZZ6mf2s7Zrv8lsYs7oLW8mxApyASYogQTVpv4pk';
-// Credenciales Pluggy movidas al backend (api/pluggy-token.js)
-// PLUGGY_ID y PLUGGY_SECRET ya NO están en el frontend — están en Vercel env vars
-const PLUGGY_API    = 'https://api.pluggy.ai';
-
-const sb = supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true}});
+// Temporary continuity with FORMÁ's existing Supabase project; banking stays disabled.
+const SB_URL = window.FORMA_CONFIG?.supabaseUrl;
+const SB_KEY = window.FORMA_CONFIG?.publishableKey;
+const CONFIGURED = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SB_URL||'') &&
+  !!SB_KEY;
+const sb = CONFIGURED ? supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true}}) : null;
+function escapeHTML(value){
+  return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
 
 // ═══════════════════════════════════════════════════
 // CATEGORÍAS
@@ -907,8 +884,8 @@ const EXP_CATS = CAT_GROUPS.flatMap(g => g.subs);
 const INC_CATS=[
   {id:'salario',l:'Salario / Sueldo',i:'💼'},
   {id:'freelance',l:'Freelance / Servicios',i:'💻'},
-  {id:'negocio',l:'Negocio / Ventas',i:'🏪'},
-  {id:'inversion',l:'Inversión / Dividendos',i:'📈'},
+  {id:'negocio',l:'Pró-labore recibido',i:'💼'},
+  {id:'inversion',l:'Rendimientos recibidos',i:'📈'},
   {id:'alquiler-i',l:'Alquiler (ingreso)',i:'🏠'},
   {id:'pension-i',l:'Pensión / Jubilación',i:'👴'},
   {id:'bono',l:'Bono / Premio',i:'🎯'},
@@ -923,14 +900,15 @@ function catInfo(type,id){
 // ═══════════════════════════════════════════════════
 let user=null, profile=null;
 let month=todayMonth();
+let annualYear=Number(month.slice(0,4));
 let txs=[], budgets={};
-let txFilter=null, txType='expense', selCat='alimentacion';
-let pluggyKey=null, connItems=[];
+let txFilter=null, txType='expense', selCat='supermercado';
+let connItems=[];
 
 // ═══════════════════════════════════════════════════
 // UTILIDADES
 // ═══════════════════════════════════════════════════
-function fmt(v){return'$ '+Number(v||0).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmt(v){return'R$ '+Number(v||0).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function todayMonth(){return new Date().toISOString().slice(0,7)}
 function todayStr(){return new Date().toISOString().slice(0,10)}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -955,11 +933,6 @@ function switchTab(tab){
   document.getElementById('login-form').style.display=tab==='login'?'block':'none';
   document.getElementById('signup-form').style.display=tab==='signup'?'block':'none';
   document.querySelectorAll('.at').forEach((b,i)=>b.classList.toggle('active',(tab==='login'&&i===0)||(tab==='signup'&&i===1)));
-}
-function setRole(r){
-  document.getElementById('role-s').classList.toggle('active',r==='student');
-  document.getElementById('role-t').classList.toggle('active',r==='teacher');
-  document.getElementById('code-field').style.display=r==='student'?'block':'none';
 }
 function togglePwd(id,btn){
   const inp=document.getElementById(id);
@@ -1004,8 +977,6 @@ async function doSignup(){
   const name=document.getElementById('s-name').value.trim();
   const email=document.getElementById('s-email').value.trim();
   const pass=document.getElementById('s-pass').value;
-  const code=document.getElementById('s-code')?.value.trim().toUpperCase()||'';
-  const role=document.getElementById('role-t').classList.contains('active')?'teacher':'student';
   const errEl=document.getElementById('signup-err');
   const okEl=document.getElementById('signup-ok');
   errEl.style.display='none';okEl.style.display='none';
@@ -1015,7 +986,7 @@ async function doSignup(){
   btn.disabled=true;btn.textContent='Creando cuenta...';
   const{data,error}=await sb.auth.signUp({
     email,password:pass,
-    options:{data:{full_name:name,forma_role:role,invite_code:code||null}}
+    options:{data:{full_name:name}}
   });
   if(error){
     errEl.textContent=error.message==='User already registered'?'Este correo ya está registrado':error.message;
@@ -1041,39 +1012,56 @@ async function doLogout(){
 // ═══════════════════════════════════════════════════
 // SESIÓN
 // ═══════════════════════════════════════════════════
-sb.auth.onAuthStateChange(async(event,session)=>{
-  if(session?.user){
-    user=session.user;
-    await loadProfile();
-    showApp();
-  }else{
-    hideEl('loading-screen');
-    showEl('auth-screen');
-  }
+let authRevision=0;
+if(sb) sb.auth.onAuthStateChange((event,session)=>{
+  const revision=++authRevision;
+  // Supabase data calls must run after the auth callback has returned.
+  setTimeout(async()=>{
+    if(window.FORMA_DEMO)return;
+    if(revision!==authRevision)return;
+    if(session?.user){
+      user=session.user;
+      try{
+        await loadProfile();
+        if(revision===authRevision)showApp();
+      }catch(e){
+        hideEl('loading-screen');showEl('auth-screen');
+        const message=document.getElementById('login-err');
+        message.textContent='No pudimos cargar tu presupuesto. Vuelve a intentarlo.';
+        message.style.display='block';
+        console.error('Profile load failed',e);
+      }
+    }else{
+      user=null;profile=null;
+      hideEl('loading-screen');hideEl('app-screen');showEl('auth-screen');
+    }
+  },0);
 });
 
-sb.auth.getSession().then(({data:{session}})=>{
+if(sb) sb.auth.getSession().then(({data:{session}})=>{
+  if(window.FORMA_DEMO)return;
   if(!session){hideEl('loading-screen');showEl('auth-screen');}
 });
+else {
+  hideEl('loading-screen');showEl('auth-screen');
+  for(const id of ['btn-login','btn-signup','bank-btn']) document.getElementById(id).disabled=true;
+  document.querySelectorAll('.btn-google').forEach(button=>button.disabled=true);
+  const message=document.getElementById('login-err');
+  message.textContent='FORMÁ está preparando su base independiente. El acceso estará disponible después de la configuración segura.';
+  message.style.display='block';
+}
 
 async function loadProfile(){
-  let{data}=await sb.from('forma_profiles').select('*').eq('id',user.id).single();
+  let{data,error}=await sb.from('forma_profiles').select('*').eq('id',user.id).maybeSingle();
+  if(error)throw error;
   if(!data){
     const meta=user.user_metadata||{};
-    const role=meta.forma_role||'student';
     const name=meta.full_name||user.email.split('@')[0];
-    const code=role==='teacher'?'ELEVA'+user.id.slice(0,5).toUpperCase():null;
-    await sb.from('forma_profiles').upsert({id:user.id,full_name:name,role,invite_code:code});
+    const inserted=await sb.from('forma_profiles').insert({id:user.id,full_name:name});
+    if(inserted.error && inserted.error.code!=='23505')throw inserted.error;
     const r2=await sb.from('forma_profiles').select('*').eq('id',user.id).single();
+    if(r2.error)throw r2.error;
     data=r2.data;
-  }
-  if(data?.role==='student'&&!data?.teacher_id){
-    const meta=user.user_metadata||{};
-    const code=meta.invite_code;
-    if(code){
-      const{data:teacher}=await sb.from('forma_profiles').select('id').eq('invite_code',code).eq('role','teacher').single();
-      if(teacher) await sb.from('forma_profiles').update({teacher_id:teacher.id}).eq('id',user.id);
-    }
   }
   profile=data;
 }
@@ -1091,7 +1079,7 @@ function showApp(){
   document.getElementById('tb-avatar').textContent=initials(profile?.full_name||user.email);
   if(profile?.role==='teacher'){
     document.getElementById('nb-alunos').style.display='flex';
-    document.getElementById('inv-code').textContent=profile.invite_code||('ELEVA'+user.id.slice(0,5).toUpperCase());
+    document.getElementById('inv-code').textContent=profile.invite_code||'Solicita un código al administrador';
   }
   document.getElementById('month-label').textContent=monthLabel(month);
   document.getElementById('tx-date').value=todayStr();
@@ -1116,8 +1104,8 @@ function goPanel(id){
   document.getElementById('nb-'+id).classList.add('active');
   if(id==='resumo'){renderResume();setTimeout(()=>renderEvoChart(),300);renderGoals();}
   if(id==='historico') renderTxList();
+  if(id==='anual') loadAnnualData();
   if(id==='alunos') loadStudents();
-  if(id==='registrar') setTimeout(()=>openNumpad(),300);
 }
 
 // ═══════════════════════════════════════════════════
@@ -1131,15 +1119,65 @@ function changeMonth(dir){
   loadMonthData();
 }
 
+function changeAnnualYear(dir){
+  annualYear+=dir;
+  loadAnnualData();
+}
+
+async function loadAnnualData(){
+  document.getElementById('annual-year-label').textContent=String(annualYear);
+  const el=document.getElementById('annual-list');
+  el.textContent='Cargando el año...';
+  const year=annualYear;
+  let transactions=[],offset=0;
+  for(;;){
+    const {data,error}=await sb.from('forma_transactions').select('id,date,type,amount')
+      .eq('user_id',user.id).gte('date',year+'-01-01').lt('date',(year+1)+'-01-01')
+      .order('id').range(offset,offset+999);
+    if(error){el.textContent='No pudimos cargar los movimientos del año.';return;}
+    transactions.push(...data);
+    if(data.length<1000)break;
+    offset+=1000;
+  }
+  const {data:plans,error:budgetError}=await sb.from('forma_budgets')
+    .select('month,category,planned').eq('user_id',user.id)
+    .gte('month',year+'-01').lte('month',year+'-12').range(0,1999);
+  if(budgetError){el.textContent='No pudimos cargar los presupuestos del año.';return;}
+  const names=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const rows=names.map((name,i)=>{
+    const key=year+'-'+String(i+1).padStart(2,'0');
+    const tx=transactions.filter(t=>t.date?.slice(0,7)===key);
+    const plan=plans.filter(p=>p.month===key);
+    const realIncome=tx.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount),0);
+    const realExpense=tx.filter(t=>t.type==='expense').reduce((s,t)=>s+Number(t.amount),0);
+    const plannedIncome=plan.filter(p=>p.category.startsWith('income:')).reduce((s,p)=>s+Number(p.planned),0);
+    const plannedExpense=plan.filter(p=>!p.category.startsWith('income:')).reduce((s,p)=>s+Number(p.planned),0);
+    return {name,key,realIncome,realExpense,plannedIncome,plannedExpense};
+  });
+  el.innerHTML=rows.map(r=>`<div style="padding:12px 0;border-bottom:1px solid var(--border2)">
+    <div style="display:flex;justify-content:space-between;font-weight:700;margin-bottom:6px"><span>${r.name}</span>
+      <span style="color:${r.realIncome-r.realExpense<0?'var(--red)':'var(--green)'}">Saldo ${fmt(r.realIncome-r.realExpense)}</span></div>
+    <div style="font-size:13px;color:var(--text2);line-height:1.6">Ingresos: ${fmt(r.realIncome)} de ${fmt(r.plannedIncome)} previstos<br>
+      Gastos: ${fmt(r.realExpense)} de ${fmt(r.plannedExpense)} previstos</div>
+  </div>`).join('');
+}
+
 // ═══════════════════════════════════════════════════
 // DATOS
 // ═══════════════════════════════════════════════════
 async function loadMonthData(){
-  const[{data:t},{data:b}]=await Promise.all([
+  const [y,m]=month.split('-').map(Number);
+  const nextMonth=new Date(Date.UTC(y,m,1)).toISOString().slice(0,7);
+  const[{data:t,error:txError},{data:b,error:budgetError}]=await Promise.all([
     sb.from('forma_transactions').select('*').eq('user_id',user.id)
-      .gte('date',month+'-01').lte('date',month+'-31').order('date',{ascending:false}),
+      .gte('date',month+'-01').lt('date',nextMonth+'-01').order('date',{ascending:false}),
     sb.from('forma_budgets').select('*').eq('user_id',user.id).eq('month',month)
   ]);
+  if(txError||budgetError){
+    toast('No se pudieron cargar tus datos. Intenta de nuevo.',false);
+    console.error('Budget load failed',txError||budgetError);
+    return;
+  }
   txs=t||[];
   budgets={};(b||[]).forEach(r=>{budgets[r.category]=r.planned});
   renderResume();
@@ -1158,6 +1196,17 @@ function renderResume(){
   document.getElementById('s-inc').textContent=fmt(inc);
   document.getElementById('s-exp').textContent=fmt(exp);
   document.getElementById('hero-card').classList.toggle('negative',bal<0);
+  const plannedIncome=INC_CATS.reduce((sum,c)=>sum+Number(budgets['income:'+c.id]||0),0);
+  const plannedExpense=EXP_CATS.reduce((sum,c)=>sum+Number(budgets[c.id]||0),0);
+  const variance=plannedExpense-exp;
+  const summary=document.getElementById('budget-summary');
+  summary.innerHTML=`<div class="statgrid" style="margin:0 0 10px">
+    <div class="stat"><div class="stat-label">Ingreso previsto</div><div class="stat-val">${fmt(plannedIncome)}</div></div>
+    <div class="stat"><div class="stat-label">Gasto previsto</div><div class="stat-val">${fmt(plannedExpense)}</div></div>
+  </div><p style="margin:0;color:var(--text2);font-size:14px">Ingreso real: ${fmt(inc)} · Gasto real: ${fmt(exp)}</p>
+  <p style="margin:8px 0 0;font-weight:700;color:${variance<0?'var(--red)':'var(--green)'}">
+    ${variance<0?'Gastaste más que lo previsto por '+fmt(-variance):'Queda en el plan de gastos: '+fmt(variance)}
+  </p><p style="margin:8px 0 0;color:var(--text2);font-size:12px">Este cálculo depende de lo registrado; no es el saldo del banco.</p>`;
 
   const bycat={};
   txs.filter(t=>t.type==='expense').forEach(t=>{bycat[t.category]=(bycat[t.category]||0)+Number(t.amount)});
@@ -1167,9 +1216,9 @@ function renderResume(){
     const ci=EXP_CATS.find(x=>x.id===c)||{i:'📦',l:c};
     const spent=bycat[c],pl=budgets[c]||0;
     const pct=pl>0?Math.min(100,spent/pl*100):0;
-    const cls=pct>100?'pf-r':pct>80?'pf-y':'pf-g';
+    const cls=pl>0&&spent>pl?'pf-r':pct>80?'pf-y':'pf-g';
     return`<div class="prog">
-      <div class="prog-header"><span class="pname">${ci.i} ${ci.l}</span><span class="pamt">${fmt(spent)}${pl?` / ${fmt(pl)}`:''}</span></div>
+      <div class="prog-header"><span class="pname">${escapeHTML(ci.i)} ${escapeHTML(ci.l)}</span><span class="pamt">${fmt(spent)}${pl?` / ${fmt(pl)}`:''}</span></div>
       ${pl?`<div class="prog-track"><div class="prog-fill ${cls}" style="width:${pct}%"></div></div>`:''}
     </div>`;
   }).join(''):'<div class="empty"><div class="ei">📝</div><p>Sin gastos este mes.<br>Toca ➕ para registrar.</p></div>';
@@ -1180,15 +1229,19 @@ function renderResume(){
 
 function txHTML(t){
   const c=catInfo(t.type,t.category);
-  return`<div class="tx" style="cursor:pointer" onclick="openTxDetail(${JSON.stringify(t).replace(/"/g,'&quot;')})">
-    <div class="tx-icon ${t.type==='income'?'i':'e'}">${c.i}</div>
+  return`<div class="tx" style="cursor:pointer" data-tx-id="${escapeHTML(t.id)}">
+    <div class="tx-icon ${t.type==='income'?'i':'e'}">${escapeHTML(c.i)}</div>
     <div class="tx-body">
-      <div class="tx-desc">${t.description||c.l}</div>
-      <div class="tx-meta">${c.l} · ${t.date}</div>
+      <div class="tx-desc">${escapeHTML(t.description||c.l)}</div>
+      <div class="tx-meta">${escapeHTML(c.l)} · ${escapeHTML(t.date)}</div>
     </div>
     <div class="tx-amt ${t.type==='income'?'i':'e'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
   </div>`;
 }
+document.addEventListener('click',event=>{
+  const item=event.target.closest('[data-tx-id]');
+  if(item){const tx=txs.find(t=>String(t.id)===item.dataset.txId);if(tx)openTxDetail(tx);}
+});
 
 function setFilter(type,btn){
   txFilter=type;
@@ -1225,7 +1278,7 @@ const QUICK_EXP=[
 const QUICK_INC=[
   {id:'salario',l:'Salario',i:'💼'},
   {id:'freelance',l:'Freelance',i:'💻'},
-  {id:'negocio',l:'Negocio',i:'🏪'},
+  {id:'negocio',l:'Pró-labore',i:'💼'},
   {id:'bono',l:'Bono',i:'🎯'},
   {id:'inversion',l:'Inversión',i:'📈'},
   {id:'alquiler-i',l:'Alquiler',i:'🏠'},
@@ -1333,13 +1386,16 @@ function openOrcModal(){
   const spent={};
   txs.filter(t=>t.type==='expense').forEach(t=>{spent[t.category]=(spent[t.category]||0)+Number(t.amount)});
   document.getElementById('orc-month-sub').textContent='Presupuesto para '+monthLabel(month);
-  document.getElementById('orc-cats').innerHTML=CAT_GROUPS.map(g=>`
+  document.getElementById('orc-cats').innerHTML=`<div class="orc-group-hdr">💰 Ingresos previstos</div>
+    ${INC_CATS.map(c=>`<div class="orc-row"><span class="orc-label">${c.i} ${c.l}</span>
+      <input class="orc-input" type="number" id="oc-inc-${c.id}" placeholder="0" value="${budgets['income:'+c.id]||''}" min="0" step="0.01" inputmode="decimal"></div>`).join('')}
+    <div class="orc-group-hdr">💸 Gastos previstos</div>`+CAT_GROUPS.map(g=>`
     <div class="orc-group-hdr">${g.i} ${g.l}</div>
     ${g.subs.map(c=>`
     <div class="orc-row">
       <span class="orc-label">${c.i} ${c.l}</span>
       <span class="orc-spent">${spent[c.id]?fmt(spent[c.id]):''}</span>
-      <input class="orc-input" type="number" id="oc-${c.id}" placeholder="$0" value="${budgets[c.id]||''}" min="0" step="10" inputmode="decimal">
+      <input class="orc-input" type="number" id="oc-${c.id}" placeholder="0" value="${budgets[c.id]||''}" min="0" step="0.01" inputmode="decimal">
     </div>`).join('')}
   `).join('');
   document.getElementById('orc-overlay').classList.add('open');
@@ -1347,11 +1403,17 @@ function openOrcModal(){
 function closeOrcModal(){document.getElementById('orc-overlay').classList.remove('open')}
 
 async function saveOrc(){
-  const rows=EXP_CATS.map(c=>({user_id:user.id,month,category:c.id,planned:parseFloat(document.getElementById('oc-'+c.id).value)||0})).filter(r=>r.planned>0);
-  if(rows.length){
-    const{error}=await sb.from('forma_budgets').upsert(rows,{onConflict:'user_id,month,category'});
-    if(error){toast('Error: '+error.message,false);return}
+  const categories=[...INC_CATS.map(c=>({key:'income:'+c.id,input:'oc-inc-'+c.id})),
+    ...EXP_CATS.map(c=>({key:c.id,input:'oc-'+c.id}))];
+  const rows=[];
+  for(const c of categories){
+    const raw=document.getElementById(c.input).value;
+    const value=raw===''?0:Number(raw);
+    if(!Number.isFinite(value)||value<0||value>999999999){toast('Revisa los montos del presupuesto',false);return;}
+    rows.push({user_id:user.id,month,category:c.key,planned:Math.round(value*100)/100});
   }
+  const{error}=await sb.from('forma_budgets').upsert(rows,{onConflict:'user_id,month,category'});
+  if(error){toast('Error al guardar presupuesto',false);console.error(error);return}
   rows.forEach(r=>{budgets[r.category]=r.planned});
   toast('✅ ¡Presupuesto guardado!');
   closeOrcModal();
@@ -1359,10 +1421,9 @@ async function saveOrc(){
 }
 
 // ═══════════════════════════════════════════════════
-// BANCO / PLUGGY — CONEXIÓN REAL
+// BANCO — bloqueado hasta disponer de integración segura en el servidor
 // ═══════════════════════════════════════════════════
 async function loadConnItems(){
-  connItems=JSON.parse(localStorage.getItem('forma_conns_'+user.id)||'[]');
   renderBankPanel();
 }
 
@@ -1370,148 +1431,18 @@ function renderBankPanel(){
   const el=document.getElementById('bank-accs');
   const syncBtn=document.getElementById('sync-btn');
   const banner=document.getElementById('bank-banner');
-
-  // Mostrar banner informativo
   banner.className='info-banner';
-  banner.innerHTML='✅ <strong>Modo sandbox activo</strong> — Puedes conectar bancos de prueba ahora mismo. El acceso a bancos reales estará disponible cuando Pluggy apruebe tu solicitud de producción (1-2 días hábiles).';
+  banner.textContent='La conexión bancaria está temporalmente deshabilitada. Puedes probar los registros manuales sin conectar cuentas reales.';
   banner.style.display='block';
-
-  if(!connItems.length){
-    el.innerHTML='<div class="empty"><div class="ei">🏦</div><p>Ningún banco conectado aún.<br>Toca el botón de arriba para comenzar.</p></div>';
-    syncBtn.style.display='none';return;
-  }
-  el.innerHTML=connItems.map(it=>`
-    <div class="conn-item">
-      <div class="conn-logo" style="background:${it.color||'var(--brand)'}">${(it.name||'B').slice(0,2).toUpperCase()}</div>
-      <div class="conn-body"><div class="conn-name">${it.name||'Banco'}</div><div class="conn-sub">Open Finance · Conectado</div></div>
-      <span class="badge-ok">✅ Activo</span>
-    </div>`).join('');
-  syncBtn.style.display='block';
-}
-
-async function getPluggyKey(){
-  if(pluggyKey) return pluggyKey;
-  try{
-    // Llama al backend seguro — las credenciales nunca salen del servidor
-    const r=await fetch('/api/pluggy-token',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'}
-    });
-    if(!r.ok){const e=await r.json();throw new Error(e.error||'Error de autenticación Pluggy')}
-    const d=await r.json();
-    pluggyKey=d.apiKey;
-    return pluggyKey;
-  }catch(e){
-    throw new Error('No se pudo conectar con Pluggy: '+e.message);
-  }
+  el.textContent='Las cuentas bancarias estarán disponibles después de las pruebas de seguridad.';
+  syncBtn.style.display='none';
 }
 
 async function connectBank(){
-  const btn=document.getElementById('bank-btn');
-  btn.textContent='⏳ Conectando...';btn.disabled=true;
-  try{
-    const key=await getPluggyKey();
-    const r=await fetch(PLUGGY_API+'/connect_token',{
-      method:'POST',
-      headers:{'Content-Type':'application/json','X-API-KEY':key},
-      body:JSON.stringify({})
-    });
-    if(!r.ok){const e=await r.json();throw new Error(e.message||'Error al obtener token')}
-    const{accessToken}=await r.json();
-
-    // Cargar el widget de Pluggy si no está cargado
-    if(!window.PluggyConnect){
-      await new Promise((res,rej)=>{
-        const s=document.createElement('script');
-        s.src='https://cdn.pluggy.ai/pluggy-connect/v2/pluggy-connect.js';
-        s.onload=res;s.onerror=()=>rej(new Error('No se pudo cargar el widget de Pluggy'));
-        document.head.appendChild(s);
-      });
-    }
-
-    new PluggyConnect({
-      connectToken:accessToken,
-      includeSandbox:true,  // Permite bancos de prueba
-      onSuccess:async(item)=>{
-        const it={
-          id:Date.now().toString(36),
-          itemId:item.item.id,
-          name:item.item.connector?.name||'Banco',
-          color:item.item.connector?.primaryColor||'#5B21B6'
-        };
-        if(!connItems.find(x=>x.itemId===it.itemId)){
-          connItems.push(it);
-          localStorage.setItem('forma_conns_'+user.id,JSON.stringify(connItems));
-        }
-        renderBankPanel();
-        toast('✅ ¡Banco conectado! Importando transacciones...');
-        await syncBanks();
-      },
-      onError:(e)=>{
-        console.error('Pluggy error:',e);
-        toast('Error al conectar: '+(e.message||'Error desconocido'),false);
-      },
-      onClose:()=>{}
-    }).init();
-  }catch(e){
-    toast('Error: '+e.message,false);
-    console.error(e);
-  }
-  btn.textContent='🔗 Conectar banco';btn.disabled=false;
+  toast('Conexión bancaria deshabilitada hasta completar la integración segura',false);
 }
-
 async function syncBanks(){
-  if(!connItems.length)return;
-  const syncBtn=document.getElementById('sync-btn');
-  syncBtn.textContent='⏳ Sincronizando...';syncBtn.disabled=true;
-  toast('🔄 Sincronizando transacciones...');
-  try{
-    const key=await getPluggyKey();
-    let added=0;
-    for(const it of connItems){
-      // Obtener cuentas del banco conectado
-      const accResp=await fetch(`${PLUGGY_API}/accounts?itemId=${it.itemId}`,{headers:{'X-API-KEY':key}});
-      if(!accResp.ok) continue;
-      const{results:accs=[]}=await accResp.json();
-
-      for(const acc of accs){
-        // Obtener transacciones de los últimos 3 meses
-        const since=new Date();since.setMonth(since.getMonth()-3);
-        const from=since.toISOString().slice(0,10);
-        const txResp=await fetch(`${PLUGGY_API}/transactions?accountId=${acc.id}&from=${from}&pageSize=500`,{headers:{'X-API-KEY':key}});
-        if(!txResp.ok) continue;
-        const{results:ptxs=[]}=await txResp.json();
-
-        for(const pt of ptxs){
-          const extId='pluggy_'+pt.id;
-          // Verificar si ya existe
-          const{count}=await sb.from('forma_transactions')
-            .select('*',{count:'exact',head:true})
-            .eq('external_id',extId).eq('user_id',user.id);
-          if(!count){
-            const txDate=pt.date.slice(0,10);
-            await sb.from('forma_transactions').insert({
-              user_id:user.id,
-              date:txDate,
-              description:pt.description||pt.descriptionRaw||'',
-              amount:Math.abs(pt.amount),
-              type:pt.type==='DEBIT'?'expense':'income',
-              category:autoCat(pt.description,pt.type),
-              source:'pluggy',
-              external_id:extId
-            });
-            added++;
-          }
-        }
-      }
-    }
-    toast(added>0?`✅ ${added} transacciones importadas!`:'✅ Todo sincronizado');
-    await loadMonthData();
-  }catch(e){
-    toast('Error al sincronizar: '+e.message,false);
-    console.error(e);
-  }
-  syncBtn.textContent='🔄 Sincronizar transacciones';syncBtn.disabled=false;
+  toast('Sincronización bancaria deshabilitada',false);
 }
 
 function autoCat(d,t){
@@ -1553,9 +1484,9 @@ async function loadStudents(){
   }));
   el.innerHTML=withBal.map(s=>`
     <div class="stu-row">
-      <div class="stu-av">${initials(s.full_name)}</div>
+      <div class="stu-av">${escapeHTML(initials(s.full_name))}</div>
       <div class="stu-body">
-        <div class="stu-name">${s.full_name}</div>
+        <div class="stu-name">${escapeHTML(s.full_name)}</div>
         <div class="stu-meta">Este mes · saldo actual</div>
       </div>
       <div class="stu-bal" style="color:${s.bal>=0?'var(--green)':'var(--red)'}">${fmt(s.bal)}</div>
@@ -1754,23 +1685,23 @@ const OB_STEPS=[
   {
     emoji:'👋',
     title:'¡Bienvenido a FORMÁ Financiero!',
-    sub:'Controla tus finanzas como un pro. Vamos a configurar tu perfil en 3 pasos rápidos.',
+    sub:'Primero descubre cuánto entra y cuánto planeas gastar. Después registrarás solo el dinero que realmente recibas o gastes.',
     cta:'¡Empezar!',
     skip:true
   },
   {
     emoji:'💰',
-    title:'¿Cuánto ganas al mes?',
-    sub:'Tu ingreso mensual aproximado. Esto nos ayuda a mostrarte tu saldo siempre actualizado.',
+    title:'¿Cuánto esperas recibir al mes?',
+    sub:'Este monto es tu plan, no un ingreso recibido. Podrás cambiarlo en tu presupuesto.',
     cta:'Siguiente →',
     input:true
   },
   {
     emoji:'🎯',
-    title:'¿En qué gastas más?',
-    sub:'Elige tus 3 categorías principales. Las pondremos primero para que registres más rápido.',
-    cta:'¡Listo, empezar!',
-    cats:true
+    title:'Arma tu presupuesto',
+    sub:'Verás las categorías conocidas de la planilla, organizadas por grupos. Completa los gastos que aplican a tu vida; los demás pueden quedar vacíos.',
+    cta:'Abrir presupuesto',
+    cats:false
   }
 ];
 
@@ -1793,7 +1724,7 @@ function renderOnboardStep(){
     <div class="onboard-sub">${step.sub}</div>`;
 
   if(step.input){
-    html+=`<input class="onboard-input" id="ob-salary" type="number" placeholder="$ 0" inputmode="decimal" min="0" step="100">`;
+    html+=`<input class="onboard-input" id="ob-salary" type="number" placeholder="R$ 0" inputmode="decimal" min="0" step="100"><select class="onboard-input" id="ob-income-source"><option value="salario">Salario</option><option value="negocio">Pró-labore recibido</option><option value="otros-i">Otro ingreso</option></select>`;
   }
   if(step.cats){
     const cats=[
@@ -1831,14 +1762,13 @@ async function obNext(){
   const step=OB_STEPS[obStep];
   if(step.input){
     const v=parseFloat(document.getElementById('ob-salary')?.value||0);
+    if(!Number.isFinite(v)||v<0||v>999999999){toast('Revisa el ingreso previsto',false);return;}
     obData.salary=v||0;
     if(obData.salary>0){
-      // Registrar ingreso inicial si no existe para este mes
-      await sb.from('forma_transactions').insert({
-        user_id:user.id,date:todayStr(),
-        description:'Ingreso mensual inicial',
-        amount:obData.salary,type:'income',category:'salario',source:'manual'
-      }).then(()=>loadMonthData());
+      const source=document.getElementById('ob-income-source').value;
+      const {error}=await sb.from('forma_budgets').upsert({user_id:user.id,month,category:'income:'+source,planned:obData.salary},{onConflict:'user_id,month,category'});
+      if(error){toast('No se pudo guardar el plan',false);return;}
+      budgets['income:'+source]=obData.salary;
     }
   }
   if(obStep<OB_STEPS.length-1){
@@ -1846,6 +1776,7 @@ async function obNext(){
     renderOnboardStep();
   }else{
     obFinish();
+    openOrcModal();
   }
 }
 
@@ -1864,7 +1795,7 @@ function obFinish(){
   }
   localStorage.setItem('forma_ob_done_'+user.id,'1');
   document.getElementById('onboard-overlay').classList.remove('open');
-  toast('🎉 ¡Todo listo! Registra tu primer gasto.');
+  toast('Tu plan empieza aquí.');
 }
 
 // ═══════════════════════════════════════════════════
@@ -1977,7 +1908,7 @@ function renderGoals(){
     const daysLeft=g.date?Math.ceil((new Date(g.date)-new Date())/(1000*86400)):null;
     return`<div class="goal-item">
       <div class="goal-header">
-        <span class="goal-name">${g.emoji||'🎯'} ${g.name}</span>
+        <span class="goal-name">${escapeHTML(g.emoji||'🎯')} ${escapeHTML(g.name)}</span>
         <span style="display:flex;align-items:center;gap:6px">
           <span class="goal-pct">${pct}%</span>
           <button class="goal-del" onclick="deleteGoal(${i})">🗑</button>
@@ -2124,5 +2055,6 @@ saveTx=async function(){
   if(!error&&date.slice(0,7)===month) await loadMonthData();
 }
 </script>
+<script src="companion.js?v=20260930b"></script><script src="experience.js?v=20260930b"></script>
 </body>
 </html>
