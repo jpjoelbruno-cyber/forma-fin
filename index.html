@@ -620,8 +620,9 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <div class="modal-title">📊 Presupuesto mensual</div>
     <div class="modal-sub" id="orc-month-sub">Planifica ingresos y gastos por categoría</div>
     <div id="orc-cats"></div>
-    <button class="btn-primary" onclick="saveOrc()">Guardar presupuesto</button>
-    <button class="btn-cancel" onclick="closeOrcModal()">Cancelar</button>
+    <p id="budget-save-status" role="status" aria-live="polite" style="font-size:13px;line-height:1.5;color:var(--text2)">Los cambios se guardan automáticamente con conexión.</p>
+    <button class="btn-primary" id="budget-save-btn" onclick="saveOrc()">Guardar y cerrar</button>
+    <button class="btn-cancel" onclick="closeOrcModal()">Cerrar</button>
   </div>
 </div>
 
@@ -901,7 +902,7 @@ function catInfo(type,id){
 let user=null, profile=null;
 let month=todayMonth();
 let annualYear=Number(month.slice(0,4));
-let txs=[], budgets={};
+let txs=[], budgets={}, budgetDataReady=false;
 let txFilter=null, txType='expense', selCat='supermercado';
 let connItems=[];
 
@@ -1166,6 +1167,8 @@ async function loadAnnualData(){
 // DATOS
 // ═══════════════════════════════════════════════════
 async function loadMonthData(){
+  budgetDataReady=false;
+  const loadingUser=user.id, loadingMonth=month;
   const [y,m]=month.split('-').map(Number);
   const nextMonth=new Date(Date.UTC(y,m,1)).toISOString().slice(0,7);
   const[{data:t,error:txError},{data:b,error:budgetError}]=await Promise.all([
@@ -1178,8 +1181,10 @@ async function loadMonthData(){
     console.error('Budget load failed',txError||budgetError);
     return;
   }
+  if(user?.id!==loadingUser||month!==loadingMonth)return;
   txs=t||[];
   budgets={};(b||[]).forEach(r=>{budgets[r.category]=r.planned});
+  budgetDataReady=true;
   renderResume();
   renderTxList();
 }
@@ -2056,5 +2061,6 @@ saveTx=async function(){
 }
 </script>
 <script src="companion.js?v=20260930b"></script><script src="experience.js?v=20260930b"></script>
+<script src="budget-save.js?v=20261001a"></script>
 </body>
 </html>
