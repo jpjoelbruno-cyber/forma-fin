@@ -51,7 +51,7 @@
     previousOpen();owner=user?.id;period=month;failed=false;invalid=false;
     status(isDemo()?'Ejemplo: no guarda datos. Entra a tu cuenta para guardar.':'Los cambios se guardan automáticamente con conexión. Espera la confirmación «Guardado».');
     const root=document.getElementById('orc-cats');
-    root.oninput=()=>{refreshOrc();if(isDemo())return;capture();clearTimeout(timer);status(invalid?'Revisa los montos. Hay cambios sin guardar.':'Cambios pendientes…');if(!invalid)timer=setTimeout(flush,700);};
+    root.oninput=event=>{if(event?.target&&!event.target.classList.contains('orc-input'))return;refreshOrc();if(isDemo())return;capture();clearTimeout(timer);status(invalid?'Revisa los montos. Hay cambios sin guardar.':'Cambios pendientes…');if(!invalid)timer=setTimeout(flush,700);};
   };
   async function finish(){
     if(isDemo()){document.getElementById('orc-overlay').classList.remove('open');return;}

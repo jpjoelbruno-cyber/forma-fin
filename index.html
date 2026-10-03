@@ -1184,6 +1184,8 @@ async function loadMonthData(){
   if(user?.id!==loadingUser||month!==loadingMonth)return;
   txs=t||[];
   budgets={};(b||[]).forEach(r=>{budgets[r.category]=r.planned});
+  try { await loadPersonalCategories(loadingUser); } catch(e) { toast("No se pudieron cargar tus gastos personalizados. Intenta de nuevo.",false); return; }
+  if(user?.id!==loadingUser||month!==loadingMonth)return;
   budgetDataReady=true;
   renderResume();
   renderTxList();
@@ -1319,7 +1321,7 @@ function renderQuickCats(){
   const cats=txType==='income'?QUICK_INC:QUICK_EXP;
   document.getElementById('quick-cats').innerHTML=cats.map(c=>`
     <button class="qcat${c.id===selCat?' active':''}" onclick="selQuickCat('${c.id}')">
-      <span class="qi">${c.i}</span>${c.l}
+      <span class="qi">${c.i}</span>${escapeHTML(c.l)}
     </button>`).join('');
 }
 
@@ -1345,7 +1347,7 @@ function renderAllCats(){
       <div class="acs-grid">
         ${g.subs.map(c=>`
           <button class="acat${c.id===selCat?' active':''}" onclick="selQuickCat('${c.id}')">
-            <span class="ai">${c.i}</span>${c.l}
+            <span class="ai">${c.i}</span>${escapeHTML(c.l)}
           </button>`).join('')}
       </div>
     </div>`).join('');
@@ -1392,13 +1394,13 @@ function openOrcModal(){
   txs.filter(t=>t.type==='expense').forEach(t=>{spent[t.category]=(spent[t.category]||0)+Number(t.amount)});
   document.getElementById('orc-month-sub').textContent='Presupuesto para '+monthLabel(month);
   document.getElementById('orc-cats').innerHTML=`<div class="orc-group-hdr">💰 Ingresos previstos</div>
-    ${INC_CATS.map(c=>`<div class="orc-row"><span class="orc-label">${c.i} ${c.l}</span>
+    ${INC_CATS.map(c=>`<div class="orc-row"><span class="orc-label">${c.i} ${escapeHTML(c.l)}</span>
       <input class="orc-input" type="number" id="oc-inc-${c.id}" placeholder="0" value="${budgets['income:'+c.id]||''}" min="0" step="0.01" inputmode="decimal"></div>`).join('')}
     <div class="orc-group-hdr">💸 Gastos previstos</div>`+CAT_GROUPS.map(g=>`
     <div class="orc-group-hdr">${g.i} ${g.l}</div>
     ${g.subs.map(c=>`
     <div class="orc-row">
-      <span class="orc-label">${c.i} ${c.l}</span>
+      <span class="orc-label">${c.i} ${escapeHTML(c.l)}</span>
       <span class="orc-spent">${spent[c.id]?fmt(spent[c.id]):''}</span>
       <input class="orc-input" type="number" id="oc-${c.id}" placeholder="0" value="${budgets[c.id]||''}" min="0" step="0.01" inputmode="decimal">
     </div>`).join('')}
@@ -1745,7 +1747,7 @@ function renderOnboardStep(){
     ];
     html+=`<div class="onboard-cats">${cats.map(c=>`
       <button class="ob-cat${obData.cats.includes(c.id)?' active':''}" onclick="obToggleCat('${c.id}',this)">
-        <span class="oi">${c.i}</span>${c.l}
+        <span class="oi">${c.i}</span>${escapeHTML(c.l)}
       </button>`).join('')}</div>`;
   }
 
@@ -2062,5 +2064,7 @@ saveTx=async function(){
 </script>
 <script src="companion.js?v=20260930b"></script><script src="experience.js?v=20260930b"></script>
 <script src="budget-save.js?v=20261001a"></script>
+<script src="personalize.js?v=20261003a"></script>
+<link rel="stylesheet" href="personalize.css?v=20261003a">
 </body>
 </html>
