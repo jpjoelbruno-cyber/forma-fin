@@ -916,8 +916,9 @@ function closeTxDetail(){
 
 function editTxOpen(){
   if(!currentTxDetail) return;
+  const selectedTx={...currentTxDetail};
   closeTxDetail();
-  editTxData={...currentTxDetail,_newAmt:Number(currentTxDetail.amount)};
+  editTxData={...selectedTx,_newAmt:Number(selectedTx.amount)};
   // Rellenar campos del editor
   editSetType(editTxData.type);
   const display=document.getElementById('edit-amt-display');
