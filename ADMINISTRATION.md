@@ -1,22 +1,21 @@
-# FORMÁ administration
+# FORMÁ evidence-based administration
 
-The Administration button appears only for accounts listed in `forma_admin_members`. Membership cannot be changed through the public client, profile role, or user-editable metadata. Activation requires the owner to supply their actual FORMÁ login email; resolve it to an existing Auth user with a FORMÁ profile and provision membership server-side. The owner supplied and confirmed their login email on October 5, 2026; one existing FORMÁ account was provisioned server-side.
+Only the owner-provisioned administrative membership can call the report. Students cannot provision membership or read the private evidence tables. No financial amounts, account locations, emails, or descriptions are exposed in reporting.
 
-The report exposes names and education/adoption flags, not financial amounts, balances, transaction descriptions, bank locations, or emails. The private reporting function requires an authenticated membership check and a fixed period of 7, 30, or 90 days. Existing financial RLS is unchanged.
+The shared Auth trigger and legacy profiles remain unchanged. Blank automatically created profiles never count as FORMÁ users. The report includes only users with an authenticated FORMÁ entry attested by the new RPC or an actual saved FORMÁ budget, movement, goal, or lesson. Administrative accounts are excluded from all student figures. Existing historical records are preserved and labeled as saved-data evidence, not proof of an old login.
 
-Definitions:
+`forma_record_access` runs an invoker wrapper around a guarded private function. It checks the authenticated UID, exact FORMÁ Origin header, signed JWT session ID, the current matching Auth session and expiration, and existing FORMÁ profile. Identity, dates, and timestamps come from the server. Clients cannot write evidence tables directly or provide another UID or a timestamp. Repeated visits deduplicate by session and user/day/section.
 
-- Registered: FORMÁ profiles only, excluding unrelated products in the shared project.
-- Active: measured section use within the selected period.
-- Budget prepared: positive planned income and positive planned expenses for the current database month.
-- Movements: at least one personal transaction dated within the selected period, excluding future dates.
-- Goals and learning: at least one saved goal or completed lesson, respectively, across all time.
-- Adoption thermometer: registered users combining current-month budget and a movement in the selected period, divided by all registered users. This is an adoption measure, not a financial score.
+This verifies an authenticated account/session requesting the FORMÁ endpoint; it does not verify a unique human, enrollment, or intent. An authenticated account holder with custom HTTP software can forge an Origin header; Origin checking is an application-scoping safeguard, not cryptographic attestation of a browser or human. Section names remain client-reported. Optional consultation telemetry waits five visible seconds in the active section before the guarded server write. It is labeled as consultation, not a saved action. Confirmed actions are calculated independently from existing server records.
 
-Section measurement starts October 5, 2026. One record per user/day/section, updated on visits; no historical visits are backfilled. Section measurement can be disabled in Help; this stops future visits being recorded, not the education flags derived from already saved records. An empty report is a valid state.
+Entry verification runs only after the authenticated budget/data read completes successfully. Demo mode never emits entry or section telemetry. Consultation tracking can be turned off in Help; necessary authenticated entry confirmation and saved-record evidence are separate.
 
-WhatsApp is configured by an authorized administrator in Administration → Help. The number is stored only after the database confirms the update. The link opens WhatsApp with a generic help message; it sends nothing automatically and contains no student financial data. Until a number is supplied, Help shows the pending state and local troubleshooting.
+Three distinct measures: authenticated entries verified since this release; historical saved activity without an attested entry; and active verified users in the selected 7/30/90-day period. Every roster row displays its evidence type, first and last verified entry when available, and saved activity flags. Charts separately show section consultations, saved actions, and daily verified visitors. No historic dates are inferred or invented.
 
-Billing is a roadmap tab only. It creates no subscriptions, charges, or payment details.
+The adoption meter uses accounts with FORMÁ evidence, includes clearly labeled historical saved activity, and is not a financial-health score. Budget preparation requires planned income and expenses in the current month; movements use the selected period; goals and lessons are all-time indicators. Counts represent distinct accounts, not clicks. Staff are excluded.
 
-Validation on October 5, 2026: 22 database assertions passed using synthetic fixtures rolled back afterwards; existing 14 autosave/goal tests passed. Security advisors reported no new FORMÁ findings; shared-project pre-existing findings remain separate. Browser verification covers the public app and Help; owner report access was verified under the authenticated database role after provisioning. Browser sign-in to the real owner account was not performed. The public demonstration no longer exposes an administration entry.
+Validation: verified-entry rollback SQL covers Origin, missing/foreign/expired sessions, anonymous calls, direct write denial, repeated-entry/section deduplication, exclusion of empty other-app profiles and administrators, and absence of sensitive financial fields. Existing autosave/goal tests (14) also passed. Test fixtures roll back. Original 103 profiles and saved financial records remain unchanged. At the audit snapshot, 9 non-admin accounts had existing saved FORMÁ activity; historic entries were not provable.
+
+The broader shared Auth trigger/legacy permission modification was rejected by automatic approval review. The implemented alternative adds isolated evidence tables and RPCs and changes only FORMÁ reporting; it preserves the shared trigger and all legacy client permissions.
+
+WhatsApp and future billing retain their prior behavior. Billing remains inactive.

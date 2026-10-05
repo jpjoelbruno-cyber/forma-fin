@@ -28,7 +28,7 @@ set local role authenticated;
 do $$ declare r jsonb;s jsonb;n integer;begin
   r:=public.forma_admin_report(30);
   select value into s from jsonb_array_elements(r->'users') where value->>'id'='00000000-0000-4000-8000-00000000a002';
-  if s is null or not(s->>'budget')::boolean or not(s->>'movements')::boolean or not(s->>'active')::boolean then raise exception 'FAIL report stage flags';end if;
+  if s is null or not(s->>'budget')::boolean or not(s->>'movements')::boolean or (s->>'active')::boolean then raise exception 'FAIL report stage flags';end if;
   if s ?| array['amount','saved','target','balance','email','description','bank'] or r::text like '%Confidential synthetic description%' then raise exception 'FAIL financial leakage';end if;
   if (select count(*) from public.forma_usage_daily where user_id='00000000-0000-4000-8000-00000000a002')<>0 then raise exception 'FAIL admin direct tracking access';end if;
   update public.forma_support_settings set whatsapp='5511999999999';get diagnostics n=row_count;if n<>1 then raise exception 'FAIL admin support update';end if;
