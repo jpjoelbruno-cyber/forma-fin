@@ -69,7 +69,7 @@ const openBudgetWithSave=openOrcModal;
 openOrcModal=function(){
  openBudgetWithSave();if(!document.getElementById('orc-overlay').classList.contains('open'))return;
  if(document.getElementById('custom-budget-tools'))return;
- document.getElementById('orc-cats').insertAdjacentHTML('beforeend','<div id="custom-budget-tools" class="custom-budget-tools"><label for="custom-budget-name">¿Falta un gasto? Personaliza «Otros»</label><input class="inp-simple" id="custom-budget-name" maxlength="80" placeholder="Ej.: Envío a mi familia, mascota…"><button type="button" id="custom-budget-add" onclick="addPersonalBudgetCategory()">+ Añadir mi gasto</button><p id="custom-budget-status" role="status">Se guarda en tu cuenta para reutilizarlo en otros meses.</p><div id="new-custom-budget-rows"></div></div>');
+ document.getElementById('orc-cats').insertAdjacentHTML('beforeend','<div id="custom-budget-tools" class="custom-budget-tools"><label for="custom-budget-name">¿Falta un gasto? Personaliza «Otros»</label><input class="inp-simple" id="custom-budget-name" maxlength="80" placeholder="Ej.: Envío a mi familia, mascota…"><button type="button" id="custom-budget-add" data-forma-click="90">+ Añadir mi gasto</button><p id="custom-budget-status" role="status">Se guarda en tu cuenta para reutilizarlo en otros meses.</p><div id="new-custom-budget-rows"></div></div>');
 };
 async function addPersonalBudgetCategory(){
  if(window.FORMA_DEMO){demoNotice();return;}if(!user||!budgetDataReady)return;
