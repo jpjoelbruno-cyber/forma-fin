@@ -1,6 +1,6 @@
 # FORMÁ administration
 
-The Administration button appears only for accounts listed in `forma_admin_members`. Membership cannot be changed through the public client, profile role, or user-editable metadata. Activation requires the owner to supply their actual FORMÁ login email; resolve it to an existing Auth user with a FORMÁ profile and provision membership server-side. No real administrator has been provisioned yet.
+The Administration button appears only for accounts listed in `forma_admin_members`. Membership cannot be changed through the public client, profile role, or user-editable metadata. Activation requires the owner to supply their actual FORMÁ login email; resolve it to an existing Auth user with a FORMÁ profile and provision membership server-side. The owner supplied and confirmed their login email on October 5, 2026; one existing FORMÁ account was provisioned server-side.
 
 The report exposes names and education/adoption flags, not financial amounts, balances, transaction descriptions, bank locations, or emails. The private reporting function requires an authenticated membership check and a fixed period of 7, 30, or 90 days. Existing financial RLS is unchanged.
 
@@ -19,4 +19,4 @@ WhatsApp is configured by an authorized administrator in Administration → Help
 
 Billing is a roadmap tab only. It creates no subscriptions, charges, or payment details.
 
-Validation on October 5, 2026: 22 database assertions passed using synthetic fixtures rolled back afterwards; existing 14 autosave/goal tests passed. Security advisors reported no new FORMÁ findings; shared-project pre-existing findings remain separate. Browser verification covers the public demo and Help; live administrator browser access remains pending owner email identification.
+Validation on October 5, 2026: 22 database assertions passed using synthetic fixtures rolled back afterwards; existing 14 autosave/goal tests passed. Security advisors reported no new FORMÁ findings; shared-project pre-existing findings remain separate. Browser verification covers the public app and Help; owner report access was verified under the authenticated database role after provisioning. Browser sign-in to the real owner account was not performed. The public demonstration no longer exposes an administration entry.
