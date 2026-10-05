@@ -55,7 +55,7 @@
   async function refresh(){
     if(pending)return;
     const status=document.getElementById('admin-status'),box=document.getElementById('admin-report');
-    if(!admin&&!demo()){status.textContent='Esta cuenta no tiene acceso administrativo.';box.innerHTML='';return;}
+    if(!admin||demo()){status.textContent='Esta cuenta no tiene acceso administrativo.';box.innerHTML='';return;}
     pending=true;document.getElementById('admin-refresh').disabled=true;box.innerHTML='';status.textContent='Cargando indicadores…';
     const rev=generation,id=user?.id;
     try {
@@ -92,7 +92,7 @@
   };
   const originalShow=showApp;showApp=function(...args){const result=originalShow(...args);init();return result;};
   const originalPanel=goPanel;goPanel=function(id){const result=originalPanel(id);track(id);return result;};
-  const originalDemo=startDemo;startDemo=function(...args){const result=originalDemo(...args);++generation;admin=false;adminButton.hidden=false;adminButton.textContent='Ejemplo de administración';return result;};
+  const originalDemo=startDemo;startDemo=function(...args){const result=originalDemo(...args);++generation;admin=false;adminButton.hidden=true;adminButton.textContent='Administración';return result;};
   if(sb)sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){++generation;admin=false;report=null;phone='';adminButton.hidden=true;dialog.close();help.close();document.getElementById('admin-report').innerHTML='';}});
   if(user&&!demo())init();
 })();
