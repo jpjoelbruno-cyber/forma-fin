@@ -16,7 +16,15 @@ Only FORMÁ tables, policies and functions were installed. No ELEVA tables, chec
 
 **Production still uses the original shared project `ipcqlltatvpvrqceqiox`.** Dedicated Google OAuth, migration and cutover have not been completed. The original student budgets remain there. Do not point `config.js` at the empty project before the following conditions pass.
 
-Automatic approval review rejected (1) removing `on_forma_user_created` from shared `auth.users`, because of possible effects on other apps, and (2) a proposed bulk export including hashed credentials, identities and financial data, because the sensitive scope required explicit authorization. Neither action ran; no export payload was obtained or transferred. `stop-cross-registration.sql` is a prepared, unapplied proposal. Existing profiles and all other-app rules/data remain untouched.
+On 2026-10-05, after the owner explicitly authorized the narrowly scoped change, migration `forma_stop_shared_automatic_profile_creation` removed ONLY `on_forma_user_created` from the shared `auth.users`. Catalog verification reports zero matching triggers. A transactional synthetic signup test confirms that shared Auth signup no longer creates a FORMÁ profile, while an authenticated explicit FORMÁ own-profile insert still works. All synthetic test rows rolled back. Existing accounts, profiles, budgets, and other-app rules/data remain untouched. This containment does not establish independent authentication; production still uses shared Auth.
+
+The earlier export proposal including hashed credentials and sessions was rejected and never executed. Do not retry that scope. Migration is limited to FORMÁ records and needs an authenticated, verified account mapping in the dedicated project before any records are attached. No passwords, sessions or other-app permissions are to be copied.
+
+### Aggregate audit after the reported incident
+
+Snapshot before containment: 122 FORMÁ profiles, versus the earlier reported 103 (+19); 20 profiles were created on October 5 in the Brazil calendar day. 106 profiles had neither recorded FORMÁ entry nor saved positive budgets, movements, goals or learning. Seven accounts had recorded FORMÁ entries. 80 profiles had a Taller owner/member relationship, including 70 without FORMÁ evidence and 10 with FORMÁ evidence. Fifteen non-administrator accounts had FORMÁ entry or saved-data evidence. 107 profile timestamps were within one second of Auth account creation, consistent with the former automatic trigger. These overlapping measurements are not additive. None proves a browser redirect, acquisition source, or that all accounts are unique real people. Origin evidence is supplementary, not cryptographic app authentication. No individual financial or credential data was exposed in this aggregate audit.
+
+Browser access to the dedicated Google configuration currently encounters Supabase sign-in. The connector exposes database operations but not provider configuration; secure administrator sign-in and a dedicated OAuth client credential are still required. Do not switch the production config to the empty project or change the shared project default Site URL to fix FORMÁ, since that can disrupt other apps.
 
 ## Cutover conditions — not yet satisfied
 
@@ -25,7 +33,7 @@ Automatic approval review rejected (1) removing `on_forma_user_created` from sha
 3. Compare counts and row checksums per account, preserve record IDs and goal references, reconcile writes made during preparation, verify restore from the protected snapshot. Retain the source during migration.
 4. Provision the owner-only admin membership in the new project through server management after verifying the owner's new identity. Never grant admin based on editable user metadata.
 5. Verify Google login, save/read-back, logout/relogin, a second device, and rejection of original-project JWTs. Update public configuration and CSP to allow only the dedicated project. Remove legacy configuration only after recovery is verified.
-6. Resolve the original FORMA registration trigger through an explicitly approved, minimal change with compatibility checks.
+6. DONE: removed only the original FORMA automatic registration trigger with explicit owner authorization; synthetic rollback test passed. Complete independent Auth and revoke old FORMÁ financial access only after migrated records and recovery are verified.
 
 ## Voice deployment
 
