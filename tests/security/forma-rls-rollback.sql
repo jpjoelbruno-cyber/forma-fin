@@ -8,6 +8,10 @@ insert into public.forma_transactions(user_id,date,description,amount,type,categ
 insert into public.forma_goals(id,user_id,name,target) values ('00000000-0000-4000-8000-00000000f0a3','00000000-0000-4000-8000-00000000f0a1','audit',100),('00000000-0000-4000-8000-00000000f0b4','00000000-0000-4000-8000-00000000f0b2','audit',200);
 insert into public.forma_goal_events(user_id,goal_id,direction,amount) values ('00000000-0000-4000-8000-00000000f0a1','00000000-0000-4000-8000-00000000f0a3','contribution',10),('00000000-0000-4000-8000-00000000f0b2','00000000-0000-4000-8000-00000000f0b4','contribution',20);
 insert into public.forma_learning_progress(user_id,lesson_key) values ('00000000-0000-4000-8000-00000000f0a1','budget'),('00000000-0000-4000-8000-00000000f0b2','budget');
+-- Enrollment fixtures: tests keep their existing owner/anonymous scopes.
+insert into forma_private.app_access(user_id,status,display_name,reason)
+select p.id,'active',left(p.full_name,120),'rollback_test_fixture' from public.forma_profiles p join auth.users u on u.id=p.id
+where u.email like 'forma-%@example.invalid' on conflict(user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000f0a1","role":"authenticated"}',true);
 do $test$ declare n integer; begin

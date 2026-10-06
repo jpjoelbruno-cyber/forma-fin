@@ -320,7 +320,8 @@ if(sb) sb.auth.onAuthStateChange((event,session)=>{
       }catch(e){
         hideEl('loading-screen');showEl('auth-screen');
         const message=document.getElementById('login-err');
-        message.textContent='No pudimos cargar tu presupuesto. Vuelve a intentarlo.';
+        hideEl('app-screen');profile=null;user=null;
+        message.textContent=e.code==='FORMA_ACCESS_PENDING' ? e.message : 'No pudimos verificar tu acceso a FORMÁ. Vuelve a intentarlo; tus datos no se borraron.';
         message.style.display='block';
         console.error('Profile load failed',e);
       }
@@ -345,6 +346,15 @@ else {
 }
 
 async function loadProfile(){
+  const accessUid=user?.id;
+  const access=await sb.rpc('forma_access_status');
+  if(user?.id!==accessUid)throw new Error('Session changed');
+  if(access.error)throw access.error;
+  if(access.data?.status!=='active'){
+    const ref=String(access.data?.reference||accessUid||'').slice(0,8);
+    const denied=new Error('Tu acceso a FORMÁ está pendiente de validación. Comunícate con FORMÁ Educacional y comparte tu referencia: '+ref+'. No se borraron tus datos.');
+    denied.code='FORMA_ACCESS_PENDING';throw denied;
+  }
   let{data,error}=await sb.from('forma_profiles').select('*').eq('id',user.id).maybeSingle();
   if(error)throw error;
   if(!data){

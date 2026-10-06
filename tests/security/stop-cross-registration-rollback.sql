@@ -9,6 +9,7 @@ begin
  if exists(select 1 from public.forma_profiles where id=fixture_id) then
   raise exception 'Unexpected automatic FORMA profile';
  end if;
+ insert into forma_private.app_access(user_id,status,display_name,reason) values(fixture_id,'active','Synthetic FORMÁ test','rollback_test_fixture');
  perform set_config('request.jwt.claims',jsonb_build_object('sub',fixture_id::text,'role','authenticated')::text,true);
  execute 'set local role authenticated';
  insert into public.forma_profiles(id,full_name) values(fixture_id,'Synthetic FORMÁ test');
@@ -17,5 +18,5 @@ begin
  end if;
  execute 'reset role';
 end $$;
-select 'PASS: no automatic FORMÁ profile; explicit FORMÁ own signup still works' as result;
+select 'PASS: no automatic FORMÁ profile; explicit FORMÁ own signup works after trusted enrollment validation' as result;
 rollback;

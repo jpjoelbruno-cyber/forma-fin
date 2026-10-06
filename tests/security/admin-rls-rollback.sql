@@ -6,6 +6,10 @@ insert into public.forma_profiles(id,full_name) values ('00000000-0000-4000-8000
 insert into public.forma_admin_members(user_id) values('00000000-0000-4000-8000-00000000a001');
 insert into public.forma_budgets(user_id,month,category,planned) values('00000000-0000-4000-8000-00000000a002',to_char(current_date,'YYYY-MM'),'income:salario',100),('00000000-0000-4000-8000-00000000a002',to_char(current_date,'YYYY-MM'),'alquiler',50);
 insert into public.forma_transactions(user_id,date,description,amount,type,category,source) values('00000000-0000-4000-8000-00000000a002',current_date,'Confidential synthetic description',50,'expense','alquiler','manual');
+-- Enrollment fixtures: tests keep their existing owner/anonymous scopes.
+insert into forma_private.app_access(user_id,status,display_name,reason)
+select p.id,'active',left(p.full_name,120),'rollback_test_fixture' from public.forma_profiles p join auth.users u on u.id=p.id
+where u.email like 'forma-%@example.invalid' on conflict(user_id) do nothing;
 select set_config('request.jwt.claims','{"sub":"00000000-0000-4000-8000-00000000a002","role":"authenticated","user_metadata":{"admin":true}}',true);
 set local role authenticated;
 do $$ declare n integer; begin

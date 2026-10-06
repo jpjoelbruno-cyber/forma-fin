@@ -1,5 +1,6 @@
 // Administration reports contain adoption flags only, never financial amounts.
 (() => {
+  let accessReport=null,accessPending=false;
   let admin=false, report=null, phone='', pending=false, generation=0, entryReady=false, entryPending=null, sectionTimer=null;
   const labels={resumo:'Inicio',registrar:'Registrar',historico:'Historial',metas:'Metas',aprender:'Aprender',anual:'Año'};
   const demo=()=>Boolean(window.FORMA_DEMO);
@@ -15,7 +16,7 @@
   help.innerHTML='<div class="admin-heading"><h2>¿Necesitas ayuda?</h2><button aria-label="Cerrar ayuda" data-close>×</button></div><p>Te acompañamos a organizar tu presupuesto, registrar movimientos y crear metas.</p><a id="forma-whatsapp" class="support-whatsapp" hidden target="_blank" rel="noopener noreferrer">Hablar por WhatsApp</a><p id="forma-support-status" role="status">Cargando el canal de ayuda…</p><details><summary>No veo mis datos</summary><p>Comprueba que entraste con la misma cuenta. Los datos de ejemplo no son tu presupuesto.</p></details><details><summary>¿Cómo sé si se guardó el presupuesto?</summary><p>Espera el mensaje «Guardado». Si aparece un error, mantén la pantalla abierta y vuelve a intentar antes de salir.</p></details><details><summary>¿El aplicativo mueve mi dinero?</summary><p>Los movimientos y cofrinhos son anotaciones personales. Las conexiones bancarias siguen desactivadas.</p></details><hr><p class="muted-note">Confirmamos la entrada autenticada a FORMÁ en el servidor. Opcionalmente medimos qué secciones se consultan, sin montos ni descripciones. Esto ayuda a mejorar FORMÁ.</p><label class="usage-choice"><input id="forma-usage-choice" type="checkbox"> Permitir medición de las secciones que utilizo</label><p class="muted-note">El panel educativo también indica si creaste presupuesto, movimientos, metas o completaste una lección; no muestra sus valores.</p>';
   document.body.append(help);
   const dialog=document.createElement('dialog');dialog.className='forma-dialog admin-dialog';
-  dialog.innerHTML='<div class="admin-heading"><div><span class="eyebrow">FORMÁ EDUCACIONAL</span><h2>Administración</h2></div><button aria-label="Cerrar administración" data-close>×</button></div><div class="admin-tabs"><button data-tab="usage" aria-pressed="true">Uso y evolución</button><button data-tab="support" aria-pressed="false">Ayuda</button><button data-tab="billing" aria-pressed="false">Cobros · Próximamente</button></div><div id="admin-usage"><div class="admin-controls"><label>Periodo <select id="admin-days"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></label><button id="admin-refresh">Actualizar</button></div><p id="admin-status" role="status"></p><div id="admin-report"></div></div><div id="admin-support" hidden><h3>WhatsApp de ayuda</h3><p>Los alumnos abren una conversación contigo. No se envían mensajes automáticamente ni se añaden datos financieros.</p><label>Número con código de país<input id="admin-phone" inputmode="tel" maxlength="24" placeholder="Ejemplo: +55 11 99999-9999"></label><button id="admin-save-phone" class="action-main">Guardar número</button><p id="admin-phone-status" role="status"></p></div><div id="admin-billing" hidden><h3>Cobros: siguiente etapa</h3><p>Esta versión no realiza cobros ni solicita tarjetas.</p><p>El próximo módulo podrá reunir planes, becas para alumnos, periodos de prueba, pagos pendientes, comprobantes e historial de suscripción.</p><p>Antes de activarlo definiremos precios, proveedor de pagos y reglas de cancelación.</p></div>';
+  dialog.innerHTML='<div class="admin-heading"><div><span class="eyebrow">FORMÁ EDUCACIONAL</span><h2>Administración</h2></div><button aria-label="Cerrar administración" data-close>×</button></div><div class="admin-tabs"><button data-tab="usage" aria-pressed="true">Uso y evolución</button><button data-tab="access" aria-pressed="false">Accesos</button><button data-tab="support" aria-pressed="false">Ayuda</button><button data-tab="billing" aria-pressed="false">Cobros · Próximamente</button></div><div id="admin-usage"><div class="admin-controls"><label>Periodo <select id="admin-days"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></label><button id="admin-refresh">Actualizar</button></div><p id="admin-status" role="status"></p><div id="admin-report"></div></div><div id="admin-access" hidden><h3>Acceso de alumnos a FORMÁ</h3><p>Los perfiles sin evidencia quedaron pendientes. Conservamos sus datos; este control solo afecta a FORMÁ. Valida una cuenta únicamente si reconoces al alumno y su referencia.</p><button id="admin-access-refresh">Actualizar accesos</button><p id="admin-access-status" role="status"></p><label>Buscar nombre o referencia<input id="admin-access-search" maxlength="120" placeholder="Nombre o referencia del alumno"></label><div id="admin-access-list"></div></div><div id="admin-support" hidden><h3>WhatsApp de ayuda</h3><p>Los alumnos abren una conversación contigo. No se envían mensajes automáticamente ni se añaden datos financieros.</p><label>Número con código de país<input id="admin-phone" inputmode="tel" maxlength="24" placeholder="Ejemplo: +55 11 99999-9999"></label><button id="admin-save-phone" class="action-main">Guardar número</button><p id="admin-phone-status" role="status"></p></div><div id="admin-billing" hidden><h3>Cobros: siguiente etapa</h3><p>Esta versión no realiza cobros ni solicita tarjetas.</p><p>El próximo módulo podrá reunir planes, becas para alumnos, periodos de prueba, pagos pendientes, comprobantes e historial de suscripción.</p><p>Antes de activarlo definiremos precios, proveedor de pagos y reglas de cancelación.</p></div>';
   document.body.append(dialog);
   [dialog,help].forEach(el=>{el.querySelector('[data-close]').onclick=()=>el.close();el.addEventListener('click',e=>{if(e.target===el)el.close()});});
   const adminButton=document.getElementById('forma-admin-button');
@@ -36,7 +37,7 @@
     phone=r.data.whatsapp;paintSupport();
   }
   async function init(){
-    const rev=++generation;admin=false;report=null;entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;phone='';
+    const rev=++generation;admin=false;report=null;accessReport=null;entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;phone='';dialog.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';
     if(demo()||!user||!sb)return;
     const id=user.id;
     const r=await sb.from('forma_admin_members').select('user_id').eq('user_id',id).maybeSingle();
@@ -93,8 +94,43 @@
     document.getElementById('admin-roster').innerHTML=rows.map(u=>`<tr><td>${esc(u.name||'Sin nombre')}</td><td>${u.entry_verified?'Sesión autenticada · Servidor':'Datos guardados · Sin prueba de entrada antigua'}</td><td>${date(u.first_entry)}</td><td>${date(u.last_seen)}</td>${['budget','movements','goals','learning'].map(k=>`<td>${u[k]?'Sí':'Aún no'}</td>`).join('')}</tr>`).join('');
     document.getElementById('admin-roster-count').textContent=`${rows.length} de ${all.length} cuentas con evidencia en esta búsqueda`;
   }
-  function selectTab(name){dialog.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));['usage','support','billing'].forEach(t=>document.getElementById('admin-'+t).hidden=t!==name);}
-  dialog.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{selectTab(b.dataset.tab);if(b.dataset.tab==='support'){await loadSupport();document.getElementById('admin-phone').value=phone;}});
+  function selectTab(name){dialog.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));['usage','access','support','billing'].forEach(t=>document.getElementById('admin-'+t).hidden=t!==name);}
+  dialog.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{selectTab(b.dataset.tab);if(b.dataset.tab==='access')await loadAccessReview();if(b.dataset.tab==='support'){await loadSupport();document.getElementById('admin-phone').value=phone;}});
+  async function loadAccessReview(){
+    if(!admin||!user||!sb||demo()||accessPending)return;
+    const uid=user.id,rev=generation,status=document.getElementById('admin-access-status');
+    accessPending=true;accessReport=null;document.getElementById('admin-access-list').innerHTML='';status.textContent='Comprobando accesos en el servidor…';
+    try{
+      const r=await sb.rpc('forma_admin_access_review');
+      if(uid!==user?.id||rev!==generation||!admin)return;
+      if(r.error||!Array.isArray(r.data?.pending))throw new Error('Access review unavailable');
+      accessReport=r.data;status.textContent=`${Number(r.data.active)} cuentas habilitadas de alumnos; ${Number(r.data.pending_count)} pendientes; ${Number(r.data.staff)} de administración. Habilitado no significa matrícula verificada.`;
+      renderAccessReview();
+    }catch(e){if(uid===user?.id&&rev===generation)status.textContent='No pudimos consultar los accesos. No se modificó ninguna cuenta.';}
+    finally{accessPending=false;}
+  }
+  function renderAccessReview(){
+    const q=document.getElementById('admin-access-search').value.trim().toLocaleLowerCase();
+    const rows=(accessReport?.pending||[]).filter(x=>(x.name||'').toLocaleLowerCase().includes(q)||x.id.toLocaleLowerCase().includes(q)).slice(0,100);
+    document.getElementById('admin-access-list').innerHTML=rows.length?'<div class="admin-table-wrap"><table><thead><tr><th>Nombre</th><th>Referencia</th><th>Solicitó acceso</th><th>Validación</th></tr></thead><tbody>'+rows.map(x=>`<tr><td>${esc(x.name||'Sin nombre')}</td><td>${esc(x.id.slice(0,8))}</td><td>${x.requested_at?esc(stamp(x.requested_at)):'Sin solicitud registrada'}</td><td><button data-validate-access="${esc(x.id)}">Validar alumno</button></td></tr>`).join('')+'</tbody></table></div>':'<p>No hay cuentas pendientes en esta búsqueda.</p>';
+  }
+  document.getElementById('admin-access-refresh').onclick=loadAccessReview;
+  document.getElementById('admin-access-search').oninput=renderAccessReview;
+  document.getElementById('admin-access-list').addEventListener('click',async event=>{
+    const button=event.target.closest('button[data-validate-access]');
+    if(!button||!admin||!user||demo()||accessPending)return;
+    const target=accessReport?.pending.find(x=>x.id===button.dataset.validateAccess);
+    if(!target||!window.confirm(`¿Confirmas que ${target.name||'esta persona'} es alumno de FORMÁ y que su referencia es ${target.id.slice(0,8)}? Esto habilita únicamente su acceso a FORMÁ.`))return;
+    const uid=user.id,rev=generation;accessPending=true;button.disabled=true;
+    const status=document.getElementById('admin-access-status');status.textContent='Validando acceso…';
+    try{
+      const r=await sb.rpc('forma_admin_validate_access',{p_user_id:target.id});
+      if(uid!==user?.id||rev!==generation||!admin)return;
+      if(r.error||r.data?.id!==target.id||r.data?.status!=='active')throw new Error('Validation not confirmed');
+      accessPending=false;await loadAccessReview();status.textContent+=' Acceso validado. El alumno puede volver a entrar a FORMÁ.';
+    }catch(e){if(uid===user?.id&&rev===generation)status.textContent='No pudimos confirmar la validación. Actualiza la lista antes de reintentar.';}
+    finally{accessPending=false;button.disabled=false;}
+  });
   adminButton.onclick=()=>{dialog.showModal();selectTab('usage');refresh();};
   document.getElementById('admin-refresh').onclick=refresh;
   document.getElementById('admin-days').onchange=refresh;
@@ -112,6 +148,6 @@
   const originalShow=showApp;showApp=function(...args){const result=originalShow(...args);init();return result;};
   const originalPanel=goPanel;goPanel=function(id){const result=originalPanel(id);track(id);return result;};
   const originalDemo=startDemo;startDemo=function(...args){const result=originalDemo(...args);++generation;admin=false;adminButton.hidden=true;adminButton.textContent='Administración';return result;};
-  if(sb)sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){++generation;admin=false;report=null;phone='';entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;dialog.close();help.close();document.getElementById('admin-report').innerHTML='';}});
+  if(sb)sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){++generation;admin=false;report=null;accessReport=null;phone='';entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;dialog.close();help.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';}});
   if(user&&!demo())init();
 })();

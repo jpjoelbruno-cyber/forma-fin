@@ -43,12 +43,22 @@ The endpoint validates Auth, checks a live matching session through a quota RPC,
 
 ## Tests
 
-40 Node checks pass: budget saves, goal progress, verified-entry guards, Spanish/Portuguese parsing, ambiguity and transfer handling, movement retries/read-back/session changes, same-ID voice corrections and transcription boundary responses.
+45 Node checks pass (including five enrollment gate checks): budget saves, goal progress, verified-entry guards, Spanish/Portuguese parsing, ambiguity and transfer handling, movement retries/read-back/session changes, same-ID voice corrections and transcription boundary responses.
 
 Dedicated database rollback suites pass: 26 owner/anonymous/foreign-account RLS checks, 22 administration checks, verified-entry live-session/origin/privacy checks, and movement/voice-quota ownership/validation/deduplication checks. The movement/quota suite also passes on the original project. All synthetic fixtures roll back.
 
-Advisor on the dedicated project reports no WARN entries; four INFO entries correspond to intentionally deny-all private tables. This is limited testing, not a penetration-test or banking approval. The shared project's unrelated privileged-function warnings are still outside this implementation.
+Advisor on the dedicated project reports no WARN entries; six INFO entries correspond to intentionally deny-all private tables. This is limited testing, not a penetration-test or banking approval. The shared project's unrelated privileged-function warnings are still outside this implementation.
 
 ## Bank readiness
 
 `api/pluggy-token.js` remains hard-disabled (503). Never return provider secrets to clients. Before real banks: complete isolation, select an authorized integration provider, implement server-only connection ownership and consent/revocation, authenticated signed webhooks, idempotent import with pagination, encrypted token storage, strict session/admin controls, data export/deletion, restore drills and adversarial sandbox tests. No banking secrets or tokens were installed in this work.
+
+## 2026-10-06 — reversible access cleanup
+
+Applied `forma_reversible_enrollment_validation` to the original and dedicated projects. The current original-project registry contains 17 active accounts (16 non-administrator accounts with entry or saved FORMÁ evidence, plus one existing administrator) and 106 pending-validation accounts. Initial activation conservatively preserves any existing budget row, goal event or educational record. This is evidence of use, not proof of enrollment or a unique person. No account is classified by having a Taller relationship alone.
+
+The pending list is excluded from active-user reporting. Seven additional restrictive policies on FORMÁ-owned tables deny pending accounts profile/financial/learning/usage reads and writes. Entry attestation and voice quota also check the registry. Private tables have deny-all RLS and no direct client grants; only guarded functions can inspect/update them. Caller-bound status can request access but never self-activate, including via editable user metadata. New requests remain pending; the FORMÁ administrator can validate a specific matching student/reference from Administration → Accesos. Activation is idempotent and audited. Existing shared Auth users and all Eleva/Taller accounts and permissions remain intact. No global sign-out was issued.
+
+Server-side fixture suites passed on both projects: pending read/write denial, prevention of self-activation, anonymous denial, private-table denial, active own CRUD and foreign-row denial, owner-only roster and restoration, audit deduplication and preservation of restored records. Synthetic fixture rows rolled back. Financial record counts and database-derived content digests were identical immediately before and after cleanup: 185 budget rows, six transactions, two goals, zero goal events and zero learning records. This is a point-in-time check; subsequent student writes can legitimately change those counts. Existing rollback suites now explicitly enroll their synthetic test users before checking ownership rules.
+
+Production remains on the shared project. This enrollment containment DOES NOT separate JWT issuers or Google authentication. Dedicated Google provider credentials and admin dashboard access are still missing; no real records were migrated. Do not switch production to the empty dedicated database. No automatic credential prompt will be left waiting without the owner's understanding and readiness. The next step is secure admin access, dedicated FORMÁ OAuth configuration, verified per-account migration and actual cross-project-session rejection tests.

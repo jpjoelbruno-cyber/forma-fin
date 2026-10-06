@@ -1,0 +1,48 @@
+begin;
+do $$
+declare a uuid:=gen_random_uuid();p uuid:=gen_random_uuid();o uuid:=gen_random_uuid();j jsonb;n integer;
+begin
+ insert into auth.users(id,aud,role,email,raw_user_meta_data,raw_app_meta_data,created_at,updated_at)
+ select x,'authenticated','authenticated','forma-enrollment-'||x::text||'@example.invalid','{"role":"admin"}'::jsonb,'{}'::jsonb,now(),now() from unnest(array[a,p,o]) x;
+ insert into public.forma_profiles(id,full_name) values(a,'Fixture active'),(p,'Fixture pending'),(o,'Fixture admin') on conflict(id) do nothing;
+ insert into public.forma_admin_members(user_id) values(o);
+ insert into forma_private.app_access(user_id,status,display_name,reason) values(a,'active','Fixture active','fixture'),(p,'pending_validation','Fixture pending','fixture');
+ insert into public.forma_budgets(user_id,month,category,planned) values(a,'2026-10','uber',20),(p,'2026-10','uber',25);
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',p,'role','authenticated')::text,true);
+ execute 'set local role authenticated';
+ j:=public.forma_access_status();if j->>'status'<>'pending_validation' then raise exception 'Pending account self-activated';end if;
+ if forma_private.access_active() then raise exception 'Editable metadata bypassed access';end if;
+ select count(*) into n from public.forma_budgets where user_id=p;if n<>0 then raise exception 'Pending account read budget';end if;
+ select count(*) into n from public.forma_profiles where id=p;if n<>0 then raise exception 'Pending account read profile';end if;
+ begin insert into public.forma_budgets(user_id,month,category,planned) values(p,'2026-11','uber',30);raise exception 'Pending write passed';exception when insufficient_privilege then null;end;
+ begin perform public.forma_admin_validate_access(p);raise exception 'Nonadmin validation passed';exception when insufficient_privilege then null;end;
+ begin perform public.forma_admin_access_review();raise exception 'Nonadmin roster passed';exception when insufficient_privilege then null;end;
+ begin perform count(*) from forma_private.app_access;raise exception 'Direct access registry read passed';exception when insufficient_privilege then null;end;
+ begin perform public.forma_record_access('entry');raise exception 'Pending entry attestation passed';exception when insufficient_privilege then null;end;
+ if public.forma_voice_claim(1000) then raise exception 'Pending voice quota passed';end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',a,'role','authenticated')::text,true);execute 'set local role authenticated';
+ if public.forma_access_status()->>'status'<>'active' then raise exception 'Active status missing';end if;
+ select count(*) into n from public.forma_budgets where user_id=a;if n<>1 then raise exception 'Active own budget unreadable';end if;
+ select count(*) into n from public.forma_budgets where user_id=p;if n<>0 then raise exception 'Foreign budget leaked';end if;
+ insert into public.forma_budgets(user_id,month,category,planned) values(a,'2026-11','uber',30);
+ update public.forma_budgets set planned=35 where user_id=a and month='2026-11';get diagnostics n=row_count;if n<>1 then raise exception 'Active own edit failed';end if;
+ delete from public.forma_budgets where user_id=a and month='2026-11';get diagnostics n=row_count;if n<>1 then raise exception 'Active own delete failed';end if;
+ execute 'reset role';
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',o,'role','authenticated')::text,true);execute 'set local role authenticated';
+ j:=public.forma_admin_access_review();if not exists(select 1 from jsonb_array_elements(j->'pending') e where e->>'id'=p::text) then raise exception 'Pending account absent from admin review';end if;
+ j:=public.forma_admin_validate_access(p);if j->>'status'<>'active' then raise exception 'Owner validation failed';end if;
+ perform public.forma_admin_validate_access(p);
+ execute 'reset role';select count(*) into n from forma_private.app_access_audit where user_id=p;if n<>1 then raise exception 'Owner retry duplicated audit';end if;
+ perform set_config('request.jwt.claims',jsonb_build_object('sub',p,'role','authenticated')::text,true);execute 'set local role authenticated';
+ if public.forma_access_status()->>'status'<>'active' then raise exception 'Validated status unavailable';end if;
+ select count(*) into n from public.forma_budgets where user_id=p;if n<>1 then raise exception 'Restored records not preserved';end if;
+ insert into public.forma_budgets(user_id,month,category,planned) values(p,'2026-11','uber',30);
+ execute 'reset role';
+ perform set_config('request.jwt.claims','{}',true);execute 'set local role anon';
+ begin perform public.forma_access_status();raise exception 'Anonymous status passed';exception when insufficient_privilege then null;end;
+ begin perform public.forma_admin_access_review();raise exception 'Anonymous admin review passed';exception when insufficient_privilege then null;end;
+ execute 'reset role';
+end $$;
+select 'PASS: pending denied; no self-activation; owner-only review/restoration; data preserved; active CRUD and ownership; anonymous denied; rollback' as result;
+rollback;
