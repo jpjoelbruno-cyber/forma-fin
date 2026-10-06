@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="referrer" content="no-referrer">
+  <title>Probar acceso exclusivo · FORMÁ</title>
+  <link rel="icon" href="/forma-seal.svg">
+  <link rel="stylesheet" href="/acceso-forma.css?v=20261006a">
+  <script defer src="/vendor/supabase.min.js?v=2.117.2"></script>
+  <script defer src="/acceso-forma.js?v=20261006a"></script>
+</head>
+<body>
+  <main>
+    <img class="seal" src="/forma-seal.svg" alt="FORMÁ Educacional">
+    <p class="label">PRUEBA DE ACCESO</p>
+    <h1>Tu acceso exclusivo a FORMÁ</h1>
+    <p>Prueba el inicio de sesión con Google en el proyecto independiente de FORMÁ.</p>
+    <p class="notice">Esta página prueba únicamente el acceso. Tus presupuestos actuales siguen en el aplicativo habitual; todavía no aparecen aquí.</p>
+    <p id="status" role="status" aria-live="polite">Comprobando acceso…</p>
+    <section id="identity" hidden>
+      <h2>Acceso verificado</h2>
+      <p id="email"></p>
+      <p>Referencia: <strong id="reference"></strong></p>
+      <p>El siguiente paso es validar tu cuenta administradora y conservar los datos antes del cambio.</p>
+    </section>
+    <button id="login" type="button" disabled>Continuar con Google</button>
+    <button id="logout" type="button" hidden>Cerrar esta sesión de prueba</button>
+  </main>
+</body>
+</html>
