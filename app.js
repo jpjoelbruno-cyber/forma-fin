@@ -1,12 +1,12 @@
 // ═══════════════════════════════════════════════════
 // CONFIG
 // ═══════════════════════════════════════════════════
-// Temporary continuity with FORMÁ's existing Supabase project; banking stays disabled.
+// Only FORMÁ's independent project is accepted. Banking stays disabled.
 const SB_URL = window.FORMA_CONFIG?.supabaseUrl;
 const SB_KEY = window.FORMA_CONFIG?.publishableKey;
-const CONFIGURED = /^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SB_URL||'') &&
+const CONFIGURED = SB_URL === 'https://irsuevjqmgpwunvymxbc.supabase.co' &&
   !!SB_KEY;
-const sb = CONFIGURED ? supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true}}) : null;
+const sb = CONFIGURED ? supabase.createClient(SB_URL, SB_KEY, {auth:{persistSession:true,flowType:'pkce',storageKey:'forma-independent-auth-v1'}}) : null;
 function escapeHTML(value){
   return String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
@@ -239,7 +239,9 @@ async function doGoogleAuth(){
     const{error}=await sb.auth.signInWithOAuth({
       provider:'google',
       options:{
-        redirectTo: window.location.origin + window.location.pathname
+        redirectTo: 'https://forma-fin.vercel.app/',
+        scopes: 'openid email profile',
+        queryParams: {prompt:'select_account'}
       }
     });
     if(error)throw error;
@@ -296,7 +298,7 @@ async function doSignup(){
 }
 
 async function doLogout(){
-  await sb.auth.signOut();
+  await sb.auth.signOut({scope:'local'});
   user=null;profile=null;
   hideEl('app-screen');
   showEl('auth-screen');
@@ -321,7 +323,7 @@ if(sb) sb.auth.onAuthStateChange((event,session)=>{
         hideEl('loading-screen');showEl('auth-screen');
         const message=document.getElementById('login-err');
         hideEl('app-screen');profile=null;user=null;
-        message.textContent=e.code==='FORMA_ACCESS_PENDING' ? e.message : 'No pudimos verificar tu acceso a FORMÁ. Vuelve a intentarlo; tus datos no se borraron.';
+        message.textContent=['FORMA_ACCESS_PENDING','FORMA_RECOVERY_FAILED'].includes(e.code) ? e.message : 'No pudimos verificar tu acceso a FORMÁ. Vuelve a intentarlo; tus datos no se borraron.';
         message.style.display='block';
         console.error('Profile load failed',e);
       }
@@ -347,6 +349,12 @@ else {
 
 async function loadProfile(){
   const accessUid=user?.id;
+  const recovered=await sb.rpc('forma_restore_legacy');
+  if(user?.id!==accessUid)throw new Error('Session changed');
+  if(recovered.error){
+    const failure=new Error('No pudimos recuperar tus datos anteriores. Están conservados. Comunícate con FORMÁ antes de volver a registrar tu presupuesto.');
+    failure.code='FORMA_RECOVERY_FAILED';throw failure;
+  }
   const access=await sb.rpc('forma_access_status');
   if(user?.id!==accessUid)throw new Error('Session changed');
   if(access.error)throw access.error;

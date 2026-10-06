@@ -1,0 +1,17 @@
+begin;
+create policy forma_cutover_insert on public.forma_budgets as restrictive for INSERT to authenticated with check(false);
+create policy forma_cutover_update on public.forma_budgets as restrictive for UPDATE to authenticated using(false) with check(false);
+create policy forma_cutover_delete on public.forma_budgets as restrictive for DELETE to authenticated using(false);
+create policy forma_cutover_insert on public.forma_transactions as restrictive for INSERT to authenticated with check(false);
+create policy forma_cutover_update on public.forma_transactions as restrictive for UPDATE to authenticated using(false) with check(false);
+create policy forma_cutover_delete on public.forma_transactions as restrictive for DELETE to authenticated using(false);
+create policy forma_cutover_insert on public.forma_goals as restrictive for INSERT to authenticated with check(false);
+create policy forma_cutover_update on public.forma_goals as restrictive for UPDATE to authenticated using(false) with check(false);
+create policy forma_cutover_delete on public.forma_goals as restrictive for DELETE to authenticated using(false);
+create policy forma_cutover_insert on public.forma_goal_events as restrictive for INSERT to authenticated with check(false);
+create policy forma_cutover_update on public.forma_goal_events as restrictive for UPDATE to authenticated using(false) with check(false);
+create policy forma_cutover_delete on public.forma_goal_events as restrictive for DELETE to authenticated using(false);
+create policy forma_cutover_insert on public.forma_learning_progress as restrictive for INSERT to authenticated with check(false);
+create policy forma_cutover_update on public.forma_learning_progress as restrictive for UPDATE to authenticated using(false) with check(false);
+create policy forma_cutover_delete on public.forma_learning_progress as restrictive for DELETE to authenticated using(false);
+commit;

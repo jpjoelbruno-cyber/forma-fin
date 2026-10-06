@@ -6,7 +6,7 @@ function config(){
  const source=readFileSync(process.cwd()+'/config.js','utf8');
  const url=process.env.FORMA_SUPABASE_URL||source.match(/supabaseUrl\s*:\s*['"](https:\/\/[a-z]+\.supabase\.co)['"]/)?.[1];
  const key=process.env.FORMA_SUPABASE_PUBLISHABLE_KEY||source.match(/publishableKey\s*:\s*['"]([^'"]+)['"]/)?.[1];
- if(!/^https:\/\/[a-z]+\.supabase\.co$/.test(url||'')||!key)throw new Error('Not configured');return {url,key};
+ if(url!=='https://irsuevjqmgpwunvymxbc.supabase.co'||!key)throw new Error('Not configured for independent FORMÁ');return {url,key};
 }
 export default async function handler(req,res){
  res.setHeader('Cache-Control','no-store');res.setHeader('X-Content-Type-Options','nosniff');

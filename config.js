@@ -1,1 +1,1 @@
-window.FORMA_CONFIG = {"supabaseUrl": "https://ipcqlltatvpvrqceqiox.supabase.co", "publishableKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImlwY3FsbHRhdHZwdnJxY2VxaW94Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc2NDgyNDYsImV4cCI6MjEwMzIyNDI0Nn0.lpmDZZ6mf2s7Zrv8lsYs7oLW8mxApyASYogQTVpv4pk"};
+window.FORMA_CONFIG = {"supabaseUrl": "https://irsuevjqmgpwunvymxbc.supabase.co", "publishableKey": "sb_publishable_p00kgl4nHZuGdMOwGJi9WA_e_knq977"};

@@ -105,6 +105,11 @@
       if(uid!==user?.id||rev!==generation||!admin)return;
       if(r.error||!Array.isArray(r.data?.pending))throw new Error('Access review unavailable');
       accessReport=r.data;status.textContent=`${Number(r.data.active)} cuentas habilitadas de alumnos; ${Number(r.data.pending_count)} pendientes; ${Number(r.data.staff)} de administración. Habilitado no significa matrícula verificada.`;
+      const recovery=await sb.rpc('forma_recovery_report');
+      if(uid!==user?.id||rev!==generation||!admin)return;
+      if(recovery.error)throw recovery.error;
+      status.textContent+=` Recuperación anterior: ${Number(recovery.data.restored)} cuentas recuperadas; ${Number(recovery.data.awaiting_google)} esperando su Google; ${Number(recovery.data.manual_review)} requieren verificación asistida. Estas cifras no son nuevas entradas de usuarios.`;
+      for(const item of recovery.data.manual_records||[]) status.textContent+=` [${item.name} · ${item.reference}: ${item.reason}]`;
       renderAccessReview();
     }catch(e){if(uid===user?.id&&rev===generation)status.textContent='No pudimos consultar los accesos. No se modificó ninguna cuenta.';}
     finally{accessPending=false;}
