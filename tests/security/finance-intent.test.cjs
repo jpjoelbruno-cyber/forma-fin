@@ -14,3 +14,5 @@ test('A preference affects only the supplied user context',()=>{const cs=[...cat
 test('meat purchases use the existing budget category in Spanish and Portuguese',()=>{for(const phrase of ['Gasté 50 reales en carne','Compra de carne 50 reales','Gastei cinquenta reais no açougue','Compré pescado por 50 reales']){const r=parse(phrase);a.equal(r.type,'expense',phrase);a.equal(r.category,'carne',phrase);a.equal(r.amount,50,phrase);a.deepEqual(r.missing,[],phrase);}});
 test('meat at market and restaurant meals have distinct categories',()=>{a.equal(parse('Compré carne por 50 en el mercado').category,'carne');a.equal(parse('Gasté 50 en almuerzo con carne').category,'restaurantes');});
 test('purchase without amount asks for it and never invents money',()=>{const r=parse('Compra de carne');a.equal(r.type,'expense');a.equal(r.category,'carne');a.equal(r.amount,null);a.ok(r.missing.includes('amount'));});
+
+test('exact student phrase hice compras de carne 60 reales is saveable',()=>{const r=parse('hice compras de carne 60 reales');a.equal(r.type,'expense');a.equal(r.category,'carne');a.equal(r.amount,60);a.deepEqual(r.missing,[]);});
