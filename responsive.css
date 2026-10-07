@@ -12,3 +12,5 @@
 }
 @media(max-width:350px){.thermo-main{flex-direction:column;align-items:flex-start}.overview-actions{grid-template-columns:1fr}.tb-info{display:none}.stat-val{font-size:21px}.legend-heading{gap:6px}.legend-heading strong{font-size:13px}.legend-name{overflow-wrap:anywhere}.panel,.panel:not(#p-resumo){padding-left:12px;padding-right:12px}.card{padding:16px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+.page-heading .mnav h2{font:600 15px 'DM Sans',sans-serif;letter-spacing:0;margin:0;min-width:120px}
+@media(min-width:768px){.guide-card .journey{padding-top:8px}.guide-card{gap:10px;padding:16px 20px}.guide-card h3{font-size:16px}.page-heading{margin-bottom:16px}.overview-actions{margin-bottom:16px}}
