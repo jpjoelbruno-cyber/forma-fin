@@ -29,3 +29,4 @@
 @media(min-width:1200px){.editor-workspace #orc-cats{columns:3}}
 @media(min-width:768px) and (max-width:1199px){.editor-workspace #orc-cats{columns:2}}
 @media(max-width:767px){.editor-workspace .editor-heading{top:-16px}}
+.editor-workspace #orc-cats{columns:auto}.budget-columns{display:grid;gap:16px;align-items:start}.budget-column{display:flex;flex-direction:column;gap:16px;min-width:0}.editor-workspace #orc-cats .budget-column .orc-group{display:block;margin:0;width:100%}.editor-workspace #custom-budget-tools{margin-top:20px}

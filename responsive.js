@@ -76,6 +76,25 @@
     if(active.root.classList.contains('open'))return;
     target.click();
   },true);
+  const budgetRoot=document.getElementById('orc-cats');
+  let budgetColumns=0;
+  function arrangeBudget(force=false){
+    const count=innerWidth>=1200?3:innerWidth>=768?2:1;
+    if(!force&&budgetColumns===count&&budgetRoot.querySelector('.budget-columns'))return;
+    const groups=[...budgetRoot.querySelectorAll('.orc-group')];
+    if(!groups.length)return;
+    const focus=document.activeElement;
+    const old=budgetRoot.querySelector('.budget-columns');
+    const columns=document.createElement('div');columns.className='budget-columns';
+    columns.style.gridTemplateColumns=`repeat(${count},minmax(0,1fr))`;
+    for(let i=0;i<count;i++){const column=document.createElement('div');column.className='budget-column';columns.append(column);}
+    groups.forEach((group,index)=>columns.children[index%count].append(group));
+    const custom=budgetRoot.querySelector('#custom-budget-tools');
+    budgetRoot.insertBefore(columns,custom||null);old?.remove();budgetColumns=count;
+    if(focus?.isConnected&&focus!==document.body)focus.focus({preventScroll:true});
+  }
+  new MutationObserver(()=>{if([...budgetRoot.children].some(el=>el.classList.contains('orc-group')))arrangeBudget(true);}).observe(budgetRoot,{childList:true});
+  window.addEventListener('resize',()=>arrangeBudget());
   // Section changes reset the reading position, while budget saves still block
   // closing until the server has confirmed them.
   const previousGoPanel=goPanel;
