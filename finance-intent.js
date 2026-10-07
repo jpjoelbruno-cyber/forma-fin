@@ -11,6 +11,7 @@
   if(runs.length===2&&/^(?:\s*(?:reales|reais|real|soles|pesos))?\s*(?:y|e|con|com|virgula|coma)\s*$/.test(s.slice(runs[0].end,runs[1].start))&&runs[1].n<100)return [Math.round((runs[0].n+runs[1].n/100)*100)/100];
   return runs.map(x=>x.n);
  }
+ function isValidDate(value){return typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!isNaN(new Date(value+'T12:00:00Z').getTime())&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;}
  function shiftDate(today,days){const d=new Date(today+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10);}
  function parse(raw,{today,categories=[],preferences=[]}={}){
   let text=normalize(raw),date=today||new Date().toISOString().slice(0,10),dateIssue=false;
@@ -32,5 +33,5 @@
   const missing=[];if(transfer)missing.push('transfer');if(!type)missing.push('type');if(!amount)missing.push(candidates.length>1?'ambiguous_amount':'amount');if(!category)missing.push('category');if(dateIssue)missing.push('date');
   return {type,amount,category,date,description:String(raw||'').trim().slice(0,500),missing,transfer};
  }
- return {parse,normalize,decimal,wordNumber};
+ return {parse,normalize,decimal,wordNumber,isValidDate};
 });
