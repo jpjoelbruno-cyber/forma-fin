@@ -223,6 +223,8 @@ function hideEl(id){document.getElementById(id).style.display='none'}
 // AUTENTICACIÓN
 // ═══════════════════════════════════════════════════
 function switchTab(tab){
+  if(passwordRecoveryActive)return;
+  for(const id of ['recovery-form','password-form'])hideEl(id);
   document.getElementById('login-form').style.display=tab==='login'?'block':'none';
   document.getElementById('signup-form').style.display=tab==='signup'?'block':'none';
   document.querySelectorAll('.at').forEach((b,i)=>b.classList.toggle('active',(tab==='login'&&i===0)||(tab==='signup'&&i===1)));
@@ -250,55 +252,89 @@ async function doGoogleAuth(){
   }
 }
 
+let passwordRecoveryActive=false;
+function authMessage(id,text,ok=false){
+  const el=document.getElementById(id);el.textContent=text;
+  el.className='auth-msg '+(ok?'auth-ok':'auth-err');el.style.display='block';
+}
+function authError(e){
+  if(e.message==='Invalid login credentials')return 'Correo o contraseña incorrectos. Puedes recuperar tu contraseña.';
+  if(e.message==='Email not confirmed')return 'Confirma tu correo antes de entrar. Revisa también spam.';
+  if(/rate|too many/i.test(e.message||''))return 'Espera unos minutos antes de intentarlo otra vez.';
+  return 'No pudimos completar la solicitud. Inténtalo de nuevo; si continúa, comunícate con FORMÁ.';
+}
 async function doLogin(){
   const email=document.getElementById('l-email').value.trim();
-  const pass=document.getElementById('l-pass').value;
-  const errEl=document.getElementById('login-err');
-  errEl.style.display='none';
-  if(!email||!pass){errEl.textContent='Ingresa correo y contraseña';errEl.style.display='block';return}
-  const btn=document.getElementById('btn-login');
-  btn.disabled=true;btn.textContent='Entrando...';
-  const{error}=await sb.auth.signInWithPassword({email,password:pass});
-  if(error){
-    const msg=error.message==='Invalid login credentials'?'Correo o contraseña incorrectos':
-              error.message==='Email not confirmed'?'Confirma tu correo antes de entrar':
-              error.message;
-    errEl.textContent=msg;errEl.style.display='block';
-    btn.disabled=false;btn.textContent='Entrar';
-  }
+  const password=document.getElementById('l-pass').value;
+  hideEl('login-err');
+  if(!email||!password){authMessage('login-err','Ingresa correo y contraseña');return;}
+  const btn=document.getElementById('btn-login');btn.disabled=true;btn.textContent='Entrando…';
+  try{const {error}=await sb.auth.signInWithPassword({email,password});if(error)throw error;}
+  catch(e){authMessage('login-err',authError(e));}
+  finally{btn.disabled=false;btn.textContent='Entrar';}
 }
-
 async function doSignup(){
   const name=document.getElementById('s-name').value.trim();
   const email=document.getElementById('s-email').value.trim();
-  const pass=document.getElementById('s-pass').value;
-  const errEl=document.getElementById('signup-err');
-  const okEl=document.getElementById('signup-ok');
-  errEl.style.display='none';okEl.style.display='none';
-  if(!name||!email||!pass){errEl.textContent='Completa todos los campos';errEl.style.display='block';return}
-  if(pass.length<6){errEl.textContent='La contraseña debe tener al menos 6 caracteres';errEl.style.display='block';return}
-  const btn=document.getElementById('btn-signup');
-  btn.disabled=true;btn.textContent='Creando cuenta...';
-  const{data,error}=await sb.auth.signUp({
-    email,password:pass,
-    options:{data:{full_name:name}}
-  });
-  if(error){
-    errEl.textContent=error.message==='User already registered'?'Este correo ya está registrado':error.message;
-    errEl.style.display='block';
-    btn.disabled=false;btn.textContent='Crear cuenta';return;
-  }
-  if(data.session){
-    // onAuthStateChange lo maneja
-  }else{
-    okEl.textContent='✅ ¡Cuenta creada! Revisa tu correo para confirmar antes de entrar.';
-    okEl.style.display='block';
-  }
-  btn.disabled=false;btn.textContent='Crear cuenta';
+  const password=document.getElementById('s-pass').value;
+  hideEl('signup-err');hideEl('signup-ok');
+  if(!name||!email||!password){authMessage('signup-err','Completa nombre, correo y contraseña');return;}
+  if(password.length<8){authMessage('signup-err','Usa al menos 8 caracteres');return;}
+  const btn=document.getElementById('btn-signup');btn.disabled=true;btn.textContent='Creando cuenta…';
+  try{
+    const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name:name},emailRedirectTo:'https://forma-fin.vercel.app/'}});
+    if(error)throw error;
+    if(!data.session)authMessage('signup-ok','Revisa tu correo para confirmar tu cuenta. Después FORMÁ validará tu acceso como alumno.',true);
+  }catch(e){authMessage('signup-err',authError(e));}
+  finally{btn.disabled=false;btn.textContent='Crear cuenta';}
 }
+function showRecoveryRequest(){
+  switchTab('recovery');showEl('recovery-form');
+  document.getElementById('r-email').value=document.getElementById('l-email').value;
+  document.getElementById('r-email').focus();
+}
+async function sendPasswordReset(){
+  const email=document.getElementById('r-email').value.trim();
+  if(!document.getElementById('r-email').checkValidity()||!email){authMessage('recovery-msg','Escribe un correo válido');return;}
+  const btn=document.getElementById('auth-send-reset');btn.disabled=true;
+  try{
+    const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://forma-fin.vercel.app/'});
+    if(error)throw error;
+    authMessage('recovery-msg','Si el correo está registrado, recibirás un enlace. Revisa también spam y ábrelo en este navegador.',true);
+  }catch(e){authMessage('recovery-msg',authError(e));}
+  finally{btn.disabled=false;}
+}
+function showPasswordRecovery(){
+  passwordRecoveryActive=true;user=null;profile=null;
+  hideEl('loading-screen');hideEl('app-screen');showEl('auth-screen');
+  for(const id of ['login-form','signup-form','recovery-form'])hideEl(id);
+  showEl('password-form');document.getElementById('r-pass').focus();
+}
+async function saveRecoveredPassword(){
+  if(!passwordRecoveryActive)return;
+  const password=document.getElementById('r-pass').value;
+  if(password.length<8){authMessage('password-msg','Usa al menos 8 caracteres');return;}
+  if(password!==document.getElementById('r-confirm').value){authMessage('password-msg','Las contraseñas no coinciden');return;}
+  const btn=document.getElementById('auth-update-password');btn.disabled=true;
+  try{
+    const {error}=await sb.auth.updateUser({password});if(error)throw error;
+    await sb.auth.signOut({scope:'local'});passwordRecoveryActive=false;
+    document.getElementById('r-pass').value='';document.getElementById('r-confirm').value='';
+    switchTab('login');authMessage('login-err','Contraseña guardada. Entra con tu correo y tu nueva contraseña.',true);
+  }catch(e){authMessage('password-msg',authError(e));}
+  finally{btn.disabled=false;}
+}
+document.getElementById('auth-retry').addEventListener('click',()=>location.reload());
+document.getElementById('auth-change').addEventListener('click',doLogout);
+document.getElementById('auth-forgot').addEventListener('click',showRecoveryRequest);
+document.getElementById('auth-back').addEventListener('click',()=>switchTab('login'));
+document.getElementById('auth-send-reset').addEventListener('click',sendPasswordReset);
+document.getElementById('auth-update-password').addEventListener('click',saveRecoveredPassword);
 
 async function doLogout(){
   await sb.auth.signOut({scope:'local'});
+  document.getElementById('pending-actions').hidden=true;
+  const demo=document.querySelector('.demo-entry');if(demo)demo.hidden=false;
   user=null;profile=null;
   hideEl('app-screen');
   showEl('auth-screen');
@@ -309,10 +345,12 @@ async function doLogout(){
 // ═══════════════════════════════════════════════════
 let authRevision=0;
 if(sb) sb.auth.onAuthStateChange((event,session)=>{
+  if(event==='PASSWORD_RECOVERY'&&session?.user)passwordRecoveryActive=true;
   const revision=++authRevision;
   // Supabase data calls must run after the auth callback has returned.
   setTimeout(async()=>{
     if(window.FORMA_DEMO)return;
+    if(passwordRecoveryActive){showPasswordRecovery();return;}
     if(revision!==authRevision)return;
     if(session?.user){
       user=session.user;
@@ -324,7 +362,10 @@ if(sb) sb.auth.onAuthStateChange((event,session)=>{
         const message=document.getElementById('login-err');
         hideEl('app-screen');profile=null;user=null;
         message.textContent=['FORMA_ACCESS_PENDING','FORMA_RECOVERY_FAILED'].includes(e.code) ? e.message : 'No pudimos verificar tu acceso a FORMÁ. Vuelve a intentarlo; tus datos no se borraron.';
+        switchTab('login');
         message.style.display='block';
+        document.getElementById('pending-actions').hidden=e.code!=='FORMA_ACCESS_PENDING';
+        const demo=document.querySelector('.demo-entry');if(demo)demo.hidden=true;
         console.error('Profile load failed',e);
       }
     }else{
@@ -999,31 +1040,14 @@ async function deleteTxConfirm(){
 // ═══════════════════════════════════════════════════
 let obStep=0;
 let obData={salary:0,cats:[]};
-const OB_STEPS=[
-  {
-    emoji:'👋',
-    title:'¡Bienvenido a FORMÁ Financiero!',
-    sub:'Primero descubre cuánto entra y cuánto planeas gastar. Después registrarás solo el dinero que realmente recibas o gastes.',
-    cta:'¡Empezar!',
-    skip:true
-  },
-  {
-    emoji:'💰',
-    title:'¿Cuánto esperas recibir al mes?',
-    sub:'Este monto es tu plan, no un ingreso recibido. Podrás cambiarlo en tu presupuesto.',
-    cta:'Siguiente →',
-    input:true
-  },
-  {
-    emoji:'🎯',
-    title:'Arma tu presupuesto',
-    sub:'Verás las categorías conocidas de la planilla, organizadas por grupos. Completa los gastos que aplican a tu vida; los demás pueden quedar vacíos.',
-    cta:'Abrir presupuesto',
-    cats:false
-  }
-];
+const OB_STEPS=[{
+  emoji:'👋',title:'Aprende a tu ritmo',
+  sub:'No necesitas saber cuánto ganas para empezar. Descubre tus gastos, completa tu presupuesto poco a poco y crea tus metas cuando estés listo.',
+  cta:'Entrar a FORMÁ',skip:false
+}];
 
 function initOnboarding(){
+  if(!user||window.FORMA_DEMO)return;
   obStep=0;
   obData={salary:0,cats:[]};
   renderOnboardStep();
@@ -1041,9 +1065,6 @@ function renderOnboardStep(){
     <div class="onboard-title">${step.title}</div>
     <div class="onboard-sub">${step.sub}</div>`;
 
-  if(step.input){
-    html+=`<input class="onboard-input" id="ob-salary" type="number" placeholder="R$ 0" inputmode="decimal" min="0" step="100"><select class="onboard-input" id="ob-income-source"><option value="salario">Salario</option><option value="negocio">Pró-labore recibido</option><option value="otros-i">Otro ingreso</option></select>`;
-  }
   if(step.cats){
     const cats=[
       {id:'supermercado',i:'🛒',l:'Mercado'},
@@ -1076,27 +1097,7 @@ function obToggleCat(id,btn){
   else{toast('Máximo 3 categorías',false);}
 }
 
-async function obNext(){
-  const step=OB_STEPS[obStep];
-  if(step.input){
-    const v=parseFloat(document.getElementById('ob-salary')?.value||0);
-    if(!Number.isFinite(v)||v<0||v>999999999){toast('Revisa el ingreso previsto',false);return;}
-    obData.salary=v||0;
-    if(obData.salary>0){
-      const source=document.getElementById('ob-income-source').value;
-      const {error}=await sb.from('forma_budgets').upsert({user_id:user.id,month,category:'income:'+source,planned:obData.salary},{onConflict:'user_id,month,category'});
-      if(error){toast('No se pudo guardar el plan',false);return;}
-      budgets['income:'+source]=obData.salary;
-    }
-  }
-  if(obStep<OB_STEPS.length-1){
-    obStep++;
-    renderOnboardStep();
-  }else{
-    obFinish();
-    openOrcModal();
-  }
-}
+async function obNext(){obFinish();}
 
 function obSkip(){
   obFinish();
@@ -1111,6 +1112,7 @@ function obFinish(){
     });
     renderQuickCats();
   }
+  if(!user)return;
   localStorage.setItem('forma_ob_done_'+user.id,'1');
   document.getElementById('onboard-overlay').classList.remove('open');
   toast('Tu plan empieza aquí.');
