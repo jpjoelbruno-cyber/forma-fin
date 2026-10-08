@@ -457,7 +457,7 @@ function goPanel(id){
   document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
   document.getElementById('p-'+id).classList.add('active');
-  document.getElementById('nb-'+id).classList.add('active');
+  document.getElementById('nb-'+id)?.classList.add('active');
   if(id==='resumo'){renderResume();setTimeout(()=>renderEvoChart(),300);renderGoals();}
   if(id==='historico') renderTxList();
   if(id==='anual') loadAnnualData();
