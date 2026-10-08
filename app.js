@@ -353,11 +353,15 @@ if(sb) sb.auth.onAuthStateChange((event,session)=>{
     if(passwordRecoveryActive){showPasswordRecovery();return;}
     if(revision!==authRevision)return;
     if(session?.user){
+      const keepWorkspace=user?.id===session.user.id&&Boolean(profile)&&document.getElementById('app-screen').style.display!=='none';
       user=session.user;
       try{
         await loadProfile();
-        if(revision===authRevision)showApp();
+        if(revision!==authRevision)return;
+        // Focus and token refresh revalidate access without rebuilding open forms.
+        if(!keepWorkspace)showApp();
       }catch(e){
+        if(revision!==authRevision)return;
         hideEl('loading-screen');showEl('auth-screen');
         const message=document.getElementById('login-err');
         hideEl('app-screen');profile=null;user=null;

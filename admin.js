@@ -142,7 +142,7 @@
     }catch(e){if(uid===user?.id&&rev===generation)status.textContent='No pudimos confirmar la validación. Actualiza la lista antes de reintentar.';}
     finally{accessPending=false;button.disabled=false;}
   });
-  adminButton.onclick=()=>{if(!admin||demo())return;dialog.showModal();selectTab('usage');refresh();};
+  adminButton.onclick=()=>{if(!admin||demo())return;dialog.showModal();const tab=dialog.querySelector('[data-tab][aria-pressed="true"]')?.dataset.tab||'usage';selectTab(tab);if(tab==='usage')refresh();};
   document.getElementById('admin-refresh').onclick=refresh;
   document.getElementById('admin-days').onchange=refresh;
   document.getElementById('admin-save-phone').onclick=async()=>{
