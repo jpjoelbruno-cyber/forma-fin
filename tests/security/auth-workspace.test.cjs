@@ -7,7 +7,7 @@ function harness(active=true){
  const elements=new Map();
  const el=id=>{if(!elements.has(id))elements.set(id,{style:{display:id==='app-screen'?(active?'flex':'none'):'none'},hidden:false});return elements.get(id)};
  let callback,shown=0,checks=0;const tasks=[];
- const context=vm.createContext({user:active?{id:'owner'}:null,profile:active?{id:'owner'}:null,passwordRecoveryActive:false,window:{FORMA_DEMO:false},document:{getElementById:el,querySelector:()=>null},sb:{auth:{onAuthStateChange:fn=>callback=fn}},setTimeout:fn=>tasks.push(fn),loadProfile:async()=>{checks++;context.profile={id:context.user.id}},showApp:()=>shown++,showPasswordRecovery:()=>{},hideEl:id=>el(id).style.display='none',showEl:id=>el(id).style.display='flex',switchTab:()=>{},console:{error:()=>{}}});
+ const context=vm.createContext({user:active?{id:'owner'}:null,profile:active?{id:'owner'}:null,passwordRecoveryActive:false,window:{FORMA_DEMO:false},document:{getElementById:el,querySelector:()=>null},sb:{auth:{onAuthStateChange:fn=>callback=fn}},setTimeout:fn=>tasks.push(fn),loadProfile:async()=>{checks++;context.profile={id:context.user.id}},showApp:()=>shown++,showPasswordRecovery:()=>{},hideEl:id=>el(id).style.display='none',showEl:id=>el(id).style.display='flex',switchTab:()=>{},showPendingAccess:reference=>{context.pendingReference=reference},console:{error:()=>{}}});
  vm.runInContext(source.slice(source.indexOf('let authRevision=0;'),source.indexOf('if(sb) sb.auth.getSession()')),context);
  return {context,el,event:async(event,id='owner')=>{callback(event,id?{user:{id}}:null);await tasks.shift()()},get shown(){return shown},get checks(){return checks}};
 }

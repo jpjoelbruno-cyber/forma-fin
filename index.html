@@ -368,7 +368,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 .install-banner button{padding:8px 14px;border-radius:8px;border:none;background:var(--grad-btn);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap}
 </style>
 <link rel="stylesheet" href="companion.css?v=20260930b"><link rel="stylesheet" href="experience.css?v=20260930b">
-<link rel="stylesheet" href="admin.css?v=20261008learning5">
+<link rel="stylesheet" href="admin.css?v=20261009audit1">
 <link rel="stylesheet" href="/voice-register.css?v=20261007save3"></head>
 <body>
 
@@ -407,7 +407,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
       <div class="fld">
         <label>Contraseña</label>
         <div class="inp-wrap">
-          <input type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password">
+          <input type="password" id="l-pass" placeholder="Tu contraseña" autocomplete="current-password">
           <button class="inp-eye" data-forma-click="2" type="button">👁</button>
         </div>
       </div>
@@ -480,7 +480,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
         <h1 id="tb-greeting">FORMÁ Financiero</h1>
         <p id="tb-role">Cargando...</p>
       </div>
-      <button class="tb-logout" data-forma-click="10" title="Salir">↩</button>
+      <button class="tb-logout" data-forma-click="10" title="Cerrar sesión" aria-label="Cerrar sesión">Salir</button>
     </div>
   </div>
 
@@ -489,12 +489,12 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
     <div class="page-heading"><div><span class="eyebrow">TU VIDA FINANCIERA</span><h2>Tu mes, en orden.</h2><p>Un paso a la vez. Empieza con tu presupuesto.</p></div><div class="mnav"><button class="marrow" data-forma-click="11" aria-label="Mes anterior">‹</button><h2 id="month-label">—</h2><button class="marrow" data-forma-click="12" aria-label="Mes siguiente">›</button></div></div>
     <div class="guide-card"><div><span class="step-kicker" id="guide-step">PASO 1 DE 4</span><h3 id="guide-title">Descubre cuánto cuesta tu mes</h3><p id="guide-copy">Arma tu presupuesto con las categorías que ya conoces.</p></div><button class="action-main" id="guide-action" data-forma-click="13">Armar presupuesto</button><div class="journey"><span id="journey-budget">1 · Presupuesto</span><span id="journey-record">2 · Mi día a día</span><span id="journey-goal">3 · Mis metas</span><span>4 · Aprender</span></div></div>
     <div class="overview-grid">
-      <div class="hero" id="hero-card"><div class="hero-label">Resultado registrado del mes</div><div class="hero-amount" id="hero-bal">R$ 0,00</div><div class="hero-sub" id="hero-sub">—</div><p class="hero-foot">Ingresos menos gastos · No es saldo bancario</p><button class="hero-register" data-forma-click="14">+ Registrar movimiento</button></div>
+      <div class="hero" id="hero-card"><div class="hero-label">Resultado registrado del mes</div><div class="hero-amount" id="hero-bal">R$ 0,00</div><div class="hero-sub" id="hero-sub">—</div><p class="hero-foot">Ingresos menos gastos · No es saldo bancario</p></div>
       <div class="card thermometer-card"><div class="sh"><span class="sh-title">Termómetro del mes</span><span class="status-pill" id="thermo-status">Sin plan</span></div><div class="thermo-main"><div class="thermo-ring" id="thermo-ring"><div><strong id="thermo-percent">—</strong><span>del presupuesto</span></div></div><div><h3 id="thermo-title">Primero, tu plan</h3><p id="thermo-copy">Define cuánto prevés gastar para acompañar tu mes.</p><small>Compara gastos registrados con gastos previstos.</small></div></div></div>
-      <div class="statgrid finance-stats"><div class="stat"><div class="stat-label">Entró este mes</div><div class="stat-val g" id="s-inc">R$ 0</div></div><div class="stat"><div class="stat-label">Gastaste este mes</div><div class="stat-val r" id="s-exp">R$ 0</div></div></div>
-      <div class="card plan-card"><div class="sh"><span class="sh-title">Mi presupuesto</span><button class="btn-sm" data-forma-click="15">Editar plan</button></div><div id="budget-summary" aria-live="polite"></div></div>
+      <div class="statgrid finance-stats" hidden><div class="stat"><div class="stat-label">Entró este mes</div><div class="stat-val g" id="s-inc">R$ 0</div></div><div class="stat"><div class="stat-label">Gastaste este mes</div><div class="stat-val r" id="s-exp">R$ 0</div></div></div>
+      <div class="card plan-card" hidden><div class="sh"><span class="sh-title">Mi presupuesto</span><button class="btn-sm" data-forma-click="15">Editar plan</button></div><div id="budget-summary" aria-live="polite"></div></div>
       <div class="card category-card"><div class="sh"><span class="sh-title">¿En qué se fue mi dinero?</span><span class="eyebrow">GASTOS</span></div><div class="category-visual"><div class="category-donut" id="category-donut"><div><strong id="category-count">0</strong><span>categorías</span></div></div><div id="category-legend"></div></div><details class="category-detail"><summary>Ver todos los gastos por categoría</summary><div id="cat-breakdown"></div></details></div>
-      <div class="card savings-card"><div class="sh"><span class="sh-title">Mis cofrinhos</span><button class="btn-sm" data-forma-click="16">Ver metas</button></div><div id="goals-preview"><p class="muted-note">Reserva, viaje, familia. Dale un lugar a tu próxima meta.</p><button class="action-main" data-forma-click="17">Crear mi primera meta</button></div></div>
+      <div class="card savings-card"><div class="sh"><span class="sh-title">Mis metas</span><button class="btn-sm" data-forma-click="16">Ver metas</button></div><div id="goals-preview"><p class="muted-note">Reserva, viaje, familia. Dale un lugar a tu próxima meta.</p><button class="action-main" data-forma-click="17">Crear mi primera meta</button></div></div>
       <div class="card learn-preview"><div class="lesson-label">TU PRÓXIMO PASO</div><h3>Una reserva, más tranquilidad.</h3><p>Aprende a crear tu reserva de emergencia con una lección corta y una acción concreta.</p><button class="btn-sm" data-forma-click="18">Empezar lección · 3 min</button></div>
       <div class="card recent-card"><div class="sh"><span class="sh-title">Últimos movimientos</span><button class="btn-sm" data-forma-click="19">Ver historial</button></div><div id="recent-txs"></div></div>
       <div class="card" id="chart-card"><div class="sh"><span class="sh-title">Tu evolución</span><span class="muted-note">Últimos 6 meses</span></div><canvas id="evo-chart" height="160" style="width:100%;display:block"></canvas><div class="chart-legend"><span>● Ingresos</span><span>● Gastos</span></div></div>
@@ -542,7 +542,7 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
   </div>
 
   <!-- PRESUPUESTO ANUAL -->
-  <div class="panel" id="p-metas"><div class="section-head"><h2>Mis cofrinhos</h2><button class="btn-sm" data-forma-click="28">+ Crear meta</button></div><p class="muted-note">Tu dinero permanece en tu banco. Aquí llevas un registro manual de dónde lo guardaste; FORMÁ no verifica saldos ni mueve dinero.</p><div id="goals-list"></div></div>
+  <div class="panel" id="p-metas"><div class="section-head"><h2>Mis metas</h2><button class="btn-sm" data-forma-click="28">+ Crear meta</button></div><p class="muted-note">Cofrinho significa alcancía: una meta para tu dinero. Tu dinero permanece en tu banco. Aquí llevas un registro manual de dónde lo guardaste; FORMÁ no verifica saldos ni mueve dinero.</p><div id="goals-list"></div></div>
   <div class="panel" id="p-aprender"><div class="section-head"><h2>Guías para consultar</h2></div><p class="muted-note">Material de apoyo para repasar. Estas guías no cuentan como cursos concluidos.</p><div id="learning-list"></div></div>
 
   <!-- PRESUPUESTO ANUAL -->
@@ -727,12 +727,12 @@ h1,h2,h3,.loader-name,.auth-brand .ab-name,.hero-amount,.inv-code{font-family:'S
 <div class="toast" id="toast-el"></div>
 
 <script src="/config.js?v=20261006independent1"></script>
-<script src="/app.js?v=20261008learning5"></script>
-<script src="companion.js?v=20261008learning5"></script><script src="experience.js?v=20261007workspace2"></script>
+<script src="/app.js?v=20261009audit1"></script>
+<script src="companion.js?v=20261009audit1"></script><script src="experience.js?v=20261009audit1"></script>
 <script src="budget-save.js?v=20261001a"></script>
-<script src="personalize.js?v=20261005voice2"></script>
-<script src="admin.js?v=20261008learning5"></script>
+<script src="personalize.js?v=20261009audit1"></script>
+<script src="admin.js?v=20261009audit1"></script>
 <link rel="stylesheet" href="personalize.css?v=20261003a">
 <link rel="stylesheet" href="branding.css?v=20261005b">
-<script src="/ui-events.js?v=20261005voice2"></script><script src="/finance-intent.js?v=20261007save3"></script><script src="/voice-register.js?v=20261007save3"></script><link rel="stylesheet" href="/responsive.css?v=20261007workspace2"><script src="/responsive.js?v=20261007workspace2"></script><link rel="stylesheet" href="/education-accounts.css?v=20261008learning5"><script src="/course-utils.js?v=20261008learning5"></script><script src="/learning-utils.js?v=20261008learning5"></script><script src="/learning-player.js?v=20261008learning5"></script><script src="/education-accounts.js?v=20261008learning5"></script></body>
+<script src="/ui-events.js?v=20261009audit1"></script><script src="/finance-intent.js?v=20261007save3"></script><script src="/voice-register.js?v=20261007save3"></script><link rel="stylesheet" href="/responsive.css?v=20261009audit1"><script src="/responsive.js?v=20261009audit1"></script><link rel="stylesheet" href="/education-accounts.css?v=20261009audit1"><script src="/course-utils.js?v=20261009audit1"></script><script src="/learning-utils.js?v=20261009audit1"></script><script src="/learning-player.js?v=20261009audit1"></script><script src="/education-accounts.js?v=20261009audit1"></script><link rel="stylesheet" href="/audit-improvements.css?v=20261009audit1"><script src="/audit-improvements.js?v=20261009audit1"></script></body>
 </html>

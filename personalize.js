@@ -47,9 +47,11 @@ paintGoals=function(){
  document.querySelectorAll('#goals-list .goal-item').forEach((card,i)=>{
   const g=remoteGoals[i];if(!g)return;const p=goalProgress(g);
   card.querySelector('.goal-header').insertAdjacentHTML('beforebegin',`<div class="goal-picture" aria-label="${escapeHTML(GOAL_VISUALS[g.visual]?.[0]||'Tu meta')}">${goalVisual(g)}</div>`);
+  card.querySelector('.goal-name').textContent=g.name;
+  card.querySelector('.goal-header strong').textContent=new Intl.NumberFormat('es',{maximumFractionDigits:1}).format(p.pct)+'%';
   const track=card.querySelector('.goal-track');track.setAttribute('role','progressbar');track.setAttribute('aria-label','Avance de '+g.name);track.setAttribute('aria-valuenow',p.pct.toFixed(1));track.setAttribute('aria-valuemin','0');track.setAttribute('aria-valuemax','100');
-  track.insertAdjacentHTML('afterend',`<div class="goal-progress-copy"><strong>${p.pct.toFixed(1)}% alcanzado</strong><span>Falta ${p.remainingPct.toFixed(1)}% · ${fmt(p.remaining)}</span></div>`);
-  const edit=document.createElement('button');edit.textContent='Editar meta';edit.addEventListener('click',()=>openGoalModal(g.id));card.querySelector('.goal-actions').prepend(edit);
+  track.insertAdjacentHTML('afterend',`<div class="goal-progress-copy"><span>Falta ${new Intl.NumberFormat('es',{maximumFractionDigits:1}).format(p.remainingPct)}% · ${fmt(p.remaining)}</span></div>`);
+  const edit=document.createElement('button');edit.textContent='Editar';edit.addEventListener('click',()=>openGoalModal(g.id));card.querySelector('.goal-actions').prepend(edit);
  });
 };
 function customCategoryLabel(key){try{return decodeURIComponent(key.slice(7));}catch{return 'Otro gasto';}}

@@ -1,3 +1,5 @@
+> Documento histórico. El estado vigente está en README.md y AUDIT-CORRECTIONS-2026-10-09.md. No usar como guía de configuración actual.
+
 # FORMÁ — voice registration and isolation status
 
 ## Published pilot behavior

@@ -201,7 +201,7 @@ let connItems=[];
 // ═══════════════════════════════════════════════════
 // UTILIDADES
 // ═══════════════════════════════════════════════════
-function fmt(v){return'R$ '+Number(v||0).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmt(v){return'R$ '+Number(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}
 function todayMonth(){return new Date().toISOString().slice(0,7)}
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
@@ -215,6 +215,11 @@ function toast(msg,ok=true){
   el.textContent=msg;el.style.background=ok?'#1F2937':'#DC2626';
   el.classList.add('show');clearTimeout(el._t);
   el._t=setTimeout(()=>el.classList.remove('show'),2800);
+}
+function displayDate(value){
+ const match=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value||''));
+ if(!match)return String(value||'');
+ return match[3]+'/'+match[2]+'/'+match[1];
 }
 function showEl(id,type='flex'){document.getElementById(id).style.display=type}
 function hideEl(id){document.getElementById(id).style.display='none'}
@@ -334,6 +339,7 @@ document.getElementById('auth-update-password').addEventListener('click',saveRec
 async function doLogout(){
   await sb.auth.signOut({scope:'local'});
   document.getElementById('pending-actions').hidden=true;
+  document.getElementById('auth-screen').classList.remove('access-pending');delete window.FORMA_PENDING_REFERENCE;
   const demo=document.querySelector('.demo-entry');if(demo)demo.hidden=false;
   user=null;profile=null;
   hideEl('app-screen');
@@ -369,6 +375,7 @@ if(sb) sb.auth.onAuthStateChange((event,session)=>{
         switchTab('login');
         message.style.display='block';
         document.getElementById('pending-actions').hidden=e.code!=='FORMA_ACCESS_PENDING';
+        if(e.code==='FORMA_ACCESS_PENDING'){window.FORMA_PENDING_REFERENCE=e.reference||'';if(typeof showPendingAccess==='function')showPendingAccess(window.FORMA_PENDING_REFERENCE);}
         const demo=document.querySelector('.demo-entry');if(demo)demo.hidden=true;
         console.error('Profile load failed',e);
       }
@@ -406,7 +413,7 @@ async function loadProfile(){
   if(access.data?.status!=='active'){
     const ref=String(access.data?.reference||accessUid||'').slice(0,8);
     const denied=new Error('Tu acceso a FORMÁ está pendiente de validación. Comunícate con FORMÁ Educacional y comparte tu referencia: '+ref+'. No se borraron tus datos.');
-    denied.code='FORMA_ACCESS_PENDING';throw denied;
+    denied.code='FORMA_ACCESS_PENDING';denied.reference=ref;throw denied;
   }
   let{data,error}=await sb.from('forma_profiles').select('*').eq('id',user.id).maybeSingle();
   if(error)throw error;
@@ -426,6 +433,7 @@ async function loadProfile(){
 // APP PRINCIPAL
 // ═══════════════════════════════════════════════════
 function showApp(){
+  document.getElementById('auth-screen').classList.remove('access-pending');delete window.FORMA_PENDING_REFERENCE;
   hideEl('loading-screen');
   hideEl('auth-screen');
   showEl('app-screen');
@@ -595,7 +603,7 @@ function txHTML(t){
     <div class="tx-icon ${t.type==='income'?'i':'e'}">${escapeHTML(c.i)}</div>
     <div class="tx-body">
       <div class="tx-desc">${escapeHTML(t.description||c.l)}</div>
-      <div class="tx-meta">${escapeHTML(c.l)} · ${escapeHTML(t.date)}</div>
+      <div class="tx-meta">${escapeHTML(c.l)} · ${escapeHTML(displayDate(t.date))}</div>
     </div>
     <div class="tx-amt ${t.type==='income'?'i':'e'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</div>
   </div>`;
@@ -651,7 +659,7 @@ const QUICK_INC=[
 function updateAmtDisplay(v){
   const el=document.getElementById('amt-display');
   if(!v||parseFloat(v)===0){el.textContent='0,00';el.classList.add('empty');}
-  else{el.textContent=parseFloat(v).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});el.classList.remove('empty');}
+  else{el.textContent=parseFloat(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});el.classList.remove('empty');}
 }
 
 function setTxType(type){
@@ -921,7 +929,7 @@ function updateNumpadDisplay(){
   }
   el.classList.remove('empty');
   const num=parseInt(npRaw,10)/100;
-  el.textContent=num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+  el.textContent=num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 }
 
 function numpadOk(){
@@ -929,7 +937,7 @@ function numpadOk(){
   if(npEditMode){
     // Actualizar el campo de edición
     document.getElementById('edit-amt-display').textContent=
-      num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+      num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     if(editTxData) editTxData._newAmt=num;
     closeNumpad();
     return;
@@ -937,7 +945,7 @@ function numpadOk(){
   // Actualizar campo de registro
   const display=document.getElementById('amt-display');
   if(num>0){
-    display.textContent=num.toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+    display.textContent=num.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     display.classList.remove('empty');
     display.dataset.value=num;
   }else{
@@ -967,7 +975,7 @@ function openTxDetail(t){
   amtEl.className='tx-detail-amt '+(tx.type==='income'?'i':'e');
   document.getElementById('tdd-desc').textContent=tx.description||c.l;
   document.getElementById('tdd-cat').textContent=c.i+' '+c.l;
-  document.getElementById('tdd-date').textContent=tx.date;
+  document.getElementById('tdd-date').textContent=displayDate(tx.date);
   document.getElementById('tdd-type').textContent=tx.type==='income'?'💰 Ingreso':'💸 Gasto';
   document.getElementById('tx-detail-overlay').classList.add('open');
 }
@@ -985,7 +993,7 @@ function editTxOpen(){
   // Rellenar campos del editor
   editSetType(editTxData.type);
   const display=document.getElementById('edit-amt-display');
-  display.textContent=Number(editTxData.amount).toLocaleString('es',{minimumFractionDigits:2,maximumFractionDigits:2});
+  display.textContent=Number(editTxData.amount).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
   document.getElementById('edit-desc').value=editTxData.description||'';
   document.getElementById('edit-date').value=editTxData.date;
   // Prep numpad para edición

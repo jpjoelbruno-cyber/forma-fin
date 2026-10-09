@@ -4,8 +4,8 @@ import {readFileSync} from 'node:fs';
 const ORIGIN='https://forma-fin.vercel.app';
 function config(){
  const source=readFileSync(process.cwd()+'/config.js','utf8');
- const url=process.env.FORMA_SUPABASE_URL||source.match(/supabaseUrl\s*:\s*['"](https:\/\/[a-z]+\.supabase\.co)['"]/)?.[1];
- const key=process.env.FORMA_SUPABASE_PUBLISHABLE_KEY||source.match(/publishableKey\s*:\s*['"]([^'"]+)['"]/)?.[1];
+ const url=process.env.FORMA_SUPABASE_URL||source.match(/['"]?supabaseUrl['"]?\s*:\s*['"](https:\/\/[a-z]+\.supabase\.co)['"]/)?.[1];
+ const key=process.env.FORMA_SUPABASE_PUBLISHABLE_KEY||source.match(/['"]?publishableKey['"]?\s*:\s*['"]([^'"]+)['"]/)?.[1];
  if(url!=='https://irsuevjqmgpwunvymxbc.supabase.co'||!key)throw new Error('Not configured for independent FORMÁ');return {url,key};
 }
 export default async function handler(req,res){

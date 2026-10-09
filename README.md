@@ -1,7 +1,11 @@
 # FORMÁ Financiero
 
-Personal finance pilot at https://forma-fin.vercel.app. Google OAuth returns to this origin. Frontend data is backed by the existing Supabase project and user-owned FORMÁ tables with RLS. The source in this repository now includes the guided budget, summary thermometer, spending chart, savings goals and learning pages.
+Aplicación personal y educativa: https://forma-fin.vercel.app/.
 
-`?vista=ejemplo` opens a read-only example with fictional data, without database reads or writes. Ordinary access uses the same UI with the signed-in user’s records. Banking remains disabled in both the UI and `/api/pluggy-token`.
+FORMÁ utiliza exclusivamente el proyecto Supabase `irsuevjqmgpwunvymxbc` (FORMA Personal Independiente), autenticación Google propia y claves de sesión independientes. Eleva Taller y Eleva Modas no participan en este acceso. Los registros históricos del proyecto compartido no se consultan desde esta aplicación y se conservan hasta verificar recuperación y respaldo.
 
-The database changes in the Site development checkout were applied to the existing project on 29 September 2026. This release does not migrate users or create a new organization. Shared project infrastructure is not physical separation from the other apps.
+JavaScript, HTML y CSS, Supabase Auth/PostgreSQL con RLS; despliegue Vercel desde GitHub. `?vista=ejemplo` muestra únicamente datos ficticios sin guardar. La conexión bancaria y `/api/pluggy-token` permanecen deshabilitadas.
+
+Estado y activaciones manuales: [correcciones de auditoría](AUDIT-CORRECTIONS-2026-10-09.md). Nunca ejecutar una migración de FORMÁ en proyectos de Eleva.
+
+Pruebas: `node --test tests/security/*.test.cjs tests/security/*.test.mjs tests/*.test.cjs`.
