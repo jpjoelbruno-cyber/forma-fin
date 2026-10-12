@@ -19,9 +19,14 @@
   const explicit=text.match(/\b(\d{1,2})[\/-](\d{1,2})(?:[\/-](\d{4}))?\b/);
   if(explicit){const proposed=`${explicit[3]||date.slice(0,4)}-${explicit[2].padStart(2,'0')}-${explicit[1].padStart(2,'0')}`;if(!isNaN(new Date(proposed+'T12:00:00Z').getTime())&&new Date(proposed+'T12:00:00Z').toISOString().slice(0,10)===proposed)date=proposed;else dateIssue=true;text=text.replace(explicit[0],'');}
   if(/\b(manana|amanha|semana|lunes|martes|miercoles|jueves|viernes|sabado|domingo|segunda|terca|quarta|quinta|sexta|dia\s+\d|el\s+\d|pasado|passado)\b/.test(text))dateIssue=true;
-  let type=/\b(recibi|recebi|recibido|recebido|ingreso|entrada|gane|ganhei|cobre|cobrei|me pagaron|me pagaram|sueldo|salario|pro[ -]?labore)\b/.test(text)?'income':/\b(gaste|gasto|gastos|compra|compras|pague|pago|compre|comprei|gastos|gastei|paguei|saio|saiu)\b/.test(text)?'expense':null;
+  const incomeAction=/\b(recibi|recebi|recibo|recebo|recibido|recebido|ingreso|entrada|entro|entrou|entraron|entraram|ingreso|ingresaron|gane|ganhei|cobre|cobrei|me pagaron|me pagaram)\b/.test(text);
+  const expenseAction=/\b(gaste|gasto|gastos|compra|compras|pague|pago|compre|comprei|gastei|paguei|saio|saiu|salio|salieron|pagar)\b/.test(text);
+  let type=incomeAction&&expenseAction?null:incomeAction?'income':expenseAction?'expense':/\b(sueldo|salario|pro[ -]?labore)\b/.test(text)?'income':null;
+  // A purchase subject implies expense only without a conflicting money direction.
+  if(!type&&!incomeAction&&!expenseAction&&/\b(uber|ifood|delivery|restaurante|almuerzo|almoco|cena|jantar|carne|carnes|pescado|peixe|carniceria|acougue|supermercado|atacado|mercadinho|farmacia|medicamento|gasolina|combustible|combustivel|panaderia|padaria)\b/.test(text))type='expense';
   const transfer=/\b(transferi|transferencia|pase|passei|movi)\b/.test(text)&&/\b(mi otra|minha outra|mis cuentas|minhas contas|mi cuenta|minha conta|caixinha|cofrinho|reserva)\b/.test(text);
-  const candidates=amounts(text),valid=candidates.filter(n=>n!==null&&n>0&&n<=999999999&&Math.abs(n*100-Math.round(n*100))<0.001);
+  const amountText=text.replace(/\b(en|no|na|con|com)\s+99\b/g,' transporte ');
+  const candidates=amounts(amountText),valid=candidates.filter(n=>n!==null&&n>0&&n<=999999999&&Math.abs(n*100-Math.round(n*100))<0.001);
   let amount=!/\bmenos\b|(?:^|\s)-\s*\d/.test(text)&&candidates.length===1&&valid.length===1?Math.round(valid[0]*100)/100:null;
   let category=null;
   const rules=type==='income'?[
@@ -30,6 +35,7 @@
   for(const [id,re] of rules){if(re.test(text)&&categories.some(c=>c.id===id&&(!type||c.type===type))){category=id;break;}}
   if(!category){const match=categories.filter(c=>c.type===type&&normalize(c.label).length>=4&&text.includes(normalize(c.label)));if(match.length===1)category=match[0].id;}
   for(const p of preferences){if(p.type===type&&p.phrase&&text.includes(normalize(p.phrase))&&categories.some(c=>c.id===p.category&&c.type===type)){category=p.category;break;}}
+  if(!category&&type==='income'&&categories.some(c=>c.id==='otros-i'&&c.type==='income'))category='otros-i';
   const missing=[];if(transfer)missing.push('transfer');if(!type)missing.push('type');if(!amount)missing.push(candidates.length>1?'ambiguous_amount':'amount');if(!category)missing.push('category');if(dateIssue)missing.push('date');
   return {type,amount,category,date,description:String(raw||'').trim().slice(0,500),missing,transfer};
  }
