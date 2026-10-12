@@ -1,3 +1,5 @@
+> Si deseas también correo/contraseña sin aprobación, usar AUTOMATIC-ACCOUNT-ACCESS.md y automatic-account-access.sql. No ejecutar este SQL de solo Google después del combinado.
+
 # Acceso automático con Google — FORMÁ independiente
 
 Preparado y probado el 12 de octubre de 2026. **Pendiente de ejecutar por el propietario en producción.** No se han aprobado usuarios ni modificado la base real.

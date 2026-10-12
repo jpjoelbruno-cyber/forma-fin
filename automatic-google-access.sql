@@ -1,3 +1,4 @@
+-- MODALIDAD ANTERIOR: solo Google. Para Google Y correo usa automatic-account-access.sql.
 -- FORMÁ independiente: acceso automático de alumno al iniciar sesión con Google.
 -- Ejecutar SOLO en FORMA Personal Independiente / irsuevjqmgpwunvymxbc.
 -- No aprueba cuentas en bloque, no crea administradores y no modifica finanzas.
