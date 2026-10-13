@@ -6,7 +6,7 @@ const code=fs.readFileSync(require('node:path').join(__dirname,'../../budget-sav
 function setup(mode='ok'){
   const events={},saved=new Map(),writes=[],timers=[];
   const elements={'orc-cats':{},'budget-save-status':{textContent:''},'orc-overlay':{closed:false,classList:{remove(){elements['orc-overlay'].closed=true;}}}};
-  const input={id:'oc-rent',value:'0',validity:{badInput:false}};
+  const input={id:'oc-rent',value:'',dataset:{},validity:{badInput:false}};
   const ctx={user:{id:'test-user'},month:'2026-10',budgetDataReady:true,budgets:{},window:{FORMA_DEMO:false,addEventListener:(k,f)=>events[k]=f},document:{getElementById:id=>elements[id],querySelectorAll:()=>[input]},setTimeout:f=>timers.push(f),clearTimeout:()=>{},console:{error:()=>{}},toast:()=>{},refreshOrc:()=>{},renderResume:()=>{},openOrcModal:()=>{},doLogout:()=>{},demoNotice:()=>{},sb:{from(){return{async upsert(rows){writes.push(rows);if(mode==='fail')return{error:new Error('offline')};rows.forEach(r=>saved.set(r.category,r.planned));return{};},select(){return{eq(){return this;},async in(_,keys){return{data:keys.map(category=>({category,planned:mode==='mismatch'?999:saved.get(category)}))};}};}}}}};
   vm.createContext(ctx);vm.runInContext(code,ctx);
   return{ctx,input,elements,writes,events,saved,timers};
@@ -21,3 +21,7 @@ test('stale month is written to captured month, not new month',async()=>{const s
 test('changed session cannot write into either account',async()=>{const s=setup();s.ctx.openOrcModal();s.input.value='10';s.elements['orc-cats'].oninput();s.ctx.user={id:'different-user'};await s.ctx.saveOrc();assert.equal(s.writes.length,0);});
 test('budget editor is blocked before cloud data loads',()=>{const s=setup();s.ctx.budgetDataReady=false;s.ctx.openOrcModal();assert.equal(s.elements['orc-cats'].oninput,undefined);});
 test('automatic save occurs after input without pressing any button',async()=>{const s=setup();s.ctx.openOrcModal();s.input.value='55';s.elements['orc-cats'].oninput();await s.timers.at(-1)();assert.equal(s.saved.get('rent'),55);assert.match(s.elements['budget-save-status'].textContent,/Guardado/);assert.equal(s.elements['orc-overlay'].closed,false);});
+
+test('zero is an explicit saved amount and differs from an untouched pending field',async()=>{const s=setup();s.ctx.openOrcModal();s.input.value='0';s.elements['orc-cats'].oninput();await s.ctx.saveOrc();assert.equal(s.saved.get('rent'),0);assert.equal(s.writes.length,1);});
+test('explicit unknown stays null after confirmation rather than becoming zero',async()=>{const s=setup();s.ctx.openOrcModal();s.input.value='';s.input.dataset.pending='true';s.elements['orc-cats'].oninput();await s.ctx.saveOrc();assert.equal(s.saved.get('rent'),null);assert.equal(s.ctx.budgets.rent,null);assert.equal(s.elements['orc-overlay'].closed,true);});
+test('clearing an old amount saves a pending estimate and preserves the category row',async()=>{const s=setup();s.ctx.budgets.rent=123;s.ctx.openOrcModal();s.input.value='';s.elements['orc-cats'].oninput();await s.ctx.saveOrc();assert.equal(s.saved.has('rent'),true);assert.equal(s.saved.get('rent'),null);});

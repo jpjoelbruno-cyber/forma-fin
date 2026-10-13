@@ -8,10 +8,14 @@
     invalid=false;
     for(const el of document.querySelectorAll('#orc-cats input.orc-input')){
       const category=el.id.startsWith('oc-inc-')?'income:'+el.id.slice(7):el.id.slice(3);
-      const value=el.value===''?0:Number(el.value);
+      const value=el.value===''?null:Number(el.value);
+      if(value===null){
+        if(Object.hasOwn(budgets,category)&&budgets[category]!==null||el.dataset?.pending==='true'||pending.has(category))pending.set(category,null);
+        continue;
+      }
       if(el.validity?.badInput||!Number.isFinite(value)||value<0||value>999999999){invalid=true;continue;}
       const rounded=Math.round(value*100)/100;
-      if(rounded!==Number(budgets[category]||0)||pending.has(category))pending.set(category,rounded);
+      if(!Object.hasOwn(budgets,category)||budgets[category]===null||rounded!==Number(budgets[category])||pending.has(category))pending.set(category,rounded);
     }
   }
   async function flush(){
@@ -30,8 +34,8 @@
         if(result.error)throw result.error;
         const check=await sb.from('forma_budgets').select('category,planned').eq('user_id',uid).eq('month',savedMonth).in('category',[...batch.keys()]);
         if(check.error)throw check.error;
-        const saved=new Map((check.data||[]).map(r=>[r.category,Number(r.planned)]));
-        if([...batch].some(([k,v])=>saved.get(k)!==v))throw new Error('Save could not be verified');
+        const saved=new Map((check.data||[]).map(r=>[r.category,r.planned===null?null:Number(r.planned)]));
+        if([...batch].some(([k,v])=>!saved.has(k)||saved.get(k)!==v))throw new Error('Save could not be verified');
         for(const [key,value] of batch){
           if(user?.id===uid&&month===savedMonth)budgets[key]=value;
           if(pending.get(key)===value)pending.delete(key);
@@ -44,6 +48,7 @@
     if(failed)return false;
     return invalid?false:pending.size?flush():true;
   }
+  window.FormaBudgetSave={confirm:async()=>{capture();return flush();}};
   const previousOpen=openOrcModal;
   openOrcModal=function(){
     if(!isDemo()&&!budgetDataReady){toast('Espera a que cargue tu presupuesto. Si hay un error de conexión, vuelve a entrar antes de editar.',false);return;}

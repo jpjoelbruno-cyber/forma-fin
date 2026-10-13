@@ -80,9 +80,9 @@ async function addPersonalBudgetCategory(){
  if(EXP_CATS.some(c=>c.id===key)){toast('Ese gasto ya está en tu lista',false);return;}
  const button=document.getElementById('custom-budget-add'),status=document.getElementById('custom-budget-status');button.disabled=true;status.textContent='Guardando tu gasto…';
  try{
-  const result=await sb.from('forma_budgets').upsert({user_id:uid,month:period,category:key,planned:0},{onConflict:'user_id,month,category',ignoreDuplicates:true});if(result.error)throw result.error;
+  const result=await sb.from('forma_budgets').upsert({user_id:uid,month:period,category:key,planned:window.FormaBudgetGuided?.supportsPending?null:0},{onConflict:'user_id,month,category',ignoreDuplicates:true});if(result.error)throw result.error;
   const check=await sb.from('forma_budgets').select('category,planned').eq('user_id',uid).eq('month',period).eq('category',key).single();if(check.error||check.data?.category!==key)throw new Error('Unconfirmed save');
-  if(user?.id!==uid||month!==period)return;registerPersonalCategory(key);budgets[key]=Number(check.data.planned);
+  if(user?.id!==uid||month!==period)return;registerPersonalCategory(key);budgets[key]=check.data.planned===null?null:Number(check.data.planned);
   document.getElementById('new-custom-budget-rows').insertAdjacentHTML('beforeend',personalInputRow(key));document.getElementById('custom-budget-name').value='';status.textContent='✓ Gasto guardado. Escribe el monto; se guarda automáticamente.';renderDailyCategory();refreshOrc();renderResume();
  }catch(e){status.textContent='No se pudo guardar. Vuelve a intentarlo.';}finally{button.disabled=false;}
 }
