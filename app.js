@@ -287,9 +287,9 @@ async function doSignup(){
   if(password.length<8){authMessage('signup-err','Usa al menos 8 caracteres');return;}
   const btn=document.getElementById('btn-signup');btn.disabled=true;btn.textContent='Creando cuenta…';
   try{
-    const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name:name},emailRedirectTo:'https://forma-fin.vercel.app/'}});
+    const {data,error}=await sb.auth.signUp({email,password,options:{data:{full_name:name,language:document.getElementById('s-language')?.value==='pt'?'pt':'es'},emailRedirectTo:'https://forma-fin.vercel.app/'}});
     if(error)throw error;
-    if(!data.session)authMessage('signup-ok','Revisa tu correo para confirmar tu cuenta. Después FORMÁ validará tu acceso como alumno.',true);
+    if(!data.session)authMessage('signup-ok','Revisa tu correo para confirmar tu cuenta. Luego vuelve a entrar a FORMÁ.',true);
   }catch(e){authMessage('signup-err',authError(e));}
   finally{btn.disabled=false;btn.textContent='Crear cuenta';}
 }

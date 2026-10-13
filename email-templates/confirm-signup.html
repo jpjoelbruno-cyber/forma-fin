@@ -1,0 +1,10 @@
+<!doctype html>
+<html><body style="margin:0;background:#f5f3fa;font-family:Arial,sans-serif;color:#273149"><div style="max-width:520px;margin:24px auto;background:white;padding:28px;border-radius:16px"><p style="color:#6540bd;font-weight:bold">FORMÁ Educacional</p>
+{{ if eq .Data.language "pt" }}
+<h1>Confirme seu e-mail</h1><p>Você criou uma conta no FORMÁ para organizar suas finanças pessoais.</p><p>Clique abaixo para confirmar seu e-mail. Depois, entre no aplicativo.</p><p><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#6540bd;color:white;padding:14px 20px;border-radius:10px;text-decoration:none">Confirmar meu e-mail</a></p><p>Se você não criou esta conta, ignore esta mensagem. Não compartilhe o link.</p>
+{{ else if eq .Data.language "es" }}
+<h1>Confirma tu correo</h1><p>Creaste una cuenta en FORMÁ para organizar tus finanzas personales.</p><p>Haz clic abajo para confirmar tu correo. Después, entra al aplicativo.</p><p><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#6540bd;color:white;padding:14px 20px;border-radius:10px;text-decoration:none">Confirmar mi correo</a></p><p>Si no creaste esta cuenta, ignora este mensaje. No compartas el enlace.</p>
+{{ else }}
+<h1>Confirme seu e-mail / Confirma tu correo</h1><p>Confirme seu e-mail para entrar no FORMÁ.<br>Confirma tu correo para entrar en FORMÁ.</p><p><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#6540bd;color:white;padding:14px 20px;border-radius:10px;text-decoration:none">Confirmar e-mail / Confirmar correo</a></p><p>Se não criou esta conta, ignore a mensagem.<br>Si no creaste esta cuenta, ignora el mensaje.</p>
+{{ end }}
+<p style="font-size:12px;color:#596377">FORMÁ · Finanças pessoais / Finanzas personales</p></div></body></html>
