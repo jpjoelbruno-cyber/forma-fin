@@ -46,3 +46,23 @@ Pendiente: ejecución SQL del propietario, correo exacto y autorización de Ren�
 `FORMA_JSDOM_MODULE=/ruta/jsdom node tests/ui/full-demo.cjs`
 
 Dependencias QA fijadas: @electric-sql/pglite 0.3.14 y jsdom 27.0.1. No se añaden al cliente publicado.
+
+## Espacio de evaluación y asistente del 15 de octubre
+
+Administración incluye «Espacio de René · Agenda y evaluación» y una entrada separada al ejemplo ficticio. Dentro de la agenda hay Mi día, Semana, Pendientes y Evaluar y mejorar. La semana y su lógica anterior se conservan.
+
+Mi día analiza exclusivamente los 7 días anteriores y 7 siguientes confirmados por el servidor: próxima sesión, horarios terminados sin asistencia registrada, recordatorios para preparar confirmaciones en las próximas 24 horas, última sesión de una serie y ausencias registradas. No se concluyen cursos automáticamente. Las tareas manuales no cambian reservas ni asistencia.
+
+La evaluación registra Me ayuda / Necesita cambios / No me ayuda y comentario. El propietario consulta evaluaciones y tareas del equipo desde el mismo espacio; cada colaborador ve solo sus propias tareas y evaluaciones. Solo el creador modifica su tarea. Preferencia de avisos de 15, 30 o 60 minutos por usuario. No hay entrenamiento de modelos ni servicios de IA externos: se aplican reglas y preferencias explícitas. No hay detección automática de que un alumno confirmó: la acción prepara un texto para que René lo revise, copie y envíe personalmente.
+
+Para activar tareas, asistencia, preferencias y evaluación, el propietario ejecuta **agenda-assistant-setup.sql después de agenda-setup.sql** en el proyecto independiente. Sigue faltando el correo exacto de René y su autorización mediante agenda-authorize.sql. No se ha aplicado ninguno de estos SQL a producción en esta sesión. No se importaron datos anteriores ni se insertaron datos ficticios en la base real.
+
+El asistente consulta al volver a la pestaña y cada minuto mientras está visible, sin reemplazar un formulario de reserva abierto. No envía notificaciones con la app cerrada ni mensajes automáticos. Los huecos sugeridos son orientativos de una hora para los próximos 7 días; el servidor valida la disponibilidad y la serie entera al guardar. Reprogramar continúa afectando toda la serie.
+
+La asistencia solo se puede registrar cuando pasó el final previsto según el reloj de servidor en São Paulo, con confirmación de la persona que registra. Puede corregirse devolviéndola a pendiente y registrándola otra vez; los cambios quedan en historial. Las versiones impiden sobrescribir una asistencia o tarea modificada desde otro dispositivo. Se conservan historial y comentarios, sin borrados destructivos.
+
+Estado muestra hasta 300 tareas ordenadas y las últimas 50 evaluaciones por ámbito autorizado. Estos listados son para prueba inicial; si el equipo supera estos límites, añadir paginación antes de usarlos como informes completos.
+
+En el ejemplo los comentarios, tareas, asistencia y preferencias son temporales. **La evaluación de ejemplo no llega al propietario**. Antes de usar datos reales hay que ejecutar el SQL, autorizar a René y comprobar desde dos cuentas que su evaluación aparece en la vista del propietario. Las reglas y permisos se validaron en PostgreSQL desechable y el recorrido UI en JSDOM; falta la prueba de producción y dispositivo físico.
+
+Prueba adicional: `FORMA_JSDOM_MODULE=/ruta/jsdom node tests/ui/agenda-assistant.cjs`. La prueba agenda-database.mjs ahora también instala la extensión de asistente y comprueba aislamiento de tareas/evaluaciones, consulta del propietario, preferencias, asistencia posterior al horario y rechazo de versiones antiguas.
