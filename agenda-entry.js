@@ -1,0 +1,6 @@
+/* Agenda-only staff never gain access to the owner's administrative membership. */
+(()=>{const adminPanel=document.getElementById('p-admin');if(adminPanel){const link=document.createElement('a');link.href='/agenda.html';link.textContent='Abrir Agenda René →';link.className='action-main';link.style.cssText='display:inline-block;margin:0 0 18px;padding:12px 16px;text-decoration:none;border-radius:10px';adminPanel.querySelector('.admin-heading').after(link);}
+ const tools=document.querySelector('.forma-tools');if(!tools||!sb)return;const link=document.createElement('a');link.href='/agenda.html';link.textContent='Agenda René';link.hidden=true;link.style.cssText='padding:10px 14px;border-radius:10px;background:#eee7fa;color:#6540b8;text-decoration:none';tools.append(link);let revision=0;
+ async function check(){const rev=++revision;link.hidden=true;if(window.FORMA_DEMO||!user)return;const uid=user.id;try{const r=await sb.rpc('forma_agenda_access');if(rev===revision&&user?.id===uid&&!r.error&&['owner','manager','instructor'].includes(r.data?.role))link.hidden=false;}catch{}}
+ const prior=loadMonthData;loadMonthData=async function(...args){const result=await prior.apply(this,args);check();return result;};sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){revision++;link.hidden=true;}});check();
+})();
