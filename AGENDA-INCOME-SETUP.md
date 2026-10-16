@@ -4,7 +4,7 @@ Esta actualización pertenece exclusivamente a `jpjoelbruno-cyber/forma-fin` y a
 
 ## Publicación y activación son pasos diferentes
 
-El frontend es compatible con la agenda anterior. Las áreas adicionales, el catálogo flexible, la edición de horario sin motivo obligatorio y los ingresos requieren `calendar_version = 4`. Hasta entonces, la interfaz explica la limitación y no registra pagos. La conexión Supabase disponible para el agente no tiene permiso sobre este proyecto: **no se ha ejecutado esta migración en producción**.
+El frontend es compatible con la agenda anterior. Las áreas adicionales, el catálogo flexible, la edición de horario sin motivo obligatorio y los ingresos requieren `calendar_version = 4`. Hasta entonces, la interfaz explica la limitación y no registra pagos. La conexión Supabase disponible para el agente no tiene permiso sobre este proyecto. El propietario ejecutó el script desde su SQL Editor el 16 de octubre y las capturas confirmaron la existencia de `forma_agenda_register` y `forma_agenda_income`. El guardado con la cuenta real de René sigue pendiente de verificación directa.
 
 ## Activar en la base existente
 
@@ -49,3 +49,13 @@ La ruta con `?vista=ejemplo` es una simulación efímera: NO utilizar para datos
 - Pruebas de DOM de agenda, calendario, asistente y cobros: guardado fallido conserva formulario; roles; escape de texto; simulación sin escrituras remotas; saldo parcial; corrección; reintento con el mismo ID tras cerrar y abrir el diálogo.
 - Pruebas SQL en PostgreSQL local descartable (PGlite), incluidos permisos, sesión de otro emisor, revocación, preservación al reinstalar con datos, independencia de instructores, pagos parciales y entre meses, duplicados, sobrepagos, cancelación y totales sobre más de 200 recibos.
 - No se ha realizado una prueba con credenciales de René en la base alojada ni una prueba en teléfono físico. La sincronización y restauración de registros anteriores siguen pendientes de verificación en producción. No se han eliminado registros reales desde esta actualización.
+
+## Corrección de fecha prevista — 16 de octubre de 2026
+
+La opción presencial permite «El día de la atención», «Otra fecha acordada» y «Sin fecha definida». Elegir el día de atención copia su fecha mientras se completa el formulario. El resumen de Ingresos y el detalle del pago muestran la fecha pactada, identificando cuando coincide con el día de atención.
+
+Es compatible con la base versión 4 ya instalada; no requiere volver a ejecutar SQL ni modifica filas existentes. Para conservar una fecha concreta en el servidor actual, el cobro se envía como `status=pendiente`, `payment_plan=fecha`, con `due_on`. La elección presencial y el modo de fecha se conservan además en el JSON privado de la solicitud y la auditoría (`presentation_status`, `payment_location`, `date_mode`). Sin fecha definida, el plan conserva `presencial` con fecha nula.
+
+La fecha futura es una promesa de pago: no crea un recibo de dinero ni aumenta lo recibido. La fecha real del cobro sigue sin admitir pagos recibidos en el futuro. Se verificó contra las funciones originales v4, sin modificar el SQL del servidor.
+
+Las fechas ya guardadas se conservan; cambiar posteriormente la fecha de atención no reescribe automáticamente el acuerdo de pago. La edición de acuerdos de pago existentes y la opción de moverlos al reprogramar requieren un flujo posterior específico; no se recrean reservas para cambiar esos datos.

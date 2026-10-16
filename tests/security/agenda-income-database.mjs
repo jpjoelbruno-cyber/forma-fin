@@ -64,5 +64,11 @@ try{await db.exec(`create role anon;create role authenticated;create schema auth
  const dated=await register('00000000-0000-4000-8000-000000000079',{...atomicData,start_date:'2026-10-16'},{status:'pendiente',total_cents:20000,amount_cents:0,payment_plan:'fecha',due_on:'2026-11-01'});detail=await income('detail',{booking_id:dated.id});assert.equal(detail.due_on,'2026-11-01');n++;
  for(const who of [I,S]){await setUser(who);await assert.rejects(register('00000000-0000-4000-8000-000000000080',atomicData,fin),e=>e.code==='42501');}n++;
  await setUser(R);await assert.rejects(db.exec('select * from forma_private.agenda_registration_requests'),e=>e.code==='42501');n++;
+
+ await setUser(R);const receivedBefore=(await income('month',{month:'2026-10-01'})).received_cents;
+ const futureFinance={status:'pendiente',presentation_status:'presencial',payment_location:'presencial',date_mode:'atencion',total_cents:20000,amount_cents:0,payment_plan:'fecha',due_on:'2026-10-19',preferred_method:null};
+ const fabiana=await register('00000000-0000-4000-8000-000000000081',{...atomicData,client:'PRUEBA FABIANA',start_date:'2026-10-19',instructor:'Emerson',instructors:['Emerson']},futureFinance);
+ detail=await income('detail',{booking_id:fabiana.id});assert.equal(detail.due_on,'2026-10-19');assert.equal(detail.paid_cents,0);assert.equal(detail.payments.length,0);assert.equal(detail.total_cents,20000);assert.equal((await income('month',{month:'2026-10-01'})).received_cents,receivedBefore);n++;
+ await db.exec('reset role');const proof=(await db.query("select payload->'finance' as finance from forma_private.agenda_registration_requests where id='00000000-0000-4000-8000-000000000081'")).rows[0].finance;assert.equal(proof.payment_location,'presencial');assert.equal(proof.due_on,'2026-10-19');n++;
  console.log('PASS '+n+' educational receipts SQL checks: migration idempotence, flexible areas, partial and cross-month payments, immutable categories, exact totals, overpayment prevention, retry idempotence, correction history, cancellation preservation, manager/owner isolation, student/instructor/foreign-session rejection.');
 }finally{await db.close();}
