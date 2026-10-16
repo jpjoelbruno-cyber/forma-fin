@@ -66,3 +66,33 @@ Estado muestra hasta 300 tareas ordenadas y las últimas 50 evaluaciones por ám
 En el ejemplo los comentarios, tareas, asistencia y preferencias son temporales. **La evaluación de ejemplo no llega al propietario**. Antes de usar datos reales hay que ejecutar el SQL, autorizar a René y comprobar desde dos cuentas que su evaluación aparece en la vista del propietario. Las reglas y permisos se validaron en PostgreSQL desechable y el recorrido UI en JSDOM; falta la prueba de producción y dispositivo físico.
 
 Prueba adicional: `FORMA_JSDOM_MODULE=/ruta/jsdom node tests/ui/agenda-assistant.cjs`. La prueba agenda-database.mjs ahora también instala la extensión de asistente y comprueba aislamiento de tareas/evaluaciones, consulta del propietario, preferencias, asistencia posterior al horario y rechazo de versiones antiguas.
+
+## Actualización solicitada el 16 de octubre
+
+La interfaz usa una paleta fija de once colores distintos (disponible y diez actividades), texto oscuro y horario en azul marino. Mentoría particular, Asesoría, Agendamiento, Clase grupal, Clase individual, Inmersión, Invitación para podcast, Orientación, Otra actividad y Consulta son tipos distintos. Se agregan las áreas Método FORMA y Asesoría / Agendamiento. La etiqueta antigua Asesoría / agendamiento se conserva al editar registros históricos; no se reasignan datos automáticamente.
+
+INICIO / SESIÓN n/N / FINALIZA se usan para cursos (clase grupal o individual) confirmados y recurrentes. Una clase de una sola sesión muestra CLASE ÚNICA. Otras actividades confirmadas muestran RESERVADO incluso si duran solo una hora. POR CONFIRMAR prevalece cuando la reserva aún no está confirmada. Las reservas antiguas sin estado explícito quedan por confirmar al instalar la ampliación, evitando inventar confirmaciones.
+
+Semana conserva seis columnas de igual tamaño. Mes es una vista mensual real; permite abrir una fecha en Semana. HOY vuelve a la fecha actual de São Paulo. El filtro Instructor y la búsqueda de nombre, WhatsApp, referencia de alumno, área o actividad trabajan sobre el periodo cargado; el selector de fecha lleva al periodo adecuado y filtra la lista.
+
+### Activación de reservas por instructor
+
+El código de servidor está preparado en `agenda-calendar-upgrade.sql`, pero **no se aplicó al proyecto alojado en esta sesión**. La conexión Supabase sigue mostrando solo demwnjuswbzygaqioaco y no ofrece acceso al proyecto FORMÁ irsuevjqmgpwunvymxbc. No se intentó cambiar el otro proyecto.
+
+La app detecta `calendar_version: 2` desde las funciones verificadas del servidor. Sin esa señal conserva el bloqueo global anterior, el catálogo anterior y oculta los nuevos controles; informa que la ampliación está pendiente. Los colores, etiquetas, búsqueda y vista mensual pueden usarse mientras tanto. El ejemplo ficticio permite evaluar toda la ampliación.
+
+El propietario debe ejecutar el script una vez se tenga acceso autorizado al proyecto correcto. Es transaccional, repetible y conserva reservas, tareas, asistencia e historial. Se amplía la estructura de franjas por instructor; una reserva con varios docentes ocupa los horarios de todos ellos. Diferentes docentes pueden atender simultáneamente; un docente ocupado impide guardar toda la serie. Sin asignar bloquea preventivamente cualquier instructor en ese horario hasta asignación explícita.
+
+Solo la membresía de propietario existente puede activar una excepción de solapamiento, con motivo obligatorio visible en historial. El administrador de agenda René no puede concederse esa excepción ni cambiar permisos. El control existe en el servidor, no solo en el formulario. Las consultas de un instructor incluyen reservas compartidas donde esté asignado, pero ocultan teléfono, profesión, referencia de alumno y motivo de excepción.
+
+### Historial por periodo
+
+Se agregan filtros por semana visible, mes y fechas personalizadas, búsqueda de nombre/número y paginación de 200 eventos por consulta. Las fechas del historial corresponden al momento del cambio en São Paulo, no al día de atención. Se incluyen cancelaciones y asistencias. Instructor de consulta y alumnos no tienen acceso a este historial general.
+
+Ocultar historial y Limpiar vista solo afectan la presentación. No hay función de borrado permanente ni eliminación masiva de evidencias. Los registros pueden volver a consultarse con los filtros. Las tareas y preferencias del asistente se conservan.
+
+### Pruebas
+
+Las pruebas de calendario agregan conservación de reservas anteriores, ejecución repetida del script, docentes simultáneos, reservas con varios instructores, denegación de solapamientos, excepción exclusiva de propietario con motivo, Sin asignar preventivo, privacidad del instructor y búsqueda/paginación de historial.
+
+Pruebas UI comprueban etiquetas por tipo de actividad, tarjetas simultáneas, filtro por instructor, búsqueda normalizada de teléfono, vista mensual, HOY, limpieza de vista sin eliminación y compatibilidad cuando la ampliación de servidor no está instalada. Pendiente: aplicación en producción y comprobación con cuentas autorizadas en dos dispositivos.
