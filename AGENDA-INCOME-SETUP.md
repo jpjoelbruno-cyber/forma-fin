@@ -4,14 +4,14 @@ Esta actualización pertenece exclusivamente a `jpjoelbruno-cyber/forma-fin` y a
 
 ## Publicación y activación son pasos diferentes
 
-El frontend es compatible con la agenda anterior. Las áreas adicionales, el catálogo flexible, la edición de horario sin motivo obligatorio y los ingresos requieren `calendar_version = 3`. Hasta entonces, la interfaz explica la limitación y no registra pagos. La conexión Supabase disponible para el agente no tiene permiso sobre este proyecto: **no se ha ejecutado esta migración en producción**.
+El frontend es compatible con la agenda anterior. Las áreas adicionales, el catálogo flexible, la edición de horario sin motivo obligatorio y los ingresos requieren `calendar_version = 4`. Hasta entonces, la interfaz explica la limitación y no registra pagos. La conexión Supabase disponible para el agente no tiene permiso sobre este proyecto: **no se ha ejecutado esta migración en producción**.
 
 ## Activar en la base existente
 
 1. Verificar proyecto exacto `irsuevjqmgpwunvymxbc` y disponer de respaldo según la política del proyecto.
 2. Ejecutar `agenda-services-upgrade.sql` en el SQL Editor con privilegios de propietario. Requiere `agenda-setup.sql` ya instalado; sustituye a `agenda-calendar-upgrade.sql`. No ejecutar la actualización anterior después de esta porque volvería a anunciar versión 2.
 3. La migración valida la identidad del propietario de FORMA y aborta si no coincide. No cambia usuarios, roles, membresías, presupuestos personales ni datos de otros aplicativos. Conserva reservas y registro de cambios. Amplía los slots existentes sin borrar las reservas. Los contratos/pagos usan tablas privadas nuevas con RLS y sin permisos directos para clientes.
-4. Verificar con la sesión de René o del propietario: `forma_agenda_access` devuelve `calendar_version: 3`; abrir Agenda → Ingresos. `forma_agenda_catalog` solo es accesible al gestor y al propietario.
+4. Verificar con la sesión de René o del propietario: `forma_agenda_access` devuelve `calendar_version: 4`; abrir Agenda → Ingresos. `forma_agenda_catalog` solo es accesible al gestor y al propietario.
 5. Validar entre dos dispositivos con la misma cuenta, usando una reserva de prueba identificada, y después cancelarla conservando auditoría. No considerar estas pruebas locales una validación de sincronización en producción.
 
 ## Ruta operativa
@@ -22,7 +22,7 @@ La ruta con `?vista=ejemplo` es una simulación efímera: NO utilizar para datos
 
 ## Uso sencillo
 
-- Actividad: qué atención se realiza. Área: sobre qué tema. En versión 3, «+ Agregar área» permite nuevas especialidades sin cambiar código; las áreas guardadas se vuelven a ofrecer en el catálogo.
+- Actividad: qué atención se realiza. Área: sobre qué tema. Grupo o turma es opcional y permite agrupar ingresos por un curso o cohorte específicos. En versión 4, «+ Agregar área» permite nuevas especialidades sin cambiar código; las áreas guardadas se vuelven a ofrecer en el catálogo.
 - Un encuentro confirmado muestra RESERVADO. Las series muestran INICIO, ENCUENTRO N/T y FINALIZA, para cualquier actividad. Si falta confirmar, aparece una etiqueta adicional POR CONFIRMAR sin ocultar el inicio o fin de una serie. No se confirma automáticamente el estado de registros antiguos.
 - Todos los bloques comparten el fondo claro de FORMÁ. Solo las invitaciones de podcast o el área Podcast/Eleva Podcast usan naranja. El sello SVG oficial no se modifica.
 - El formulario principal contiene los datos esenciales. Contacto, estado y otros instructores quedan en opciones adicionales.
@@ -31,13 +31,13 @@ La ruta con `?vista=ejemplo` es una simulación efímera: NO utilizar para datos
 
 ## Pagos e informes
 
-1. Guardar una reserva. Abrirla y pulsar «Ver pagos y saldo».
-2. Definir el valor acordado para toda la atención/serie. Cero representa una atención gratuita; sin definir no equivale a cero.
-3. Registrar cada importe realmente recibido, fecha y medio: Pix, efectivo, tarjeta o transferencia. No se solicitan credenciales, números de tarjeta ni cuentas bancarias. Es un registro manual: no procesa un cobro ni hace conciliación bancaria.
+1. En Nueva reserva, usar el bloque visible «Pago de esta reserva»: definir después, no pagó, pagará presencialmente, adelanto, pagó todo o gratuito. Indicar el valor total y, si se recibió dinero, medio, importe y fecha. El saldo se muestra antes de guardar.
+2. En versión 4, la reserva, el valor y el pago inicial se guardan en una sola transacción mediante `forma_agenda_register`. Si falla un componente, se revierte todo. El UUID de registro evita duplicar tanto la reserva como el primer pago al reintentar. Un registro sin respuesta confirmada mantiene los datos y permite únicamente reintentar el mismo contenido hasta obtener confirmación. Cero representa una atención gratuita; sin definir no equivale a cero.
+3. Para completar un pago después, abrir la reserva → «Ver pagos y saldo». Registrar cada importe realmente recibido, fecha y medio: Pix, efectivo, tarjeta, transferencia o Bitcoin (importe registrado en reales). Bitcoin se anota por su valor recibido en R$; no se convierte ni se transfiere criptomoneda. Un acuerdo de pago presencial o para una fecha futura no se suma a los ingresos recibidos. No se solicitan credenciales, números de tarjeta ni cuentas bancarias. Es un registro manual: no procesa un cobro ni hace conciliación bancaria.
 4. El saldo se calcula con todos los pagos vigentes de esa reserva. No se permite sobrepago ni reducir el total por debajo de lo recibido. Se usa entero en centavos y bloqueo transaccional compartido con la agenda.
 5. Un UUID de pago se conserva en reintentos; una respuesta incierta mantiene los campos y solo permite reintentar el mismo pago antes de crear otro. El servidor impide duplicar el identificador y rechaza reutilizarlo con otro contenido. Si se cierra o recarga el navegador durante una respuesta incierta, consultar el historial del servidor antes de registrar otro pago.
 6. «Corregir error» anula un registro con motivo; no lo elimina ni realiza una devolución bancaria. Registrar el pago correcto por separado después de verificar el saldo.
-7. Ingresos muestra recibido en el mes por fecha de recepción, cantidad de pagos, reservas con inicio en el mes, saldo pendiente de todos los meses y categorías por actividad, área y medio. Adelantos se cuentan una sola vez; los pagos de otros meses no se suman al mes elegido.
+7. Ingresos muestra recibido en el mes por fecha de recepción, cantidad de pagos, reservas con inicio en el mes, saldo pendiente de todos los meses y categorías por actividad, área, grupo/turma y medio. Adelantos se cuentan una sola vez; los pagos de otros meses no se suman al mes elegido.
 8. Actividad y área se congelan en cada pago al registrarlo para que editar una reserva no cambie silenciosamente informes anteriores. Tarjeta se registra por valor bruto; no calcula comisiones, cuotas ni fecha de liquidación.
 9. Anular un error recalcula el mes original del pago. Esto es corrección de registro, no contabilidad de devoluciones, facturación fiscal ni cierre contable.
 10. Cancelar una reserva no borra pagos ni extingue automáticamente su saldo pendiente. Se identifica la cancelación. Solo propietario y gestor ven ingresos; alumnos e instructores no tienen acceso.

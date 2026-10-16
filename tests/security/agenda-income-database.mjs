@@ -15,7 +15,7 @@ try{await db.exec(`create role anon;create role authenticated;create schema auth
 
  const migration=fs.readFileSync('agenda-services-upgrade.sql','utf8');
  await db.exec(migration);await db.exec(migration);n++;
- await setUser(R);assert.equal((await call('select public.forma_agenda_access() v')).calendar_version,3);n++;
+ await setUser(R);assert.equal((await call('select public.forma_agenda_access() v')).calendar_version,4);n++;
  const booking=await save({...data,area:'Nueva especialidad educativa',booking_state:'reservado'});n++;
  const income=async(action,d)=>call('select public.forma_agenda_income($1,$2) v',[action,JSON.stringify(d)]);
  const total=async(value,expected=0)=>income('total',{booking_id:booking.id,total_cents:value,expected});
@@ -48,5 +48,21 @@ try{await db.exec(`create role anon;create role authenticated;create schema auth
  await db.exec('reset role');await setUser(O);assert.equal((await income('month',{month:'2026-10-01'})).received_cents,0);n++;
  const extra=await save({...data,client:'PRUEBA PAGINACIÓN',instructor:'Miguel',start_hour:17,duration:1,sessions:1});await income('total',{booking_id:extra.id,total_cents:1000000,expected:0});
  await db.exec('reset role');await db.query(`insert into forma_private.agenda_payments(id,booking_id,amount_cents,paid_on,method,activity,area,created_by) select gen_random_uuid(),$1,100,'2026-10-10','pix','Asesoría','Informática',$2 from generate_series(1,205)`,[extra.id,O]);await setUser(R);oct=await income('month',{month:'2026-10-01'});assert.equal(oct.received_cents,20500);assert.equal(oct.payment_count,205);assert.equal(oct.entries.length,200);assert.equal(oct.entries_limited,true);n++;
+
+ await setUser(R);
+ const atomicData={...data,client:'PRUEBA ATÓMICA',group_name:'Grupo de los sábados',instructor:'Luis',instructors:['Luis'],start_date:'2026-10-15',start_hour:16,duration:1,sessions:1,booking_state:'reservado'};
+ const register=async(id,d,f)=>call('select public.forma_agenda_register($1,$2,$3,$4) v',[id,JSON.stringify(d),JSON.stringify(f),'']);
+ const requestId='00000000-0000-4000-8000-000000000077';
+ const fin={status:'adelanto',total_cents:50000,amount_cents:10000,method:'bitcoin',paid_on:'2026-10-15',payment_plan:'presencial',preferred_method:'pix'};
+ const before=(await call("select public.forma_agenda_list('2026-10-12','2026-10-17') v")).bookings.length;
+ for(const invalid of [{...fin,paid_on:'2045-01-01'},{...fin,method:'incorrecto'},{...fin,amount_cents:50000},{...fin,status:'pendiente'},{...fin,status:'pagado'},{...fin,payment_plan:'fecha',due_on:null}])await assert.rejects(register(requestId,atomicData,invalid),e=>e.code==='22023');
+ assert.equal((await call("select public.forma_agenda_list('2026-10-12','2026-10-17') v")).bookings.length,before);n++;
+ const registered=await register(requestId,atomicData,fin);assert.equal(registered.saved,true);assert.equal(registered.finance_saved,true);detail=await income('detail',{booking_id:registered.id});assert.equal(detail.total_cents,50000);assert.equal(detail.paid_cents,10000);assert.equal(detail.payments[0].method,'bitcoin');assert.equal(detail.payment_plan,'presencial');assert.equal(detail.preferred_method,'pix');assert.equal((await income('month',{month:'2026-10-01'})).by_group.find(g=>g.label==='Grupo de los sábados').cents,10000);n++;
+ const retried=await register(requestId,atomicData,fin);assert.equal(retried.id,registered.id);assert.equal(retried.already_saved,true);assert.equal((await income('detail',{booking_id:registered.id})).payments.length,1);n++;
+ await assert.rejects(register(requestId,atomicData,{...fin,amount_cents:20000}),e=>e.code==='22023');n++;
+ const later=await register('00000000-0000-4000-8000-000000000078',{...atomicData,start_hour:17},{status:'presencial',total_cents:30000,amount_cents:0,preferred_method:'tarjeta'});detail=await income('detail',{booking_id:later.id});assert.equal(detail.paid_cents,0);assert.equal(detail.payment_plan,'presencial');n++;
+ const dated=await register('00000000-0000-4000-8000-000000000079',{...atomicData,start_date:'2026-10-16'},{status:'pendiente',total_cents:20000,amount_cents:0,payment_plan:'fecha',due_on:'2026-11-01'});detail=await income('detail',{booking_id:dated.id});assert.equal(detail.due_on,'2026-11-01');n++;
+ for(const who of [I,S]){await setUser(who);await assert.rejects(register('00000000-0000-4000-8000-000000000080',atomicData,fin),e=>e.code==='42501');}n++;
+ await setUser(R);await assert.rejects(db.exec('select * from forma_private.agenda_registration_requests'),e=>e.code==='42501');n++;
  console.log('PASS '+n+' educational receipts SQL checks: migration idempotence, flexible areas, partial and cross-month payments, immutable categories, exact totals, overpayment prevention, retry idempotence, correction history, cancellation preservation, manager/owner isolation, student/instructor/foreign-session rejection.');
 }finally{await db.close();}
