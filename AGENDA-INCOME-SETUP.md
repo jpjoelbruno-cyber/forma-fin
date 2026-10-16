@@ -1,0 +1,51 @@
+# Agenda e ingresos educativos de FORMÁ — 16 de octubre de 2026
+
+Esta actualización pertenece exclusivamente a `jpjoelbruno-cyber/forma-fin` y al proyecto Supabase `irsuevjqmgpwunvymxbc` (FORMA Personal Independiente). No instalar en Eleva Taller, Eleva Moda ni en el antiguo proyecto compartido.
+
+## Publicación y activación son pasos diferentes
+
+El frontend es compatible con la agenda anterior. Las áreas adicionales, el catálogo flexible, la edición de horario sin motivo obligatorio y los ingresos requieren `calendar_version = 3`. Hasta entonces, la interfaz explica la limitación y no registra pagos. La conexión Supabase disponible para el agente no tiene permiso sobre este proyecto: **no se ha ejecutado esta migración en producción**.
+
+## Activar en la base existente
+
+1. Verificar proyecto exacto `irsuevjqmgpwunvymxbc` y disponer de respaldo según la política del proyecto.
+2. Ejecutar `agenda-services-upgrade.sql` en el SQL Editor con privilegios de propietario. Requiere `agenda-setup.sql` ya instalado; sustituye a `agenda-calendar-upgrade.sql`. No ejecutar la actualización anterior después de esta porque volvería a anunciar versión 2.
+3. La migración valida la identidad del propietario de FORMA y aborta si no coincide. No cambia usuarios, roles, membresías, presupuestos personales ni datos de otros aplicativos. Conserva reservas y registro de cambios. Amplía los slots existentes sin borrar las reservas. Los contratos/pagos usan tablas privadas nuevas con RLS y sin permisos directos para clientes.
+4. Verificar con la sesión de René o del propietario: `forma_agenda_access` devuelve `calendar_version: 3`; abrir Agenda → Ingresos. `forma_agenda_catalog` solo es accesible al gestor y al propietario.
+5. Validar entre dos dispositivos con la misma cuenta, usando una reserva de prueba identificada, y después cancelarla conservando auditoría. No considerar estas pruebas locales una validación de sincronización en producción.
+
+## Ruta operativa
+
+`https://forma-fin.vercel.app/agenda.html`
+
+La ruta con `?vista=ejemplo` es una simulación efímera: NO utilizar para datos reales. El acceso de ejemplo se retiró de la puerta de entrada de la agenda. Al abrir la agenda sin sesión, el botón de acceso recuerda en la pestaña que debe regresar a ella; René también se dirige a la agenda al entrar desde el inicio. La autorización sigue verificándose en servidor. El enlace «Presupuesto personal» permite regresar voluntariamente al área personal.
+
+## Uso sencillo
+
+- Actividad: qué atención se realiza. Área: sobre qué tema. En versión 3, «+ Agregar área» permite nuevas especialidades sin cambiar código; las áreas guardadas se vuelven a ofrecer en el catálogo.
+- Un encuentro confirmado muestra RESERVADO. Las series muestran INICIO, ENCUENTRO N/T y FINALIZA, para cualquier actividad. Si falta confirmar, aparece una etiqueta adicional POR CONFIRMAR sin ocultar el inicio o fin de una serie. No se confirma automáticamente el estado de registros antiguos.
+- Todos los bloques comparten el fondo claro de FORMÁ. Solo las invitaciones de podcast o el área Podcast/Eleva Podcast usan naranja. El sello SVG oficial no se modifica.
+- El formulario principal contiene los datos esenciales. Contacto, estado y otros instructores quedan en opciones adicionales.
+- Los encuentros siguen siendo semanales, lunes a sábado de 13:00 a 18:00. Editar horario o cancelar sigue afectando a toda la serie; la edición individual de una fecha no está incluida en esta entrega. La corrección de asistencia por fecha se mantiene en Mi día.
+- Tras guardar, la agenda abre la fecha inicial de la reserva y limpia filtros que podrían ocultarla. Un error al refrescar no vacía las reservas visibles; se avisa que pueden estar desactualizadas.
+
+## Pagos e informes
+
+1. Guardar una reserva. Abrirla y pulsar «Ver pagos y saldo».
+2. Definir el valor acordado para toda la atención/serie. Cero representa una atención gratuita; sin definir no equivale a cero.
+3. Registrar cada importe realmente recibido, fecha y medio: Pix, efectivo, tarjeta o transferencia. No se solicitan credenciales, números de tarjeta ni cuentas bancarias. Es un registro manual: no procesa un cobro ni hace conciliación bancaria.
+4. El saldo se calcula con todos los pagos vigentes de esa reserva. No se permite sobrepago ni reducir el total por debajo de lo recibido. Se usa entero en centavos y bloqueo transaccional compartido con la agenda.
+5. Un UUID de pago se conserva en reintentos; una respuesta incierta mantiene los campos y solo permite reintentar el mismo pago antes de crear otro. El servidor impide duplicar el identificador y rechaza reutilizarlo con otro contenido. Si se cierra o recarga el navegador durante una respuesta incierta, consultar el historial del servidor antes de registrar otro pago.
+6. «Corregir error» anula un registro con motivo; no lo elimina ni realiza una devolución bancaria. Registrar el pago correcto por separado después de verificar el saldo.
+7. Ingresos muestra recibido en el mes por fecha de recepción, cantidad de pagos, reservas con inicio en el mes, saldo pendiente de todos los meses y categorías por actividad, área y medio. Adelantos se cuentan una sola vez; los pagos de otros meses no se suman al mes elegido.
+8. Actividad y área se congelan en cada pago al registrarlo para que editar una reserva no cambie silenciosamente informes anteriores. Tarjeta se registra por valor bruto; no calcula comisiones, cuotas ni fecha de liquidación.
+9. Anular un error recalcula el mes original del pago. Esto es corrección de registro, no contabilidad de devoluciones, facturación fiscal ni cierre contable.
+10. Cancelar una reserva no borra pagos ni extingue automáticamente su saldo pendiente. Se identifica la cancelación. Solo propietario y gestor ven ingresos; alumnos e instructores no tienen acceso.
+11. Los informes calculan todas las filas. Los listados muestran hasta 200 reservas/pagos y 500 pagos por reserva, con aviso visible cuando el listado está limitado. Usar Semana para localizar otra reserva. No se incluye exportación ni paginación completa en esta entrega.
+
+## Validación disponible
+
+- 139 pruebas unitarias/regresión del proyecto.
+- Pruebas de DOM de agenda, calendario, asistente y cobros: guardado fallido conserva formulario; roles; escape de texto; simulación sin escrituras remotas; saldo parcial; corrección; reintento con el mismo ID tras cerrar y abrir el diálogo.
+- Pruebas SQL en PostgreSQL local descartable (PGlite), incluidos permisos, sesión de otro emisor, revocación, preservación al reinstalar con datos, independencia de instructores, pagos parciales y entre meses, duplicados, sobrepagos, cancelación y totales sobre más de 200 recibos.
+- No se ha realizado una prueba con credenciales de René en la base alojada ni una prueba en teléfono físico. La sincronización y restauración de registros anteriores siguen pendientes de verificación en producción. No se han eliminado registros reales desde esta actualización.
