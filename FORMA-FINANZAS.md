@@ -44,3 +44,12 @@ Antes de esa activación, la interfaz consulta la API financiera instalada: mes/
 Con la actualización: los informes se calculan en el servidor sobre todos los movimientos, aunque las listas sean limitadas. Por cobrar dispone de paginación de 30. Solo se cierra un mes terminado según São Paulo. Los cierres guardados conservan fecha, actor, totales, categorías y medios; una corrección genera una revisión con motivo, nunca sobrescribe. No bloquean registrar movimientos atrasados: estos aparecen en el resumen actual y en la siguiente revisión. Reintentar utiliza el mismo identificador para impedir duplicados. CSV exporta el resumen, no comprobantes fiscales.
 
 Validación: 148 pruebas unitarias, suite SQL adicional con conservación de datos y permisos, y pruebas de interfaz con RPC simulada. No se crearon movimientos de prueba en producción. La visualización en dispositivos físicos y el guardado de cierres en la base real requieren validación posterior a la activación.
+
+
+## Seguimiento de cobros y campana · 17 octubre
+
+Finanzas muestra Cobros y pendientes en día/semana/mes/año. Ver cobrado abre los recibos del período; Por cobrar en el período usa la fecha prevista del contrato, no la clase. Vencidos hasta hoy y Sin fecha se consultan aparte y pueden solaparse con el período. No sumar saldos pendientes al efectivo cobrado. La lista abre el detalle real para registrar el dinero recibido, sin botón Hecho para perdonar deudas.
+
+La campana de dirección/gestión incorpora los saldos vencidos y que vencen hoy. Se conservan hasta que los cobros/ajustes confirmados dejen saldo cero; una recepción parcial reduce el importe. Próximos vencimientos se ven al consultar su período. Se actualiza al confirmar pagos, volver a la app y cada 60 segundos con la app abierta. No hay push con la app cerrada ni mensajes de cobranza enviados automáticamente.
+
+Esta mejora usa las consultas existentes: forma_finance_reports/pending con páginas de 30 si está instalada, o forma_agenda_income/month de la base activa. Si faltan filas por los límites de consulta o hay una inconsistencia, se señala que la lista/importes son parciales. Si falla la consulta, no se declara Todo al día. Sin valor total definido no se calcula deuda. No crea datos de cobranza ni modifica los pagos. Lecturas permitidas solo a owner/manager del proyecto independiente; el cierre de sesión borra los resultados en pantalla.
