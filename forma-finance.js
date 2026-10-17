@@ -8,7 +8,7 @@ function cashBars(t){const max=Math.max(1,t.incoming,t.outgoing||0);return `<div
 let recordsState={month:'',open:false,key:'reservas',query:'',page:0};
 function compactRecords(){
  const blocks=[...$('income-content').querySelectorAll('details.finance-detail')];if(!blocks.length)return;
- const month=$('income-month').value;if(recordsState.month!==month)recordsState={month,open:false,key:'reservas',query:'',page:0};
+ const month=currentMonth.period_from?currentMonth.period_from+' — '+currentMonth.period_to:$('income-month').value;if(recordsState.month!==month)recordsState={month,open:false,key:'reservas',query:'',page:0};
  const d=currentMonth,hasLedger=d.finance_version===1;
  const groups=[{key:'reservas',label:'Reservas',items:d.bookings||[],count:(d.bookings||[]).length,limited:!!d.bookings_limited,note:'Incluye reservas del mes y saldos pendientes de otros meses.'},{key:'cobros',label:'Cobros',items:d.entries||[],count:Number(d.payment_count||0),limited:!!d.entries_limited,note:'Cobros recibidos durante el mes seleccionado.'}];
  if(hasLedger)groups.push({key:'salidas',label:'Salidas',items:(d.outflows||[]).slice(0,100),count:Math.min((d.outflows||[]).length,100),limited:(d.outflows||[]).length>100,note:'Salidas realizadas durante el mes seleccionado.'},{key:'devoluciones',label:'Devoluciones',items:(d.refunds||[]).slice(0,100),count:Math.min((d.refunds||[]).length,100),limited:(d.refunds||[]).length>100,note:'Incluye solicitudes pendientes de otros meses y devoluciones realizadas en el mes.'});

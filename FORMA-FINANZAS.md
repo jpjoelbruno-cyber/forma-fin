@@ -29,3 +29,18 @@ Todas las escrituras usan UUID persistente para reintento incierto, payload/acto
 Pruebas locales con datos ficticios en PGlite y JSDOM, más regresión existente. Se compara antes/después el contenido íntegro de reservas, acuerdos, cobros e historial al instalar dos veces. Casos de reembolso parcial, exceso, solicitud sin salida, pago de devolución una sola vez, corrección protegida, saldos cancelados explícitos, meses distintos, neto negativo, continuidad de reserva/adelanto y permisos.
 
 Pendiente: ejecutar instalador autorizado en proyecto real, comprobar dos sesiones reales y verificar los movimientos completos de René. Las pruebas locales no son una auditoría independiente de los datos productivos.
+
+
+## Actualización 17 octubre · períodos y cierre mensual
+
+Finanzas abre en Hoy. Día, semana (lunes a domingo), mes y año se consultan individualmente. Entró y Salió usan fechas reales de movimientos; Diferencia no equivale a beneficio ni saldo bancario. Curso/servicio corresponde al área registrada al cobrar, actividad y grupo son desgloses alternativos; los medios de pago son otra lectura del mismo total. Los registros históricos de tarjeta no distinguen crédito/débito.
+
+Por cobrar muestra deudas de todos los períodos por separado, con pago previsto y acceso al detalle. Cancelar no borra cobros ni perdona saldos; reembolsos confirmados aparecen una sola vez como salida.
+
+Activación adicional del servidor: en la cuenta de dirección, Finanzas → Activar cierres copia `forma-finance-periods.sql`. Ejecutar exclusivamente en FORMA Personal Independiente (`irsuevjqmgpwunvymxbc`). Es aditivo, verifica el proyecto y no cambia registros antiguos. Tras el resultado `informes_y_cierres_instalados = true`, pulsar Actualizar. Sin acceso administrativo al proyecto correcto no se aplica automáticamente.
+
+Antes de esa activación, la interfaz consulta la API financiera instalada: mes/año conservan sus agregados completos, día/semana solo se calculan si las listas de movimientos están completas; si exceden los límites, se exige activar informes en lugar de mostrar totales parciales. Por cobrar advierte si su lista está limitada. El resumen mensual permite exportar un borrador; Guardar cierre queda deshabilitado.
+
+Con la actualización: los informes se calculan en el servidor sobre todos los movimientos, aunque las listas sean limitadas. Por cobrar dispone de paginación de 30. Solo se cierra un mes terminado según São Paulo. Los cierres guardados conservan fecha, actor, totales, categorías y medios; una corrección genera una revisión con motivo, nunca sobrescribe. No bloquean registrar movimientos atrasados: estos aparecen en el resumen actual y en la siguiente revisión. Reintentar utiliza el mismo identificador para impedir duplicados. CSV exporta el resumen, no comprobantes fiscales.
+
+Validación: 148 pruebas unitarias, suite SQL adicional con conservación de datos y permisos, y pruebas de interfaz con RPC simulada. No se crearon movimientos de prueba en producción. La visualización en dispositivos físicos y el guardado de cierres en la base real requieren validación posterior a la activación.
