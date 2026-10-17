@@ -35,6 +35,7 @@ $('rene-pref-current').textContent='Aviso actual: '+state.reminder_minutes+' min
 $('rene-feedback-mode').textContent=s.demo?'Esta evaluación es de prueba y no llega al propietario. Para conservarla y compartirla dentro de FORMÁ hay que activar el guardado real.':'Tu evaluación se guarda para que el propietario pueda revisarla.';
 $('rene-owner-note').textContent=s.role==='owner'?'Como propietario ves las tareas y evaluaciones del equipo. Cada persona modifica sus propias tareas y preferencias.':'Tu evaluación podrá consultarla el propietario desde este espacio.';
 for(const f of [$('rene-task-form'),$('rene-feedback-form'),$('rene-pref-form')])for(const el of f.elements)el.disabled=!ready||acting;
+document.dispatchEvent(new CustomEvent('forma:assistant-updated'));
 }
 function setNotice(text){$('rene-state').textContent=text;}
 async function load(){const s=snap();if(!s||!['owner','manager'].includes(s.role))return;const rev=++request;revision=s.generation;clearInterval(timer);if(s.demo){if(!demoState){const c=clock(),yesterday=M.plus(c.day,-1),tomorrow=M.plus(c.day,1);const weekday=M.date(c.day).getUTCDay();const today=weekday===0?M.plus(c.day,1):c.day;const prior=M.date(yesterday).getUTCDay()===0?M.plus(yesterday,-1):yesterday;
@@ -53,5 +54,11 @@ function sync(){const s=snap();if(!s||!['owner','manager'].includes(s.role)){tab
 document.addEventListener('forma:agenda-render',sync);
 document.addEventListener('forma:agenda-gate',()=>{request++;clearInterval(timer);timer=null;state=null;demoState=null;ready=false;acting=false;lastServerAt=null;detail.close();$('rene-message')?.remove();for(const id of ['rene-summary','rene-actions','rene-day','rene-task-list','rene-feedback-list'])$(id).replaceChildren();$('rene-task-form').reset();$('rene-feedback-form').reset();});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&!acting&&snap()?.role&&!$('editor').open)load();});
+window.FormaAgendaAssistant={
+ snapshot:()=>{const s=snap();if(!s||!['owner','manager'].includes(s.role))return{ready:false,state:null};return{ready,acting,serverNow:now().toISOString(),state:state?JSON.parse(JSON.stringify(state)):null};},
+ refresh:load,
+ setTask:async(id,version,done)=>{const s=snap(),t=state?.tasks?.find(t=>t.id===id);if(!ready||acting||!t||t.user_id!==(s?.userId||'demo-rene')||t.version!==version)return false;if(t.done===done)return true;return act('task_toggle',{id:t.id,version:t.version});},
+ openBooking:id=>{const b=state?.bookings?.find(b=>b.id===id);if(ready&&b)api().openData(b);}
+};
 if(snap()?.role)sync();
 })();
