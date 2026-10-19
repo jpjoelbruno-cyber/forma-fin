@@ -295,7 +295,7 @@ begin
    select * into bill from forma_private.cash_payables where id=(p_data->>'payable_id')::uuid and status='pendiente' for update;
    if not found then raise exception 'La cuenta ya cambió. Actualiza' using errcode='40001';end if;
    if dt>today then raise exception 'Confirma solo una salida ya realizada' using errcode='22023';end if;
-   result:=forma_private.finance('expense',jsonb_build_object('request_id',rid,'amount_cents',bill.amount_cents,'paid_on',dt,'method',p_data->>'method','category',bill.category,'reason',bill.title));
+   result:=forma_private.finance('expense',jsonb_build_object('request_id',rid,'amount_cents',bill.amount_cents,'paid_on',dt,'method',p_data->>'method','category',bill.category,'reason','Pago previsto: '||bill.title));
    insert into forma_private.cash_allocations(kind,record_id,account_id,settled_on,fee_cents,actor) values('outflow',rid,a,dt,0,u);
    update forma_private.cash_payables set status='pagado',outflow_id=rid where id=bill.id;
   elsif p_action='allocate' then
