@@ -65,6 +65,6 @@ function reset(){recordsState={month:'',open:false,key:'reservas',query:'',page:
 $('income-content').addEventListener('click',e=>{const b=e.target.closest('[data-expense-void]');if(b)openForm('expense_void',{id:b.dataset.expenseVoid});});
 for(const event of ['pointerover','focusin','click'])$('income-content').addEventListener(event,e=>{const t=e.target.closest('[data-finance-tip]');if(t&&$('finance-tip'))$('finance-tip').textContent=t.dataset.financeTip;});
 document.addEventListener('forma:agenda-gate',reset);
-window.FormaFinance={loadMonth,renderMonth,decorateDetail};
+window.FormaFinance={loadMonth,renderMonth,decorateDetail,pie};
 const heading=$('agenda-income').querySelector('h2');if(heading)heading.textContent='Finanzas de FORMA';const tab=document.querySelector('[data-view="income"]');if(tab)tab.textContent='Finanzas';
 })();
