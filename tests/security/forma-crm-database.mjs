@@ -52,5 +52,12 @@ try{await db.exec(`create role anon;create role authenticated;create schema auth
  await db.exec("select set_config('test.blocked','yes',false)");await assert.rejects(crm('search'),e=>e.code==='42501');await db.exec("select set_config('test.blocked','',false)");n++;
  await db.exec('reset role;set role anon');await assert.rejects(crm('search'),e=>e.code==='42501');n++;
  await db.exec('reset role');await setUser(O);assert.equal((await crm('search',{query:'Fabiana'})).people.length,2);n++;
+
+ await db.exec('reset role');await db.exec("select set_config('test.issuer','',false);select set_config('test.blocked','',false)");await setUser(O);
+ const cdata={request_id:request(),title:'Precio de computación',area:'Computación',language:'es',price_cents:50000,answer:'Texto aprobado de prueba',approved:false};const csave=await crm('catalog_save',cdata);assert.equal(csave.saved,true);assert.equal((await crm('catalog_save',cdata)).already_saved,true);n++;
+ await setUser(R);assert.equal((await crm('catalog_list')).items.length,0);await assert.rejects(crm('catalog_save',{...cdata,request_id:request()}),e=>e.code==='42501');n++;
+ await setUser(O);await crm('catalog_save',{...cdata,request_id:request(),id:csave.id,expected:1,approved:true});await assert.rejects(crm('catalog_save',{...cdata,request_id:request(),id:csave.id,expected:1}),e=>e.code==='40001');await setUser(R);assert.equal((await crm('catalog_list')).items[0].approved,true);n++;
+ const fuzzy=await crm('search',{query:'Faviana'});assert.ok(fuzzy.people.length||fuzzy.legacy.length);n++;
+ for(const who of [S,I]){await setUser(who);for(const act of ['alerts','catalog_list','catalog_save'])await assert.rejects(crm(act,{}),e=>e.code==='42501');}n++;
  console.log('PASS '+n+' CRM SQL checks: exact preservation of existing bookings/payments/history/slots, idempotent additive migration, explicit links and same-name separation, multi-interest pipeline, optimistic edits, atomic reservations/payments, retry deduplication, pagination, owner/manager access and denial to students/instructors/foreign sessions/anonymous.');
 }finally{await db.close();}
