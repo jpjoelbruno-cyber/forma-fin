@@ -31,3 +31,7 @@ Real-bank and import controls stay false; /api/pluggy-token remains hard-disable
 ## Primary API references
 - https://docs.pluggy.ai/en/docs/authentication
 - https://docs.pluggy.ai/en/reference/connector/connectors-list
+
+## Subsequent prepared pilot
+
+The initial diagnostic remains available. A separate owner-only read-only pilot has now been implemented in code with an additive installer, independent vault key and gated live Open Finance. It is not activated by the diagnostic or by publication alone. See BANK-PILOT-2026-10-20.md; no production database or real bank was exercised by automated tests.

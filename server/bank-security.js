@@ -1,0 +1,15 @@
+import {createCipheriv,createDecipheriv,createHmac,randomBytes} from 'node:crypto';
+export const OWNER='776893e1-f940-437c-94a7-40a83bccc013';
+export const ORIGIN='https://forma-fin.vercel.app';
+export const SUPABASE='https://irsuevjqmgpwunvymxbc.supabase.co';
+export const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export function vaultKey(){const raw=process.env.FORMA_BANK_VAULT_KEY||'';if(!/^[A-Za-z0-9_-]{43}$/.test(raw))throw Error('vault_key');const k=Buffer.from(raw,'base64url');if(k.length!==32)throw Error('vault_key');return k;}
+export function marker(id){if(!UUID.test(id))throw Error('id');return 'forma-pilot-'+createHmac('sha256',vaultKey()).update('owner-readonly-v1:'+OWNER+':'+id).digest('hex');}
+export function seal(value){const iv=randomBytes(12),c=createCipheriv('aes-256-gcm',vaultKey(),iv);c.setAAD(Buffer.from('forma-bank-pilot-v1'));const data=Buffer.concat([c.update(JSON.stringify(value),'utf8'),c.final()]);return Buffer.concat([iv,c.getAuthTag(),data]).toString('base64url');}
+export function unseal(blob){if(typeof blob!=='string'||!/^[A-Za-z0-9_-]{32,4096}$/.test(blob))throw Error('vault');const b=Buffer.from(blob,'base64url'),d=createDecipheriv('aes-256-gcm',vaultKey(),b.subarray(0,12));d.setAAD(Buffer.from('forma-bank-pilot-v1'));d.setAuthTag(b.subarray(12,28));return JSON.parse(Buffer.concat([d.update(b.subarray(28)),d.final()]).toString('utf8'));}
+export function connectorAllowed(c,mode){return Boolean(c&&Number.isInteger(c.id)&&c.country==='BR'&&c.type==='PERSONAL_BANK'&&(mode==='sandbox'?c.id===2&&c.isSandbox===true:mode==='live'&&c.isSandbox===false&&c.isOpenFinance===true&&c.oauth===true));}
+export function verifyItem(item,link){if(!item||!UUID.test(item.id||'')||item.clientUserId!==marker(link.id)||!connectorAllowed(item.connector,link.mode))throw Error('ownership');return item;}
+export function readLink(link){const v=unseal(link.vault);if(v.uid!==OWNER||v.link!==link.id||v.mode!==link.mode||!UUID.test(v.item||'')||!Number.isInteger(v.connector))throw Error('ownership');return v;}
+export function safeText(v,max=160){return typeof v==='string'?v.slice(0,max):'';}
+export function transactionRows(data,accountId){if(!Array.isArray(data.results)||data.results.length>500)throw Error('provider_response');const seen=new Set();return data.results.map(t=>{if(!UUID.test(t.id||'')||t.accountId!==accountId||!Number.isFinite(t.amount)||seen.has(t.id))throw Error('provider_response');seen.add(t.id);return{id:t.id,date:safeText(t.date,32),description:safeText(t.description,240),amount:t.amount,currency:safeText(t.currencyCode,3),category:safeText(t.category,80),status:safeText(t.status,32),type:safeText(t.type,20)};});}
+export function cursorToken(next,context){if(next===null||next===undefined)return null;if(typeof next!=='string'||next.length>4096||!next.startsWith('?'))throw Error('cursor');const p=new URLSearchParams(next.slice(1));if(p.get('accountId')!==context.account||!p.get('after'))throw Error('cursor');return seal({...context,after:p.get('after'),exp:Date.now()+15*60*1000});}
