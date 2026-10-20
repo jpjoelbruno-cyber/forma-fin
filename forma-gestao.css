@@ -3468,10 +3468,10 @@ body[data-workspace-view=income] #workspace>.heading, body[data-workspace-view=s
   box-shadow: 0 3px 9px #49257904;
   gap: 10px;
 }
-.crm-lane .crm-person strong {
+.crm-lane .crm-card-name {
   font-size: 15px;
 }
-.crm-lane .crm-person strong small {
+.crm-lane .crm-card-name small {
   font-size: 12px;
   display: block;
   font-weight: 400;
@@ -3483,7 +3483,7 @@ body[data-workspace-view=income] #workspace>.heading, body[data-workspace-view=s
   color: #776486;
   line-height: 1.5;
 }
-.crm-lane .crm-person button {
+.crm-lane .crm-card-actions button {
   font-size: 11px;
   padding: 6px 8px;
   border: 0;
@@ -3492,6 +3492,7 @@ body[data-workspace-view=income] #workspace>.heading, body[data-workspace-view=s
   flex: 1;
   color: #6d2cae;
 }
+.crm-board-tools {display:flex;align-items:center;justify-content:space-between;gap:14px;font-size:12px;color:#70647d}.crm-board-tools p {margin:8px 0}.crm-card-heading {display:flex;align-items:flex-start;gap:8px}.crm-drag-grip {color:#9586a5;cursor:grab;padding-top:6px;font-size:19px}.crm-card-name {border:0;background:transparent;text-align:left;padding:4px 0;color:#30263f;font-weight:700;flex:1;min-width:0}.crm-card-name small {display:block}.crm-card-actions {display:flex;gap:8px;flex-wrap:wrap}.crm-person[draggable=true] {cursor:grab}.crm-card-dragging {opacity:.45}.crm-lane.crm-drop-target {outline:2px dashed #7551b2;outline-offset:3px;background:#ede5fa}.crm-lane[data-stage=conversacion],.crm-lane[data-stage=matriculado] {background:#edf5f0;border-color:#d3e5da}.crm-lane[data-stage=conversacion] h3,.crm-lane[data-stage=matriculado] h3 {color:#285a40}.crm-priority.enrolled {background:#e4f2e9;color:#286242}#crm-move-dialog {width:min(620px,95vw);max-height:90dvh;overflow:auto}#crm-move-person {font-weight:650;color:#554368;overflow-wrap:anywhere}#crm-move-form>label {display:grid;gap:8px;margin:18px 0}#crm-move-form select,#crm-move-form input {width:100%;min-height:44px}#crm-move-form .crm-move-actions {display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}#crm-move-history {border-top:1px solid #e5deed;padding-top:15px;margin-top:20px}#crm-move-history summary {cursor:pointer;color:#62516f}#crm-move-history-list small {display:block;color:#70647d;margin-top:6px}.crm-card-name:focus-visible,.crm-card-actions button:focus-visible {outline:3px solid #8060b0;outline-offset:3px}@media(max-width:650px){.crm-drag-grip {display:none}.crm-card-actions button {min-height:44px}.crm-board-tools {align-items:flex-start;flex-direction:column}}
 .crm-lane-empty {
   font-size: 12px;
   line-height: 1.6;
