@@ -34,6 +34,10 @@
     "api/transcribe.js": {
       "includeFiles": "config.js",
       "maxDuration": 60
+    },
+    "api/pluggy-check.js": {
+      "includeFiles": "config.js",
+      "maxDuration": 60
     }
   }
 }

@@ -1,6 +1,7 @@
 // Administration reports contain adoption flags only, never financial amounts.
 (() => {
   let accessReport=null,accessPending=false;
+  let bankCheckPending=false;
   let admin=false, report=null, phone='', pending=false, generation=0, entryReady=false, entryPending=null, sectionTimer=null;
   const labels={resumo:'Inicio',registrar:'Registrar',historico:'Historial',metas:'Metas',aprender:'Aprender',anual:'Año'};
   const demo=()=>Boolean(window.FORMA_DEMO);
@@ -19,7 +20,7 @@
   let previousPanel='resumo';
   dialog.showModal=()=>{const active=document.querySelector('.panel.active')?.id.replace('p-','');if(active&&active!=='admin')previousPanel=active;goPanel('admin');window.scrollTo({top:0,behavior:'auto'});};
   dialog.close=()=>{if(dialog.classList.contains('active'))goPanel(previousPanel==='admin'?'resumo':previousPanel);};
-  dialog.innerHTML='<div class="admin-heading"><div><span class="eyebrow">FORMÁ EDUCACIONAL</span><h2>Administración</h2></div><button aria-label="Volver a mis finanzas" data-close>Volver a mis finanzas</button></div><div class="admin-tabs"><button data-tab="usage" aria-pressed="true">Uso y evolución</button><button data-tab="access" aria-pressed="false">Accesos</button><button data-tab="support" aria-pressed="false">Ayuda</button><button data-tab="courses" aria-pressed="false">Cursos</button><button data-tab="billing" aria-pressed="false">Cobros · Próximamente</button></div><div id="admin-usage"><div class="admin-controls"><label>Periodo <select id="admin-days"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></label><button id="admin-refresh">Actualizar</button></div><p id="admin-status" role="status"></p><div id="admin-report"></div></div><div id="admin-access" hidden><h3>Acceso de alumnos a FORMÁ</h3><p>Los perfiles sin evidencia quedaron pendientes. Conservamos sus datos; este control solo afecta a FORMÁ. Valida una cuenta únicamente si reconoces al alumno y su referencia.</p><button id="admin-access-refresh">Actualizar accesos</button><p id="admin-access-status" role="status"></p><label>Buscar nombre, correo o referencia<input id="admin-access-search" maxlength="120" placeholder="Correo, nombre o referencia del alumno"></label><div id="admin-access-list"></div></div><div id="admin-support" hidden><h3>WhatsApp de ayuda</h3><p>Los alumnos abren una conversación contigo. No se envían mensajes automáticamente ni se añaden datos financieros.</p><label>Número con código de país<input id="admin-phone" inputmode="tel" maxlength="24" placeholder="Ejemplo: +55 11 99999-9999"></label><button id="admin-save-phone" class="action-main">Guardar número</button><p id="admin-phone-status" role="status"></p></div><div id="admin-billing" hidden><h3>Cobros: siguiente etapa</h3><p>Esta versión no realiza cobros ni solicita tarjetas.</p><p>El próximo módulo podrá reunir planes, becas para alumnos, periodos de prueba, pagos pendientes, comprobantes e historial de suscripción.</p><p>Antes de activarlo definiremos precios, proveedor de pagos y reglas de cancelación.</p></div>';
+  dialog.innerHTML='<div class="admin-heading"><div><span class="eyebrow">FORMÁ EDUCACIONAL</span><h2>Administración</h2></div><button aria-label="Volver a mis finanzas" data-close>Volver a mis finanzas</button></div><div class="admin-tabs"><button data-tab="usage" aria-pressed="true">Uso y evolución</button><button data-tab="access" aria-pressed="false">Accesos</button><button data-tab="support" aria-pressed="false">Ayuda</button><button data-tab="courses" aria-pressed="false">Cursos</button><button data-tab="banks" aria-pressed="false" hidden>Conexión bancaria · Pruebas</button><button data-tab="billing" aria-pressed="false">Cobros · Próximamente</button></div><div id="admin-usage"><div class="admin-controls"><label>Periodo <select id="admin-days"><option value="7">7 días</option><option value="30" selected>30 días</option><option value="90">90 días</option></select></label><button id="admin-refresh">Actualizar</button></div><p id="admin-status" role="status"></p><div id="admin-report"></div></div><div id="admin-access" hidden><h3>Acceso de alumnos a FORMÁ</h3><p>Los perfiles sin evidencia quedaron pendientes. Conservamos sus datos; este control solo afecta a FORMÁ. Valida una cuenta únicamente si reconoces al alumno y su referencia.</p><button id="admin-access-refresh">Actualizar accesos</button><p id="admin-access-status" role="status"></p><label>Buscar nombre, correo o referencia<input id="admin-access-search" maxlength="120" placeholder="Correo, nombre o referencia del alumno"></label><div id="admin-access-list"></div></div><div id="admin-support" hidden><h3>WhatsApp de ayuda</h3><p>Los alumnos abren una conversación contigo. No se envían mensajes automáticamente ni se añaden datos financieros.</p><label>Número con código de país<input id="admin-phone" inputmode="tel" maxlength="24" placeholder="Ejemplo: +55 11 99999-9999"></label><button id="admin-save-phone" class="action-main">Guardar número</button><p id="admin-phone-status" role="status"></p></div><div id="admin-banks" hidden><h3>FORMA Conecta · Prueba privada</h3><p>Comprueba que el servidor acepta las credenciales del proveedor y dispone de conectores ficticios Sandbox. Disponible únicamente para Joel.</p><p>Esta prueba no conecta una cuenta, no consulta saldos y no guarda movimientos. Los bancos reales y las importaciones continúan desactivados.</p><button id="admin-bank-check" class="action-main">Comprobar conexión de prueba</button><p id="admin-bank-status" role="status" aria-live="polite">Pendiente de comprobar en este despliegue.</p></div><div id="admin-billing" hidden><h3>Cobros: siguiente etapa</h3><p>Esta versión no realiza cobros ni solicita tarjetas.</p><p>El próximo módulo podrá reunir planes, becas para alumnos, periodos de prueba, pagos pendientes, comprobantes e historial de suscripción.</p><p>Antes de activarlo definiremos precios, proveedor de pagos y reglas de cancelación.</p></div>';
   document.querySelector('#app-screen').insertBefore(dialog,document.getElementById('bnav'));
   [dialog,help].forEach(el=>{el.querySelector('[data-close]').onclick=()=>el.close();if(el===help)el.addEventListener('click',e=>{if(e.target===el)el.close()});});
   const adminButton=document.getElementById('forma-admin-button');
@@ -44,12 +45,12 @@
     phone=r.data.whatsapp;paintSupport();
   }
   async function init(){
-    const rev=++generation;admin=false;report=null;accessReport=null;entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;phone='';dialog.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';
+    resetBankCheck();const rev=++generation;admin=false;report=null;accessReport=null;entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;phone='';dialog.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';
     if(demo()||!user||!sb)return;
     const id=user.id;
     const r=await sb.from('forma_admin_members').select('user_id').eq('user_id',id).maybeSingle();
     if(rev!==generation||user?.id!==id||demo())return;
-    admin=!r.error&&Boolean(r.data);adminButton.hidden=!admin;paintAdminButton();
+    admin=!r.error&&Boolean(r.data);adminButton.hidden=!admin;dialog.querySelector('[data-tab="banks"]').hidden=!admin||id!=='776893e1-f940-437c-94a7-40a83bccc013';paintAdminButton();
     if(budgetDataReady)await verifyEntry();
   }
   async function verifyEntry(){
@@ -101,8 +102,32 @@
     document.getElementById('admin-roster').innerHTML=rows.map(u=>`<tr><td>${esc(u.name||'Sin nombre')}</td><td>${u.entry_verified?'Sesión autenticada · Servidor':'Datos guardados · Sin prueba de entrada antigua'}</td><td>${date(u.first_entry)}</td><td>${date(u.last_seen)}</td><td>${u.active?'Activo':'Sin actividad medida'}</td>${['budget','movements','goals','learning'].map(k=>`<td>${u[k]?'Sí':'Aún no'}</td>`).join('')}</tr>`).join('');
     document.getElementById('admin-roster-count').textContent=`${rows.length} de ${all.length} cuentas con evidencia en esta búsqueda`;
   }
-  function selectTab(name){dialog.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));['usage','access','support','billing','courses'].forEach(t=>document.getElementById('admin-'+t).hidden=t!==name);}
+  function selectTab(name){dialog.querySelectorAll('[data-tab]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.tab===name)));['usage','access','support','billing','courses','banks'].forEach(t=>document.getElementById('admin-'+t).hidden=t!==name);}
   dialog.querySelectorAll('[data-tab]').forEach(b=>b.onclick=async()=>{selectTab(b.dataset.tab);if(b.dataset.tab==='courses')await window.FormaCourses?.loadAdmin();if(b.dataset.tab==='access')await loadAccessReview();if(b.dataset.tab==='support'){await loadSupport();document.getElementById('admin-phone').value=phone;}});
+  function resetBankCheck(){
+    bankCheckPending=false;
+    document.getElementById('admin-bank-check').disabled=false;
+    document.getElementById('admin-bank-status').textContent='Pendiente de comprobar en este despliegue.';
+  }
+  document.getElementById('admin-bank-check').onclick=async()=>{
+    if(bankCheckPending||!admin||demo()||!user||!sb)return;
+    const rev=generation,uid=user.id,button=document.getElementById('admin-bank-check'),status=document.getElementById('admin-bank-status');
+    bankCheckPending=true;button.disabled=true;status.textContent='Comprobando acceso y proveedor…';
+    const current=()=>rev===generation&&uid===user?.id&&admin&&!demo();
+    try{
+      const session=await sb.auth.getSession();
+      if(!current())return;
+      const token=session.data?.session?.access_token;
+      if(!token||session.error)throw new Error('session');
+      const response=await fetch('/api/pluggy-check',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({action:'check'}),signal:AbortSignal.timeout(50000)});
+      const result=await response.json();
+      if(!current())return;
+      if(!response.ok){status.textContent=result.error||'No pudimos completar la comprobación.';return;}
+      if(result.authenticated!==true||result.realBanksEnabled!==false||result.importsEnabled!==false)throw new Error('response');
+      status.textContent=result.sandboxAvailable===true?'Credenciales aceptadas y Sandbox disponible. Aún no hay una cuenta conectada dentro de FORMA. Próximo paso: probar una conexión ficticia y su importación aislada.':'Credenciales aceptadas, pero no se confirmó disponibilidad de Sandbox. Revisa la habilitación de FORMA Conecta en Pluggy.';
+    }catch{if(current())status.textContent='No pudimos completar la comprobación. Vuelve a entrar o intenta nuevamente.';}
+    finally{if(current()){bankCheckPending=false;button.disabled=false;}}
+  };
   async function loadAccessReview(){
     if(!admin||!user||!sb||demo()||accessPending)return;
     const uid=user.id,rev=generation,status=document.getElementById('admin-access-status');
@@ -159,7 +184,7 @@
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')track(document.querySelector('.panel.active')?.id.replace('p-','')||'resumo');else clearTimeout(sectionTimer);});
   const originalShow=showApp;showApp=function(...args){const result=originalShow(...args);init();return result;};
   const originalPanel=goPanel;goPanel=function(id){const result=originalPanel(id);track(id);return result;};
-  const originalDemo=startDemo;startDemo=function(...args){const result=originalDemo(...args);++generation;admin=false;adminButton.hidden=true;paintAdminButton();return result;};
-  if(sb)sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){++generation;admin=false;report=null;accessReport=null;phone='';entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;dialog.close();help.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';}});
+  const originalDemo=startDemo;startDemo=function(...args){const result=originalDemo(...args);++generation;resetBankCheck();admin=false;adminButton.hidden=true;paintAdminButton();return result;};
+  if(sb)sb.auth.onAuthStateChange(event=>{if(event==='SIGNED_OUT'){++generation;resetBankCheck();admin=false;report=null;accessReport=null;phone='';entryReady=false;clearTimeout(sectionTimer);adminButton.hidden=true;dialog.close();help.close();document.getElementById('admin-report').innerHTML='';document.getElementById('admin-access-list').innerHTML='';}});
   if(user&&!demo())init();
 })();
