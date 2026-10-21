@@ -1316,28 +1316,8 @@ function addToGoalCustom(i){
 // ═══════════════════════════════════════════════════
 // PWA — instalación como app
 // ═══════════════════════════════════════════════════
-let deferredInstall=null;
-window.addEventListener('beforeinstallprompt',e=>{
-  e.preventDefault();
-  deferredInstall=e;
-  const dismissed=localStorage.getItem('forma_install_dismissed');
-  if(!dismissed) document.getElementById('install-banner').classList.add('show');
-});
-window.addEventListener('appinstalled',()=>{
-  document.getElementById('install-banner').classList.remove('show');
-  toast('✅ ¡FORMÁ instalada como app!');
-});
-async function doInstall(){
-  if(!deferredInstall) return;
-  deferredInstall.prompt();
-  const{outcome}=await deferredInstall.userChoice;
-  if(outcome==='accepted'){document.getElementById('install-banner').classList.remove('show');}
-  deferredInstall=null;
-}
-function dismissInstall(){
-  document.getElementById('install-banner').classList.remove('show');
-  localStorage.setItem('forma_install_dismissed','1');
-}
+function doInstall(){window.FormaInstall?.open();}
+function dismissInstall(){window.FormaInstall?.close();}
 
 // Offline financial writes are deliberately not queued.
 
