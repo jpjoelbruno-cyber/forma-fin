@@ -63,3 +63,10 @@ Official sources reviewed 2026-10-20:
 - https://docs.pluggy.ai/en/reference/items/items-delete
 - https://supabase.com/changelog.md
 - https://supabase.com/docs/guides/database/functions
+
+## Follow-up — 2026-10-21
+The owner provided live app screenshots confirming preparation, Sandbox authorization/binding, account preview and transaction preview, then explicitly confirmed that disconnect removed only the fictitious connection. This is owner acceptance evidence for Sandbox, not real-bank production approval. Pluggy dashboard showed expired trial/Development; provider agent confirmation of real Open Finance access/cost is still pending.
+
+The banking screen now checks preparation on opening, folds completed setup, and disables repeating the SQL/key buttons when the server confirms those prerequisites. Refreshing preparation for the same connection and failed account requests preserve the existing preview. Confirmed disconnection still clears it. Dates use Sao Paulo time and readable day/month/year; account types and common transaction statuses use Spanish labels. A stalled SDK load times out and permits retry without creating a provider token. Invalid references from old pending attempts can be cleared without changing server connection records.
+
+This follow-up changes browser presentation/recovery only: no SQL, credentials, environment flags, student data or institutional records were changed. Verified with bank UI regression cases (including fail/retry, setup guards, stale pending reference and SDK timeout), full-demo boot, and the existing 179 unit/security checks.
