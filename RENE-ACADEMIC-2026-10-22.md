@@ -32,3 +32,11 @@ Before inviting a group this week: activate SQL, create/review one actual cohort
 ## Verification
 
 Automated checks cover six-module timetables, repeated instructors, substitution, shared teacher/room conflicts, own-group overlaps, single-reservation group enrollment, capacity, individual pricing, weekly/custom due dates, partial payments, atomic receipt correction and rollback, module income, contract correction, reassignment and old-student access removal. Existing data-preservation, revoked-session, student/staff isolation, financial/refund/closing, frontend recovery and logout cleanup checks are also run. No authenticated live student test or production mutation is claimed before activation.
+
+## Ampliación del catálogo (22 de octubre)
+
+El editor de cursos muestra una fila editable por módulo y un botón «Añadir módulo»; no utiliza una lista fija de dos opciones. Admite hasta 100 módulos por curso, conforme al límite de validación existente en el servidor. El catálogo de cursos queda visible para editarlo sin buscar un panel cerrado.
+
+Al preparar un grupo se puede guardar un módulo nuevo directamente en su curso, sin cerrar el formulario ni perder fechas, alumnos o encuentros existentes. Se utiliza `course_save` con control de versión e identificador de solicitud; si se pierde la respuesta, solo se permite reintentar esa misma operación hasta confirmarla. El módulo queda en el catálogo del curso; el grupo y sus nuevas fechas se guardan aparte con el botón habitual.
+
+Las nuevas especialidades de Servicios se escriben con «Escribir nueva área» y se conservan al guardar la reserva. Curso, módulo y área de un servicio siguen siendo conceptos separados. Esta mejora de interfaz utiliza las funciones ya disponibles y no necesita una migración adicional. No instala ni confirma la actualización académica previamente pendiente.

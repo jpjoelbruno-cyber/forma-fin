@@ -12,3 +12,6 @@
 
 #forma-setup-sql{width:100%;font:12px/1.5 monospace;padding:12px;border:1px solid #d5c7ec;border-radius:10px;resize:vertical}.academic-planner .edu-fields h4{grid-column:1/-1}
 .academic-session-row[hidden],.agenda-type-tabs[hidden]{display:none!important}
+
+/* Editable module catalogue; existing course and group records remain server-owned. */
+.academic-module-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end;margin-bottom:10px}.academic-module-row label,.academic-add-module label{display:grid;gap:6px}.academic-module-row input,.academic-add-module input{width:100%;min-width:0;box-sizing:border-box}.academic-add-module{padding-bottom:18px;border-bottom:1px solid #e7e0f3;margin-bottom:18px;display:flex;flex-wrap:wrap;gap:12px;align-items:end}.academic-add-module label{flex:1 1 240px}.academic-add-module p{flex-basis:100%;margin:0}.academic-planner nav{max-height:440px;overflow:auto}.academic-module-row button{min-width:44px;min-height:44px}
