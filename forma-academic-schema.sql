@@ -7,6 +7,10 @@ create table if not exists forma_private.academic_sessions(id uuid primary key,g
 alter table forma_private.academic_sessions add column if not exists instructor text;
 alter table forma_private.academic_sessions add column if not exists room text;
 alter table forma_private.academic_groups add column if not exists module_plan jsonb not null default '[]';
+-- Stable course definition; dates belong to a group, not to this template.
+alter table forma_private.academic_courses add column if not exists encounter_count integer not null default 0 check(encounter_count between 0 and 104);
+alter table forma_private.academic_courses add column if not exists module_counts jsonb not null default '{}' check(jsonb_typeof(module_counts)='object');
+alter table forma_private.academic_groups add column if not exists planned_count integer not null default 0 check(planned_count between 0 and 104);
 create index if not exists academic_sessions_day on forma_private.academic_sessions(day) where not cancelled;
 create index if not exists academic_sessions_group on forma_private.academic_sessions(group_id);
 create table if not exists forma_private.academic_requests(id uuid primary key,actor uuid not null,action text not null,payload jsonb not null,result jsonb not null,created_at timestamptz not null default now());
