@@ -55,3 +55,13 @@ Letícia's message on 21 October quotes R$2,500/month for 500 connected bank acc
 ## Verification
 
 API tests cover strict origin/owner/session isolation, minimal product scope, secure references, quota checks, preflight without connection creation, paused live access, minimized previews and disconnect retries. UI tests cover setup gating, explicit preflight, no implicit live enablement, protected connection flow, recovery, logout cleanup and no budget writes. Re-run the existing banking database installer checks without touching production data. Real browser/bank OAuth and commercial entitlement remain owner/provider acceptance.
+
+## Read-only insight preview added after owner acceptance began
+
+Owner screenshots confirmed a successful RecargaPay authorization, account preview and movement preview on 22 October. Bank-side reconciliation, logout/re-entry and revocation still require owner acceptance; these screenshots do not certify a general student release.
+
+`bank-insights.js` now presents a responsive category donut, recognized-income/expense/difference cards, a descriptive income/expense meter, coverage indicators and ephemeral category review. All arithmetic uses integer cents, and the review excludes non-BRL, unconfirmed and direction-conflicting records from recognized totals. Ambiguous transfers, loans and refunds require review; own transfers, invoice payments and investment movements are separated with explicit verification copy. These are conservative suggestions, not definitive transaction reconciliation or personalized advice.
+
+The preview combines only account pages manually fetched through the existing owner-only connection. It never automatically fetches more accounts, starts another connection or changes provider quotas. Missing accounts/pages and incomplete month coverage are visible. Bank data and review overrides stay in page memory and clear on account refresh/logout/disconnect. It does not store history, learn persistent rules, import records, calculate full-month growth, expose an instructor/student/manager endpoint or remove the existing single active link limit. Multiple bank links per learner, durable review rules, monthly snapshots and a student-facing route remain subsequent work requiring independent ownership tests and explicit user scope.
+
+Tests include transfer/card-payment exclusion, refunds, foreign currency, ambiguous merchants, per-account deduplication, monthly tranches, cent reconciliation, DOM safety, logout clearing and unchanged private API access. The generated PC/mobile illustration contains fictitious numbers and a proposed student shell, not a screenshot of live personal banking data.
