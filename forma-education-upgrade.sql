@@ -1,4 +1,4 @@
--- FORMA: activar matrículas después de la agenda de servicios.
+-- FORMA: activar cursos, grupos y matrículas después de la agenda de servicios.
 begin;
 -- FORMA independiente · Finanzas v1 · conserva cobros/reservas existentes.
 
@@ -599,6 +599,19 @@ grant execute on function forma_private.statement(jsonb),public.forma_statement(
 notify pgrst,'reload schema';
 
 
+-- FORMA private academic catalogue. Additive: no seeds or data deletion.
+
+do $$begin if position('https://irsuevjqmgpwunvymxbc.supabase.co/auth/v1' in pg_get_functiondef('forma_private.agenda_role()'::regprocedure))=0 then raise exception 'Usar exclusivamente FORMA independiente';end if;end$$;
+create table if not exists forma_private.academic_courses(id uuid primary key,name text not null check(length(trim(name)) between 2 and 120),modules jsonb not null default '[]' check(jsonb_typeof(modules)='array' and jsonb_array_length(modules)<=100),active boolean not null default true,version integer not null default 1,created_by uuid not null references auth.users(id));
+create table if not exists forma_private.academic_groups(id uuid primary key,course_id uuid not null references forma_private.academic_courses(id),name text not null check(length(trim(name)) between 1 and 120),instructor text not null check(length(trim(instructor)) between 1 and 120),room text not null check(length(trim(room)) between 1 and 120),capacity integer not null check(capacity between 1 and 500),fee_cents integer not null check(fee_cents between 0 and 100000000),monthly_cents integer not null check(monthly_cents between 0 and 100000000),installments integer not null check(installments between 0 and 60),active boolean not null default true,version integer not null default 1,created_by uuid not null references auth.users(id),check((installments=0 and monthly_cents=0) or (installments>0 and monthly_cents>0)));
+create table if not exists forma_private.academic_sessions(id uuid primary key,group_id uuid not null references forma_private.academic_groups(id),day date not null check(day between '2020-01-01' and '2045-12-31'),start_min integer not null check(start_min between 0 and 1439),end_min integer not null check(end_min between 1 and 1440),module text not null default '' check(length(module)<=160),cancelled boolean not null default false,check(end_min>start_min));
+create index if not exists academic_sessions_day on forma_private.academic_sessions(day) where not cancelled;
+create index if not exists academic_sessions_group on forma_private.academic_sessions(group_id);
+create table if not exists forma_private.academic_requests(id uuid primary key,actor uuid not null,action text not null,payload jsonb not null,result jsonb not null,created_at timestamptz not null default now());
+create table if not exists forma_private.academic_history(id bigint generated always as identity primary key,actor uuid not null,action text not null,target uuid,snapshot jsonb not null,created_at timestamptz not null default now());
+do $$declare t text;begin foreach t in array array['academic_courses','academic_groups','academic_sessions','academic_requests','academic_history'] loop execute format('alter table forma_private.%I enable row level security',t);execute format('revoke all on forma_private.%I from public,anon,authenticated',t);end loop;end$$;
+alter table forma_private.agenda_bookings add column if not exists room text not null default '';
+
 -- FORMA: alumnos, contratos y recibos. Aditivo; no modifica datos antiguos.
 
 do $$begin
@@ -611,6 +624,9 @@ create table if not exists forma_private.education_enrolments(
  fee_due date not null default ((now() at time zone 'America/Sao_Paulo')::date),fee_cents integer not null check(fee_cents between 0 and 100000000),monthly_cents integer not null check(monthly_cents between 0 and 100000000),installments integer not null check(installments between 0 and 60),first_due date not null,
  total_cents bigint generated always as (fee_cents::bigint+monthly_cents::bigint*installments) stored,version integer not null default 1,created_by uuid not null references auth.users(id),created_at timestamptz not null default now(),
  check(ends_on is null or starts_on is null or ends_on>=starts_on),check((installments=0 and monthly_cents=0) or (installments>0 and monthly_cents>0)),check(first_due between '2020-01-01' and '2045-12-31'));
+alter table forma_private.education_enrolments add column if not exists group_id uuid references forma_private.academic_groups(id);
+create index if not exists education_enrolments_group on forma_private.education_enrolments(group_id);
+create unique index if not exists education_person_group_unique on forma_private.education_enrolments(person_id,group_id) where group_id is not null and state<>'cancelado';
 create index if not exists education_enrolments_person on forma_private.education_enrolments(person_id);
 create table if not exists forma_private.education_receipts(
  id uuid primary key,person_id uuid not null references forma_private.crm_people(id),enrolment_id uuid references forma_private.education_enrolments(id),payer_name text not null,area text not null,activity text not null default 'Curso',group_name text not null default '',
@@ -655,11 +671,14 @@ revoke all on function forma_private.education_student() from public,anon,authen
 create or replace function forma_private.education_detail(pid uuid) returns jsonb language sql set search_path='' as $$
  select jsonb_build_object('version',1,'person',(select jsonb_build_object('id',id,'name',name,'email',email,'phone',phone,'number',number) from forma_private.crm_people where id=pid),
  'payment_notices',coalesce((select jsonb_agg(to_jsonb(n) order by created_at desc) from forma_private.education_payment_notices n where person_id=pid),'[]'::jsonb),
- 'enrolments',coalesce((select jsonb_agg((to_jsonb(e)-'created_by')||jsonb_build_object('paid_cents',coalesce((select sum(r.amount_cents) from forma_private.institution_receipts r where r.enrolment_id=e.id and r.voided_at is null),0)) order by e.created_at desc) from forma_private.education_enrolments e where e.person_id=pid),'[]'::jsonb),
+ 'enrolments',coalesce((select jsonb_agg((to_jsonb(e)-'created_by')||jsonb_build_object('group_name',(select name from forma_private.academic_groups where id=e.group_id),'instructor',(select instructor from forma_private.academic_groups where id=e.group_id),'room',(select room from forma_private.academic_groups where id=e.group_id),'paid_cents',coalesce((select sum(r.amount_cents) from forma_private.institution_receipts r where r.enrolment_id=e.id and r.voided_at is null),0)) order by e.created_at desc) from forma_private.education_enrolments e where e.person_id=pid),'[]'::jsonb),
  'unconfigured',coalesce((select jsonb_agg(jsonb_build_object('id',e.id,'course',e.course,'starts_on',e.starts_on)) from forma_private.crm_enrolments e where e.person_id=pid and e.status='confirmada' and not exists(select 1 from forma_private.education_enrolments x where x.crm_id=e.id)),'[]'::jsonb),
  'receipts',coalesce((select jsonb_agg(to_jsonb(r)-'created_by'-'voided_by' order by paid_on desc,created_at desc,id) from (select r.*,er.balance_after_cents,er.card_type from forma_private.institution_receipts r left join forma_private.education_receipts er on er.id=r.id where r.person_id=pid) r),'[]'::jsonb),
  'debts',coalesce((select jsonb_agg(to_jsonb(d) order by d.due_on,d.id) from forma_private.education_debts(pid) d join forma_private.education_enrolments e on e.id=d.enrolment_id where e.person_id=pid),'[]'::jsonb),
- 'sessions',coalesce((select jsonb_agg(jsonb_build_object('enrolment_id',eb.enrolment_id,'course',e.course,'day',s.day,'hour',b.start_hour,'duration',b.duration,'instructor',b.instructor) order by s.day,b.start_hour) from forma_private.education_bookings eb join forma_private.education_enrolments e on e.id=eb.enrolment_id join forma_private.agenda_bookings b on b.id=eb.booking_id cross join lateral generate_series(b.start_date::timestamp,(b.start_date+(b.sessions-1)*7)::timestamp,interval '7 days') as s(day) where e.person_id=pid and not b.cancelled),'[]'::jsonb),
+ 'sessions',coalesce((select jsonb_agg(x order by x->>'day',x->>'start_min') from (
+ select jsonb_build_object('enrolment_id',e.id,'course',e.course,'group_name',g.name,'day',s.day,'start_min',s.start_min,'end_min',s.end_min,'instructor',g.instructor,'room',g.room,'module',s.module,'active',g.active,'marker',case when s.id=(select id from forma_private.academic_sessions where group_id=g.id and not cancelled order by day,start_min,id limit 1) then 'INICIO' when s.id=(select id from forma_private.academic_sessions where group_id=g.id and not cancelled order by day desc,start_min desc,id desc limit 1) then 'FINALIZA' else 'ENCUENTRO' end) x from forma_private.education_enrolments e join forma_private.academic_groups g on g.id=e.group_id join forma_private.academic_sessions s on s.group_id=g.id where e.person_id=pid and not s.cancelled and e.state<>'cancelado'
+ union all select jsonb_build_object('enrolment_id',eb.enrolment_id,'course',e.course,'day',s.day,'start_min',b.start_hour*60,'end_min',(b.start_hour+b.duration)*60,'instructor',b.instructor,'room',b.room) from forma_private.education_bookings eb join forma_private.education_enrolments e on e.id=eb.enrolment_id join forma_private.agenda_bookings b on b.id=eb.booking_id cross join lateral generate_series(b.start_date::timestamp,(b.start_date+(b.sessions-1)*7)::timestamp,interval '7 days') s(day) where e.person_id=pid and e.group_id is null and not b.cancelled
+ )a),'[]'::jsonb),
  'notices',coalesce((select jsonb_agg(jsonb_build_object('id',x.id,'message',x.message,'created_at',x.created_at,'receipt_id',x.receipt_id) order by created_at desc) from(select * from forma_private.education_events where person_id=pid order by created_at desc limit 50)x),'[]'::jsonb))
 $$;
 revoke all on function forma_private.education_detail(uuid) from public,anon,authenticated;
@@ -719,7 +738,7 @@ declare uid uuid:=auth.uid();role_value text;pid uuid;eid uuid;rid uuid;payment_
    select coalesce(sum(amount_cents),0) into paid from forma_private.institution_receipts where enrolment_id=eid and voided_at is null;
    if paid+amount>enrol.total_cents then raise exception 'El pago supera el saldo pendiente; revisa el contrato' using errcode='22023';end if;
   end if;
-  insert into forma_private.education_receipts(id,person_id,enrolment_id,payer_name,area,balance_after_cents,amount_cents,paid_on,method,card_type,note,created_by) values(rid,pid,eid,person.name,coalesce(enrol.course,nullif(trim(p_data->>'category'),''),'Ingreso por conciliar'),case when eid is not null then enrol.total_cents-paid-amount end,amount,day_value,p_data->>'method',coalesce(p_data->>'card_type',''),trim(coalesce(p_data->>'note','Pago recibido')),uid);
+  insert into forma_private.education_receipts(id,person_id,enrolment_id,payer_name,area,group_name,balance_after_cents,amount_cents,paid_on,method,card_type,note,created_by) values(rid,pid,eid,person.name,coalesce(enrol.course,nullif(trim(p_data->>'category'),''),'Ingreso por conciliar'),coalesce((select name from forma_private.academic_groups where id=enrol.group_id),''),case when eid is not null then enrol.total_cents-paid-amount end,amount,day_value,p_data->>'method',coalesce(p_data->>'card_type',''),trim(coalesce(p_data->>'note','Pago recibido')),uid);
   if nullif(p_data->>'notice_id','') is not null then
    update forma_private.education_payment_notices set state='confirmado',receipt_id=rid where id=(p_data->>'notice_id')::uuid and person_id=pid and enrolment_id=eid and amount_cents=amount and method=p_data->>'method' and state='reportado';
    if not found then raise exception 'Aviso ya confirmado o con datos diferentes' using errcode='40001';end if;
@@ -734,7 +753,8 @@ declare uid uuid:=auth.uid();role_value text;pid uuid;eid uuid;rid uuid;payment_
   if exists(select 1 from forma_private.education_portal where person_id=pid and email<>email_value) then raise exception 'El correo del portal cambió; dirección debe revisar el vínculo antes de reasignarlo' using errcode='22023';end if;
   insert into forma_private.education_portal(person_id,email,actor) values(pid,email_value,uid) on conflict(person_id) do update set active=true;
  elsif p_action='update' then
-  update forma_private.education_enrolments set starts_on=nullif(p_data->>'starts_on','')::date,ends_on=nullif(p_data->>'ends_on','')::date,state=p_data->>'state',version=version+1 where id=(p_data->>'enrolment_id')::uuid and person_id=pid and version=(p_data->>'expected')::integer returning * into enrol;
+  if p_data->>'state'<>'cancelado' and exists(select 1 from forma_private.education_enrolments e join forma_private.academic_groups g on g.id=e.group_id where e.id=(p_data->>'enrolment_id')::uuid and e.person_id=pid and e.state='cancelado' and (select count(*) from forma_private.education_enrolments x where x.group_id=g.id and x.state<>'cancelado')>=g.capacity) then raise exception 'No hay cupo para reactivar esta matrícula' using errcode='22023';end if;
+  update forma_private.education_enrolments set starts_on=case when group_id is null then nullif(p_data->>'starts_on','')::date else starts_on end,ends_on=case when group_id is null then nullif(p_data->>'ends_on','')::date else ends_on end,state=p_data->>'state',version=version+1 where id=(p_data->>'enrolment_id')::uuid and person_id=pid and version=(p_data->>'expected')::integer returning * into enrol;
   if not found then raise exception 'La matrícula cambió; actualiza antes de editar' using errcode='40001';end if;
  elsif p_action='link_payments' then
   eid:=(p_data->>'enrolment_id')::uuid;bid:=(p_data->>'booking_id')::uuid;
@@ -770,7 +790,7 @@ create or replace function forma_private.finance_period_data(d date,e date,bucke
  select jsonb_build_object('version',1,'finance_version',1,'report_version',1,'period_from',d,'period_to',e,'as_of',now(),
  'received_cents',coalesce((select sum(amount_cents) from payments),0),'payment_count',(select count(*) from payments),
  'outflow_cents',coalesce((select sum(amount_cents) from outs),0),'expense_cents',coalesce((select sum(amount_cents) from outs where kind='gasto'),0),'refund_cents',coalesce((select sum(amount_cents) from outs where kind='reembolso'),0),
- 'by_activity',coalesce((select data from breakdown where k='by_activity'),'[]'::jsonb),'by_area',coalesce((select data from breakdown where k='by_area'),'[]'::jsonb),'by_group',coalesce((select data from breakdown where k='by_group'),'[]'::jsonb),'by_method',coalesce((select data from breakdown where k='by_method'),'[]'::jsonb),
+ 'by_stream',coalesce((select jsonb_agg(x order by cents desc) from (select case when p.enrolment_id is not null or p.activity in ('Clase grupal','Clase individual','Curso') then 'Cursos / matrículas' when p.booking_id is not null then 'Servicios / agendamientos' else 'Ingresos por conciliar' end label,sum(p.amount_cents) cents from payments p group by 1)x),'[]'::jsonb),'by_activity',coalesce((select data from breakdown where k='by_activity'),'[]'::jsonb),'by_area',coalesce((select data from breakdown where k='by_area'),'[]'::jsonb),'by_group',coalesce((select data from breakdown where k='by_group'),'[]'::jsonb),'by_method',coalesce((select data from breakdown where k='by_method'),'[]'::jsonb),
  'by_outflow_category',coalesce((select jsonb_agg(x order by cents desc) from(select category label,sum(amount_cents) cents from outs group by category)x),'[]'::jsonb),
  'by_outflow_method',coalesce((select jsonb_agg(x order by cents desc) from(select method label,sum(amount_cents) cents from outs group by method)x),'[]'::jsonb),
  'entries',coalesce((select jsonb_agg(x order by paid_on desc,created_at desc,id) from(select id,booking_id,client,amount_cents,paid_on,method,activity,area,group_name,note,created_at,enrolment_id,person_id from payments order by paid_on desc,created_at desc,id limit 200)x),'[]'::jsonb),'entries_limited',(select count(*)>200 from payments),
@@ -1001,7 +1021,135 @@ revoke all on function public.forma_monthly_summary(jsonb) from public,anon;gran
 notify pgrst,'reload schema';
 
 
+-- Transactional academic groups, meetings and enrollment, in independent FORMA.
+
+create or replace function forma_private.academic_conflict(p_day date,p_start integer,p_end integer,p_instructor text,p_room text,p_group uuid default null) returns boolean language sql set search_path='' as $$
+ select exists(select 1 from forma_private.academic_sessions s join forma_private.academic_groups g on g.id=s.group_id where not s.cancelled and g.active and (p_group is null or g.id<>p_group) and s.day=p_day and s.start_min<p_end and p_start<s.end_min and (lower(g.instructor)=lower(p_instructor) or lower(g.room)=lower(p_room)))
+ or exists(select 1 from forma_private.agenda_bookings b where not b.cancelled and p_day>=b.start_date and (p_day-b.start_date)%7=0 and (p_day-b.start_date)/7<b.sessions and b.start_hour*60<p_end and p_start<(b.start_hour+b.duration)*60 and (p_instructor=any(b.instructors) or 'Sin asignar'=any(b.instructors) or (b.room<>'' and lower(b.room)=lower(p_room))))
+$$;
+revoke all on function forma_private.academic_conflict(date,integer,integer,text,text,uuid) from public,anon,authenticated;
+create or replace function forma_private.academic_booking_guard() returns trigger language plpgsql security definer set search_path='' as $$begin
+ perform pg_advisory_xact_lock(7860152026::bigint);
+ if length(new.room)>120 then raise exception 'Revisa el nombre de la sala' using errcode='22023';end if;
+ if not new.cancelled and new.room<>'' and exists(select 1 from forma_private.agenda_bookings b cross join lateral generate_series(new.start_date::timestamp,(new.start_date+(new.sessions-1)*7)::timestamp,interval '7 days') q(day) where b.id<>new.id and not b.cancelled and lower(b.room)=lower(new.room) and q.day::date>=b.start_date and (q.day::date-b.start_date)%7=0 and (q.day::date-b.start_date)/7<b.sessions and b.start_hour<new.start_hour+new.duration and new.start_hour<b.start_hour+b.duration) then raise exception 'La sala ya está ocupada por otro servicio' using errcode='23P01';end if;
+ if not new.cancelled and exists(select 1 from forma_private.academic_sessions s join forma_private.academic_groups g on g.id=s.group_id where not s.cancelled and g.active and s.day>=new.start_date and (s.day-new.start_date)%7=0 and (s.day-new.start_date)/7<new.sessions and s.start_min<(new.start_hour+new.duration)*60 and new.start_hour*60<s.end_min and (g.instructor=any(new.instructors) or 'Sin asignar'=any(new.instructors) or (new.room<>'' and lower(new.room)=lower(g.room)))) then raise exception 'Ocupado por un curso: revisa instructor, sala y horario.' using errcode='23P01';end if;return new;end$$;
+revoke all on function forma_private.academic_booking_guard() from public,anon,authenticated;
+drop trigger if exists academic_booking_guard on forma_private.agenda_bookings;
+create trigger academic_booking_guard before insert or update on forma_private.agenda_bookings for each row execute function forma_private.academic_booking_guard();
+create or replace function forma_private.academic(p_action text,p_data jsonb) returns jsonb language plpgsql security definer set search_path='' as $$
+#variable_conflict use_column
+declare who text:=forma_private.agenda_role();uid uuid:=auth.uid();rid uuid;old forma_private.academic_requests;result jsonb;gid uuid;cid uuid;pid uuid;eid uuid;g forma_private.academic_groups;c forma_private.academic_courses;previous_enrol forma_private.education_enrolments;booking forma_private.agenda_bookings;j jsonb;d date;sm integer;em integer;enr jsonb;pay jsonb;paid integer;first_day date;last_day date;student_count integer;matches integer;crm_candidate uuid;begin
+ if who is null or who not in ('owner','manager','instructor') then raise exception 'Acceso exclusivo de FORMA' using errcode='42501';end if;
+ if p_data is null or jsonb_typeof(p_data)<>'object' then raise exception 'Datos inválidos' using errcode='22023';end if;
+ if p_action='calendar' then
+  if p_data->>'from' is null or p_data->>'to' is null or (p_data->>'to')::date-(p_data->>'from')::date not between 0 and 370 then raise exception 'Rango inválido' using errcode='22023';end if;
+  return jsonb_build_object('version',1,'sessions',coalesce((select jsonb_agg(jsonb_build_object('id',s.id,'group_id',g.id,'group_name',g.name,'course',c.name,'day',s.day,'start_min',s.start_min,'end_min',s.end_min,'module',s.module,'instructor',g.instructor,'room',g.room) order by s.day,s.start_min) from forma_private.academic_sessions s join forma_private.academic_groups g on g.id=s.group_id join forma_private.academic_courses c on c.id=g.course_id where not s.cancelled and g.active and s.day between (p_data->>'from')::date and (p_data->>'to')::date and (who in ('owner','manager') or g.instructor=(select instructor from forma_private.agenda_staff where user_id=uid))),'[]'::jsonb));
+ end if;
+ if who not in ('owner','manager') then raise exception 'Solo administración de FORMA' using errcode='42501';end if;
+ if p_action='catalog' then return jsonb_build_object('version',1,'academic',true,'courses',coalesce((select jsonb_agg(to_jsonb(c)-'created_by' order by c.name) from forma_private.academic_courses c),'[]'::jsonb),'groups',coalesce((select jsonb_agg((to_jsonb(g)-'created_by')||jsonb_build_object('course',c.name,'students',(select count(*) from forma_private.education_enrolments e where e.group_id=g.id and e.state<>'cancelado'),'sessions',coalesce((select jsonb_agg(to_jsonb(s) order by day,start_min,id) from forma_private.academic_sessions s where s.group_id=g.id and not s.cancelled),'[]'::jsonb)) order by c.name,g.name) from forma_private.academic_groups g join forma_private.academic_courses c on c.id=g.course_id),'[]'::jsonb));end if;
+ rid:=(p_data->>'request_id')::uuid;if rid is null then raise exception 'Identificador requerido' using errcode='22023';end if;
+ perform pg_advisory_xact_lock(7860152026::bigint);
+ select * into old from forma_private.academic_requests where id=rid;
+ if found then if old.actor<>uid or old.action<>p_action or old.payload<>p_data then raise exception 'Operación usada con otros datos' using errcode='22023';end if;return old.result;end if;
+ if p_action='service_person' then
+  select * into booking from forma_private.agenda_bookings where id=(p_data->>'booking_id')::uuid;if not found then raise exception 'Reserva no encontrada' using errcode='22023';end if;
+  select person_id into pid from forma_private.crm_booking_people where booking_id=booking.id;
+  if pid is null and length(regexp_replace(booking.phone,'[^0-9]','','g'))>=8 then
+   select count(*),min(p.id::text)::uuid into matches,pid from forma_private.crm_people p where regexp_replace(p.phone,'[^0-9]','','g')=regexp_replace(booking.phone,'[^0-9]','','g');
+   if matches>1 or (matches=1 and not exists(select 1 from forma_private.crm_people p where p.id=pid and forma_private.crm_normalize(p.name)=forma_private.crm_normalize(booking.client))) then raise exception 'Hay otra ficha con ese teléfono. Busca y revisa la persona antes de vincular.' using errcode='22023';end if;
+  end if;
+  if pid is null then enr:=forma_private.education('person',jsonb_build_object('request_id',rid,'name',booking.client,'phone',booking.phone,'email','','language','es','booking_id',booking.id));pid:=(enr->>'person_id')::uuid;end if;
+  perform forma_private.crm('link',jsonb_build_object('request_id',gen_random_uuid(),'person_id',pid,'booking_id',booking.id));
+ elsif p_action='course_save' then
+  cid:=coalesce(nullif(p_data->>'id','')::uuid,rid);select * into c from forma_private.academic_courses where id=cid for update;if found and c.version is distinct from (p_data->>'expected')::integer then raise exception 'El curso cambió; actualiza antes de editar' using errcode='40001';end if;
+  if jsonb_typeof(p_data->'modules') is distinct from 'array' or jsonb_array_length(p_data->'modules')>100 or exists(select 1 from jsonb_array_elements(p_data->'modules') x where jsonb_typeof(x)<>'string' or length(trim(x#>>'{}')) not between 1 and 160) then raise exception 'Revisa los módulos' using errcode='22023';end if;
+  insert into forma_private.academic_courses(id,name,modules,active,created_by) values(cid,trim(p_data->>'name'),p_data->'modules',coalesce((p_data->>'active')::boolean,true),uid) on conflict(id) do update set name=excluded.name,modules=excluded.modules,active=excluded.active,version=academic_courses.version+1;
+ elsif p_action='group_save' then
+  gid:=coalesce(nullif(p_data->>'id','')::uuid,rid);select * into g from forma_private.academic_groups where id=gid for update;if found and g.version is distinct from (p_data->>'expected')::integer then raise exception 'El grupo cambió; actualiza antes de editar' using errcode='40001';end if;
+  cid:=(p_data->>'course_id')::uuid;select * into c from forma_private.academic_courses where id=cid;if not found or not c.active or (g.id is not null and g.course_id<>cid) then raise exception 'Selecciona un curso activo; conserva el curso de un grupo existente' using errcode='22023';end if;
+  select count(*) into student_count from forma_private.education_enrolments where group_id=gid and state<>'cancelado';if student_count>coalesce((p_data->>'capacity')::integer,0) then raise exception 'No puedes reducir los cupos por debajo de los alumnos matriculados' using errcode='22023';end if;
+  if not (p_data->>'instructor'=any(array['Joel','René','Luis','Emerson','Miguel'])) and not exists(select 1 from forma_private.agenda_staff where active and instructor=p_data->>'instructor') then raise exception 'Selecciona un instructor registrado' using errcode='22023';end if;
+  if jsonb_typeof(p_data->'sessions') is distinct from 'array' or jsonb_array_length(p_data->'sessions') not between 1 and 104 then raise exception 'Prepara entre 1 y 104 encuentros' using errcode='22023';end if;
+  for j in select value from jsonb_array_elements(p_data->'sessions') loop
+   d:=(j->>'day')::date;sm:=(j->>'start_min')::integer;em:=(j->>'end_min')::integer;
+   if d is null or sm is null or em is null or d not between '2020-01-01' and '2045-12-31' or sm<0 or sm>=em or em>1440 then raise exception 'Revisa fechas y horas de cada encuentro' using errcode='22023';end if;
+   if coalesce((p_data->>'active')::boolean,true) and forma_private.academic_conflict(d,sm,em,p_data->>'instructor',p_data->>'room',gid) then raise exception 'Ocupado: el instructor o la sala ya tiene una actividad' using errcode='23P01';end if;
+  end loop;
+  if exists(select 1 from jsonb_array_elements(p_data->'sessions') with ordinality a(x,n) cross join jsonb_array_elements(p_data->'sessions') with ordinality b(y,m) where n<m and x->>'day'=y->>'day' and (x->>'start_min')::integer<(y->>'end_min')::integer and (y->>'start_min')::integer<(x->>'end_min')::integer) then raise exception 'Dos encuentros del grupo se superponen' using errcode='23P01';end if;
+  insert into forma_private.academic_groups(id,course_id,name,instructor,room,capacity,fee_cents,monthly_cents,installments,active,created_by) values(gid,cid,trim(p_data->>'name'),trim(p_data->>'instructor'),trim(p_data->>'room'),(p_data->>'capacity')::integer,(p_data->>'fee_cents')::integer,(p_data->>'monthly_cents')::integer,(p_data->>'installments')::integer,coalesce((p_data->>'active')::boolean,true),uid) on conflict(id) do update set name=excluded.name,instructor=excluded.instructor,room=excluded.room,capacity=excluded.capacity,fee_cents=excluded.fee_cents,monthly_cents=excluded.monthly_cents,installments=excluded.installments,active=excluded.active,version=academic_groups.version+1;
+  update forma_private.academic_sessions set cancelled=true where group_id=gid;
+  for j in select value from jsonb_array_elements(p_data->'sessions') loop insert into forma_private.academic_sessions(id,group_id,day,start_min,end_min,module) values(gen_random_uuid(),gid,(j->>'day')::date,(j->>'start_min')::integer,(j->>'end_min')::integer,coalesce(j->>'module',''));end loop;
+  select min(day),max(day) into first_day,last_day from forma_private.academic_sessions where group_id=gid and not cancelled;
+  update forma_private.education_enrolments set starts_on=first_day,ends_on=last_day,version=version+1 where group_id=gid;
+  insert into forma_private.education_events(person_id,actor,kind,message) select person_id,uid,'schedule',case when p.language='pt' then 'Os encontros do seu curso foram atualizados. Consulte seus horários.' else 'Los encuentros de tu curso fueron actualizados. Revisa tus horarios.' end from forma_private.education_enrolments e join forma_private.crm_people p on p.id=e.person_id where e.group_id=gid;
+ elsif p_action='enrol_group' then
+  gid:=(p_data->>'group_id')::uuid;pid:=(p_data->>'person_id')::uuid;select * into g from forma_private.academic_groups where id=gid and active for update;if not found or g.version is distinct from (p_data->>'expected')::integer then raise exception 'El grupo cambió o está cerrado; actualiza antes de matricular' using errcode='40001';end if;
+  select * into c from forma_private.academic_courses where id=g.course_id and active;if not found then raise exception 'Curso cerrado' using errcode='22023';end if;
+  if exists(select 1 from forma_private.education_enrolments where person_id=pid and group_id=gid and state<>'cancelado') then raise exception 'La persona ya está matriculada en este grupo' using errcode='23505';end if;
+  select count(*) into student_count from forma_private.education_enrolments where group_id=gid and state<>'cancelado';if student_count>=g.capacity then raise exception 'Grupo completo: no hay vacantes' using errcode='22023';end if;
+  select min(day),max(day) into first_day,last_day from forma_private.academic_sessions where group_id=gid and not cancelled;if first_day is null then raise exception 'Grupo sin encuentros' using errcode='22023';end if;
+  paid:=coalesce((p_data->>'advance_cents')::integer,0);if paid<0 then raise exception 'Adelanto inválido' using errcode='22023';end if;
+  eid:=nullif(p_data->>'existing_enrolment_id','')::uuid;
+  if eid is not null then
+   select * into previous_enrol from forma_private.education_enrolments e where e.id=eid and e.person_id=pid and e.group_id is null and e.state<>'cancelado' and forma_private.crm_normalize(e.course)=forma_private.crm_normalize(c.name) for update;if not found then raise exception 'Revisa la matrícula existente y el curso' using errcode='22023';end if;
+   update forma_private.education_enrolments set group_id=gid,starts_on=first_day,ends_on=last_day,version=version+1 where id=eid;
+  else
+   if exists(select 1 from forma_private.education_enrolments e where e.person_id=pid and e.group_id is null and e.state<>'cancelado' and forma_private.crm_normalize(e.course)=forma_private.crm_normalize(c.name)) then raise exception 'Ya hay una matrícula de este curso. Selecciona Vincular matrícula existente para conservar sus pagos.' using errcode='22023';end if;
+   select count(*),min(x.id::text)::uuid into matches,crm_candidate from forma_private.crm_enrolments x where x.person_id=pid and x.status='confirmada' and x.course=c.name and not exists(select 1 from forma_private.education_enrolments e where e.crm_id=x.id);if matches<>1 then crm_candidate:=null;end if;
+   enr:=forma_private.education('enrol',jsonb_build_object('request_id',rid,'person_id',pid,'crm_id',crm_candidate,'course',c.name,'starts_on',first_day,'ends_on',last_day,'fee_cents',g.fee_cents,'monthly_cents',g.monthly_cents,'installments',g.installments,'first_due',p_data->>'first_due','fee_due',p_data->>'fee_due'));eid:=(enr->>'enrolment_id')::uuid;update forma_private.education_enrolments set group_id=gid where id=eid;
+  end if;
+  if paid>0 then pay:=forma_private.education('payment',jsonb_build_object('request_id',gen_random_uuid(),'person_id',pid,'enrolment_id',eid,'amount_cents',paid,'paid_on',p_data->>'paid_on','method',p_data->>'method','card_type',coalesce(p_data->>'card_type',''),'confirmed',coalesce((p_data->>'confirmed')::boolean,false),'note','Adelanto de matrícula · '||g.name));end if;
+  if coalesce((p_data->>'portal')::boolean,false) then perform forma_private.education('portal',jsonb_build_object('request_id',gen_random_uuid(),'person_id',pid));end if;
+ else raise exception 'Acción inválida' using errcode='22023';end if;
+ result:=jsonb_build_object('version',1,'saved',true,'person_id',pid,'enrolment_id',eid,'receipt_id',pay->>'receipt_id','course_id',cid,'group_id',gid);
+ insert into forma_private.academic_requests values(rid,uid,p_action,p_data,result,now());insert into forma_private.academic_history(actor,action,target,snapshot) values(uid,p_action,coalesce(gid,cid),p_data);return result;
+end$$;
+create or replace function public.forma_academic(p_action text,p_data jsonb default '{}'::jsonb) returns jsonb language sql security invoker set search_path='' as $$select forma_private.academic(p_action,p_data)$$;
+revoke all on function forma_private.academic(text,jsonb),public.forma_academic(text,jsonb) from public,anon,authenticated;
+grant execute on function forma_private.academic(text,jsonb),public.forma_academic(text,jsonb) to authenticated;
+notify pgrst,'reload schema';
+
+-- BEGIN GENERATED AGENDA SAVE
+create or replace function forma_private.agenda_save(p_id uuid,p_expected integer,p_data jsonb,p_reason text) returns jsonb language plpgsql security definer set search_path='' as $$
+declare r text:=forma_private.agenda_role();old forma_private.agenda_bookings; saved forma_private.agenda_bookings;d date;h int;dur int;n int;i int;j int;k uuid;v_teachers text[];v_primary text;v_state text;v_student text;v_force boolean;v_override text;begin
+ if r not in ('owner','manager') then raise exception 'Solo consulta' using errcode='42501';end if;
+ if p_data is null or jsonb_typeof(p_data)<>'object' or length(trim(coalesce(p_data->>'client','')))=0 or length(p_data->>'client')>160 or length(coalesce(p_data->>'phone',''))>40 or length(coalesce(p_data->>'profession',''))>240 or length(coalesce(p_data->>'group_name',''))>120 or length(coalesce(p_reason,''))>1000 then raise exception 'Revisa los datos' using errcode='22023';end if;
+ if (p_data->>'activity') is null or p_data->>'activity' not in ('Mentoría particular','Asesoría','Agendamiento','Clase grupal','Clase individual','Inmersión','Invitación para podcast','Orientación','Otra actividad','Consulta','Asesoría / agendamiento') or length(trim(coalesce(p_data->>'area','')))=0 or length(p_data->>'area')>120 or (p_data->>'instructor') is null or p_data->>'instructor' not in ('Sin asignar','Joel','René','Luis','Emerson','Miguel') then raise exception 'Selecciona actividad, área e instructor válidos' using errcode='22023';end if;
+
+ if p_data ? 'instructors' then
+  if jsonb_typeof(p_data->'instructors')<>'array' then raise exception 'Selecciona instructores válidos' using errcode='22023';end if;
+  select array_agg(distinct t order by t) into v_teachers from jsonb_array_elements_text(p_data->'instructors') t;
+ else v_teachers:=array[p_data->>'instructor'];end if;
+ if coalesce(cardinality(v_teachers),0)=0 or cardinality(v_teachers)>5 or not (v_teachers <@ array['Sin asignar','Joel','René','Luis','Emerson','Miguel']::text[]) or array_position(v_teachers,null) is not null or ('Sin asignar'=any(v_teachers) and cardinality(v_teachers)>1) then raise exception 'Selecciona instructores válidos' using errcode='22023';end if;
+ v_primary:=case when p_data->>'instructor'=any(v_teachers) then p_data->>'instructor' else v_teachers[1] end;
+ v_state:=coalesce(p_data->>'booking_state','por_confirmar');v_student:=trim(coalesce(p_data->>'student_reference',''));
+ if v_state not in ('reservado','por_confirmar') or length(v_student)>80 then raise exception 'Estado o referencia inválida' using errcode='22023';end if;
+ v_force:=coalesce((p_data->>'override_conflict')::boolean,false);v_override:=trim(coalesce(p_data->>'override_reason',''));
+ if v_force and r<>'owner' then raise exception 'Solo el propietario puede autorizar una excepción' using errcode='42501';end if;
+ if v_force and (length(v_override)=0 or length(v_override)>1000) then raise exception 'Indica el motivo de la excepción' using errcode='22023';end if;
+ d:=(p_data->>'start_date')::date;h:=(p_data->>'start_hour')::int;dur:=(p_data->>'duration')::int;n:=(p_data->>'sessions')::int;
+ if d is null or h is null or dur is null or n is null or extract(isodow from d)>6 or h<13 or h>17 or dur<1 or dur>5 or h+dur>18 or n<1 or n>52 then raise exception 'Horario válido: lunes a sábado, 13:00 a 18:00; 1 a 52 sesiones' using errcode='22023';end if;
+ perform pg_advisory_xact_lock(7860152026::bigint);
+ if p_id is not null then
+ select * into old from forma_private.agenda_bookings where id=p_id for update;
+ if not found or old.cancelled or p_expected is distinct from old.version then raise exception 'La reserva cambió. Actualiza la agenda antes de editar' using errcode='40001';end if;
+
+ end if;
+ if not v_force and exists(select 1 from forma_private.agenda_slots s where (p_id is null or s.booking_id<>p_id) and s.day>=d and s.day<=d+7*(n-1) and (s.day-d)%7=0 and s.hour>=h and s.hour<h+dur and (s.instructor=any(v_teachers) or s.instructor='Sin asignar' or 'Sin asignar'=any(v_teachers))) then raise exception 'Hay un horario ocupado en esta serie. No se guardó ningún cambio' using errcode='23P01';end if;
+ if p_id is null then
+ insert into forma_private.agenda_bookings(client,phone,activity,area,profession,instructor,start_date,start_hour,duration,sessions,created_by,instructors,booking_state,student_reference,override_conflict,override_reason,group_name,room) values(trim(p_data->>'client'),coalesce(p_data->>'phone',''),p_data->>'activity',p_data->>'area',coalesce(p_data->>'profession',''),v_primary,d,h,dur,n,auth.uid(),v_teachers,v_state,v_student,v_force,case when v_force then v_override else '' end,trim(coalesce(p_data->>'group_name','')),trim(coalesce(p_data->>'room',''))) returning * into saved;
+ else
+ update forma_private.agenda_bookings set room=case when p_data ? 'room' then trim(coalesce(p_data->>'room','')) else old.room end,group_name=case when p_data ? 'group_name' then trim(coalesce(p_data->>'group_name','')) else old.group_name end,client=trim(p_data->>'client'),phone=coalesce(p_data->>'phone',''),activity=p_data->>'activity',area=p_data->>'area',profession=coalesce(p_data->>'profession',''),instructor=v_primary,instructors=v_teachers,booking_state=v_state,student_reference=v_student,override_conflict=v_force,override_reason=case when v_force then v_override else '' end,start_date=d,start_hour=h,duration=dur,sessions=n,version=version+1,updated_at=now() where id=p_id returning * into saved;
+ delete from forma_private.agenda_slots where booking_id=p_id;
+ end if;
+ for i in 0..n-1 loop for j in h..h+dur-1 loop insert into forma_private.agenda_slots(day,hour,booking_id,instructor,override_conflict) select d+7*i,j,saved.id,t,v_force from unnest(v_teachers) t;end loop;end loop;
+ insert into forma_private.agenda_history(booking_id,actor,action,reason,snapshot) values(saved.id,auth.uid(),case when p_id is null then 'created' else 'updated' end,coalesce(p_reason,'')||case when v_force then ' · Excepción del propietario: '||v_override else '' end,jsonb_build_object('before',to_jsonb(old),'after',to_jsonb(saved)));
+ return jsonb_build_object('id',saved.id,'version',saved.version,'saved',true);
+end$$;
+
+
+
 
 
 commit;
-select true as matriculas_activadas;
+select true as matriculas_activadas, to_regprocedure('public.forma_academic(text,jsonb)') is not null as cursos_grupos_activados;

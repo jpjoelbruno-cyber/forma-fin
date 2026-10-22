@@ -23,3 +23,5 @@ The personal Administration banking tab now also has a separate read-only pilot:
 ### Install FORMA (2026-10-21)
 
 Open https://forma-fin.vercel.app/ in a normal browser and use Instalar; iPhone/iPad instructions are included. The same PWA retains current FORMÁ accounts and permissions, with a Gestão shortcut. Internet is required for financial data; no offline writes or authenticated-page caching are introduced. See [INSTALLATION-2026-10-21.md](INSTALLATION-2026-10-21.md) for device acceptance tests and delivery limits.
+
+Academic groups and service separation: see [ACADEMIC-2026-10-22.md](ACADEMIC-2026-10-22.md).
