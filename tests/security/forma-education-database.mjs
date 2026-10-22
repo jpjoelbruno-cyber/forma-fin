@@ -87,5 +87,16 @@ try{await db.exec(`create role anon;create role authenticated;create schema auth
  await setUser(S);const mine=await edu('mine');assert.equal(mine.enrolments.some(x=>x.id===me.id),false);assert.equal(mine.receipts.some(x=>x.id===replaced.receipt_id),false);await assert.rejects(edu('contract',contractFix),e=>e.code==='42501');await assert.rejects(ac('group_detail',{group_id:methodGroup.group_id}),e=>e.code==='42501');n++;
  await setUser(R);const nameBefore=moved.person;await edu('person_edit',{request_id:uuid(),person_id:recipient.person_id,expected:nameBefore.version,name:'Nombre corregido',email:nameBefore.email,phone:nameBefore.phone,language:'pt'});assert.equal((await edu('detail',{person_id:recipient.person_id})).person.name,'Nombre corregido');assert.equal((await edu('detail',{person_id:recipient.person_id})).receipts.find(r=>r.id===replaced.receipt_id).payer_name,md.person.name);n++;
  }
+ { // Julio: agreed price remains 2,000 while independently receipted advances reduce the balance.
+ await setUser(R);const julio=await edu('person',{request_id:uuid(),name:'Julio Prueba',phone:'5511999000123',email:'julio@example.test',language:'es'});
+ const course=await ac('course_save',{request_id:uuid(),name:'Educación financiera · Julio',modules:[],active:true});
+ const group=await ac('group_save',{request_id:uuid(),course_id:course.course_id,name:'Julio test',instructor:'Joel',room:'Sala Julio',capacity:10,fee_cents:0,monthly_cents:50000,installments:1,active:true,sessions:[{day:'2033-04-04',start_min:780,end_min:840}]});
+ const en=await ac('enrol_group',{request_id:uuid(),person_id:julio.person_id,group_id:group.group_id,expected:1,fee_cents:0,monthly_cents:200000,installments:1,payment_schedule:[],fee_due:'2026-10-21',first_due:'2033-04-04',advance_cents:20000,paid_on:'2026-10-21',method:'pix',confirmed:true,portal:true});
+ const check=async paid=>{const d=await edu('detail',{person_id:julio.person_id});const e=d.enrolments.find(e=>e.id===en.enrolment_id);assert.equal(e.total_cents,200000);assert.equal(e.paid_cents,paid);assert.equal(d.debts.filter(x=>x.enrolment_id===e.id).reduce((n,x)=>n+x.total_cents-x.paid_cents,0),200000-paid);return d;};
+ let jd=await check(20000);assert.equal(jd.receipts.length,1);assert.equal(jd.receipts[0].balance_after_cents,180000);
+ const pay={request_id:uuid(),person_id:julio.person_id,enrolment_id:en.enrolment_id,amount_cents:80000,paid_on:'2026-10-21',method:'efectivo',confirmed:true,note:'Segundo abono'};await edu('payment',pay);await edu('payment',pay);jd=await check(100000);assert.equal(jd.receipts.length,2);assert.ok(jd.receipts.some(r=>r.balance_after_cents===100000));
+ await assert.rejects(edu('payment',{...pay,request_id:uuid(),amount_cents:100001}),e=>e.code==='22023');await check(100000);
+ await edu('payment',{...pay,request_id:uuid(),amount_cents:100000,method:'tarjeta',card_type:'debito',note:'Saldo final'});jd=await check(200000);assert.equal(jd.receipts.length,3);assert.ok(jd.receipts.some(r=>r.balance_after_cents===0));n++;
+ }
  console.log('PASS education DB: '+n+' groups, partial receipts, idempotency, complete financial integration, per-student portal isolation, receipt corrections, pending payment notices, independent live sessions and data-preserving reinstall.');
 }finally{await db.close();}

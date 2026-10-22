@@ -40,3 +40,9 @@ El editor de cursos muestra una fila editable por módulo y un botón «Añadir 
 Al preparar un grupo se puede guardar un módulo nuevo directamente en su curso, sin cerrar el formulario ni perder fechas, alumnos o encuentros existentes. Se utiliza `course_save` con control de versión e identificador de solicitud; si se pierde la respuesta, solo se permite reintentar esa misma operación hasta confirmarla. El módulo queda en el catálogo del curso; el grupo y sus nuevas fechas se guardan aparte con el botón habitual.
 
 Las nuevas especialidades de Servicios se escriben con «Escribir nueva área» y se conservan al guardar la reserva. Curso, módulo y área de un servicio siguen siendo conceptos separados. Esta mejora de interfaz utiliza las funciones ya disponibles y no necesita una migración adicional. No instala ni confirma la actualización académica previamente pendiente.
+
+## Precio acordado y abonos sucesivos
+
+La matrícula de grupo destaca el valor total individual. Escribir ese importe aplica el acuerdo como un único valor del curso, sin sumar otra inscripción; el desglose en cuotas e inscripción adicional sigue disponible en opciones. El adelanto se guarda en la misma operación de matrícula. Cada abono posterior se registra desde la ficha del curso y muestra total acordado, recibido, saldo actual y saldo previsto tras el pago. El precio original no se reduce al cobrar. El saldo aparece explícito en las fichas de René y del alumno.
+
+Se verificó el caso Julio en la interfaz y en Postgres local: R$2.000 contratados, R$200 recibidos al matricular, R$800 después, R$1.000 pendientes; repetición de solicitud sin duplicar, rechazo de importe superior al saldo y liquidación final con comprobantes separados. No se aplicaron operaciones sobre registros reales. Utiliza los RPC existentes; no añade SQL de instalación. La personalización individual sigue requiriendo la activación académica versión 2 previamente preparada.
