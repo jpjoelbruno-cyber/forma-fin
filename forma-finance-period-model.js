@@ -4,6 +4,7 @@ const iso=d=>d.toISOString().slice(0,10),date=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test
 function add(s,days){const d=date(s);d.setUTCDate(d.getUTCDate()+days);return iso(d);}
 function range(mode,anchor){const d=date(anchor),y=d.getUTCFullYear(),m=d.getUTCMonth();if(mode==='day')return{from:anchor,to:anchor};if(mode==='week'){const from=add(anchor,-((d.getUTCDay()+6)%7));return{from,to:add(from,6)};}if(mode==='month')return{from:iso(new Date(Date.UTC(y,m,1,12))),to:iso(new Date(Date.UTC(y,m+1,0,12)))};if(mode==='year')return{from:y+'-01-01',to:y+'-12-31'};throw Error('Período inválido');}
 function shift(mode,anchor,step){const d=date(anchor);if(mode==='day'||mode==='week')return add(anchor,step*(mode==='week'?7:1));if(mode==='month'){d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+step);}else{d.setUTCMonth(0,1);d.setUTCFullYear(d.getUTCFullYear()+step);}return iso(d);}
+function previousRange(mode,r,today){if(r.from>today)return null;const end=r.to<today?r.to:today;let prev;try{prev=range(mode,shift(mode,r.from,-1));}catch{return null;}if(mode==='year'){let to=(Number(end.slice(0,4))-1)+end.slice(4);if(to.endsWith('02-29')&&iso(new Date(to+'T12:00:00Z'))!==to)to=to.slice(0,4)+'-02-28';return{from:prev.from,to};}const elapsed=Math.round((date(end)-date(r.from))/86400000),to=add(prev.from,elapsed);return{from:prev.from,to:to>prev.to?prev.to:to};}
 function months(r){let s=r.from.slice(0,7)+'-01',a=[];while(s<=r.to){a.push(s);const d=date(s);d.setUTCMonth(d.getUTCMonth()+1);s=iso(d);}return a;}
 const sum=(a,k)=>a.reduce((v,r)=>v+Number(r[k]||0),0),groups=(a,k)=>Object.entries(a.reduce((v,p)=>{const label=p[k]||'Sin grupo';v[label]=(v[label]||0)+Number(p.amount_cents);return v;},{})).map(([label,cents])=>({label,cents})).sort((a,b)=>b.cents-a.cents);
 function aggregate(data,r,mode,today){
@@ -20,5 +21,5 @@ function aggregate(data,r,mode,today){
 }
 function pendingStatus(b,today){return !b.due_on?'Sin fecha':b.due_on<today?'Vencido':b.due_on===today?'Vence hoy':'Próximo';}
 function csv(rows){return '\ufeff'+rows.map(row=>row.map(v=>{let s=String(v??'');if(typeof v==='string'&&/^[\s]*[=+@-]/.test(s))s="'"+s;return '"'+s.replace(/"/g,'""')+'"';}).join(';')).join('\r\n');}
-const api={range,shift,months,aggregate,pendingStatus,csv};root.FormaFinancePeriodModel=api;if(typeof module!=='undefined')module.exports=api;
+const api={range,shift,previousRange,months,aggregate,pendingStatus,csv};root.FormaFinancePeriodModel=api;if(typeof module!=='undefined')module.exports=api;
 })(typeof window!=='undefined'?window:globalThis);
