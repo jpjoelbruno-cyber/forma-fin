@@ -1,4 +1,5 @@
 import {readFileSync} from 'node:fs';
+import {createPluggyTransport} from '../server/providers/pluggy.js';
 import {OWNER,ORIGIN,SUPABASE,UUID,vaultKey,marker,seal,unseal,connectorAllowed,verifyItem,readLink,safeText,transactionRows,cursorToken} from '../server/bank-security.js';
 const consentVersion='owner-readonly-v1',products=['ACCOUNTS','TRANSACTIONS'];
 class Failure extends Error{constructor(status,code,message){super(message);this.status=status;this.code=code;}}
@@ -10,8 +11,8 @@ export default async function handler(req,res){
   if(req.method!=='POST'){res.setHeader('Allow','POST');fail(405,'method','Método no permitido.');}
   if(req.headers.origin!==ORIGIN)fail(403,'origin','Solicitud fuera de FORMA.');
   const auth=req.headers.authorization;if(!/^Bearer [A-Za-z0-9._-]+$/.test(auth||''))fail(401,'session','Inicia sesión en FORMA.');
-  const b=req.body;if(!b||typeof b!=='object'||Array.isArray(b)||JSON.stringify(b).length>8192||!['status','start','attach','accounts','transactions','disconnect'].includes(b.action))fail(400,'request','Solicitud inválida.');
-  const fields={status:['action'],start:['action','mode','consent','providerConfirmed'],attach:['action','itemId'],accounts:['action'],transactions:['action','accountId','cursor'],disconnect:['action']};
+  const b=req.body;if(!b||typeof b!=='object'||Array.isArray(b)||JSON.stringify(b).length>8192||!['status','preflight','start','attach','accounts','transactions','disconnect'].includes(b.action))fail(400,'request','Solicitud inválida.');
+  const fields={status:['action'],preflight:['action'],start:['action','mode','consent','providerConfirmed'],attach:['action','itemId'],accounts:['action'],transactions:['action','accountId','cursor'],disconnect:['action']};
   if(Object.keys(b).some(k=>!fields[b.action].includes(k)))fail(400,'request','Parámetros no permitidos.');
   const cfg=config(),headers={apikey:cfg.key,Authorization:auth,'Content-Type':'application/json',Origin:ORIGIN};
   const deadline=Date.now()+45000;
@@ -31,21 +32,22 @@ export default async function handler(req,res){
   }
   if(!keyReady)fail(503,'vault_key','Falta configurar la clave privada FORMA_BANK_VAULT_KEY en Vercel.');
   if(!process.env.PLUGGY_CLIENT_ID||!process.env.PLUGGY_CLIENT_SECRET)fail(503,'provider_config','Faltan las credenciales del proveedor en el servidor.');
-  let apiKey;
-  const provider=async(path,method='GET',body)=>{
-   if(!apiKey){const r=await request('https://api.pluggy.ai/auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:process.env.PLUGGY_CLIENT_ID,clientSecret:process.env.PLUGGY_CLIENT_SECRET})});if(!r.ok)fail(502,'provider_auth','Pluggy no aceptó las credenciales o su habilitación.');apiKey=(await r.json()).apiKey;if(typeof apiKey!=='string'||!apiKey)fail(502,'provider_response','Respuesta inesperada del proveedor.');}
-   const r=await request('https://api.pluggy.ai'+path,{method,headers:{'X-API-KEY':apiKey,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
-   if(method==='DELETE'&&r.status===404)return{deleted:true};
-   if(!r.ok)fail(502,'provider_access','El proveedor no completó la consulta o autorización. Revisa la habilitación de FORMA Conecta.');
-   return r.status===204?{}:r.json();
-  };
+  const provider=createPluggyTransport({request,fail});
+  if(b.action==='preflight'){
+   // Counts against the existing private read quota; never creates an Item or consent.
+   await rpc('read');
+   const list=await provider('/connectors?isOpenFinance=true');
+   if(!Array.isArray(list.results))fail(502,'provider_response','Respuesta inesperada del proveedor.');
+   const eligible=list.results.filter(c=>connectorAllowed(c,'live')&&Array.isArray(c.products)&&products.every(p=>c.products.includes(p)));
+   return res.status(200).json({authenticated:true,catalogAvailable:true,compatibleInstitutions:new Set(eligible.map(c=>c.id)).size,realEnabled,checkedAt:new Date().toISOString(),importsEnabled:false});
+  }
   if(b.action==='start'){
    if(!['sandbox','live'].includes(b.mode)||b.consent!==true)fail(400,'consent','Confirma la consulta de cuentas y movimientos antes de continuar.');
    if(b.mode==='live'&&(!realEnabled||b.providerConfirmed!==true))fail(403,'live_disabled','El piloto con banco real requiere habilitación del proveedor y activación privada en Vercel.');
    const {link}=await rpc('begin',{mode:b.mode,consent:true,consent_version:consentVersion});
    if(!link||!UUID.test(link.id||''))fail(503,'storage','No se confirmó la preparación de la prueba.');
    // Quota and consent are committed before any provider request.
-   const list=await provider('/connectors?sandbox=true');if(!Array.isArray(list.results))fail(502,'provider_response','Respuesta inesperada del proveedor.');
+   const list=await provider(b.mode==='live'?'/connectors?isOpenFinance=true':'/connectors?sandbox=true');if(!Array.isArray(list.results))fail(502,'provider_response','Respuesta inesperada del proveedor.');
    const ids=list.results.filter(c=>connectorAllowed(c,b.mode)).map(c=>c.id);
    if(!ids.length)fail(502,'connectors','El proveedor no ofreció conectores compatibles con este piloto.');
    const token=await provider('/connect_token','POST',{options:{clientUserId:marker(link.id),avoidDuplicates:true,products}});
@@ -86,8 +88,8 @@ export default async function handler(req,res){
   if(item.status!=='UPDATED')return res.status(200).json({ready:false,status:safeText(item.status),accounts:[],transactions:[],importsEnabled:false});
   if(item.consentExpiresAt&&new Date(item.consentExpiresAt).getTime()<=Date.now())fail(409,'expired','La autorización venció. Desconecta y autoriza nuevamente.');
   const accounts=await provider('/accounts?itemId='+v.item);
-  if(!Array.isArray(accounts.results)||accounts.results.some(a=>!UUID.test(a.id||'')||a.itemId!==v.item)||Number(accounts.totalPages||1)>1)fail(502,'provider_response','No se pudo validar la lista completa de cuentas.');
-  if(b.action==='accounts')return res.status(200).json({ready:true,mode:link.mode,institution:safeText(item.connector.name),lastUpdatedAt:safeText(item.lastUpdatedAt,40),accounts:accounts.results.map(a=>({id:a.id,name:safeText(a.name),type:safeText(a.type,20),currency:safeText(a.currencyCode,3),balance:Number.isFinite(a.balance)?a.balance:null})),importsEnabled:false});
+  if(!Array.isArray(accounts.results)||accounts.results.some(a=>!UUID.test(a.id||'')||a.itemId!==v.item)||Number(accounts.totalPages||1)>1||new Set(accounts.results.map(a=>a.id)).size!==accounts.results.length)fail(502,'provider_response','No se pudo validar la lista completa de cuentas.');
+  if(b.action==='accounts')return res.status(200).json({ready:true,mode:link.mode,institution:safeText(item.connector.name),lastUpdatedAt:safeText(item.lastUpdatedAt,40),accountCount:accounts.results.length,bankAccountCount:accounts.results.filter(a=>a.type==='BANK').length,creditAccountCount:accounts.results.filter(a=>a.type==='CREDIT').length,accounts:accounts.results.map(a=>({id:a.id,name:safeText(a.name),type:safeText(a.type,20),currency:safeText(a.currencyCode,3),balance:Number.isFinite(a.balance)?a.balance:null})),importsEnabled:false});
   if(!UUID.test(b.accountId||'')||!accounts.results.some(a=>a.id===b.accountId))fail(403,'account','La cuenta no pertenece a tu conexión.');
   let after,from=new Date(Date.now()-30*86400000).toISOString().slice(0,10),to=new Date().toISOString().slice(0,10);
   if(b.cursor){try{const c=unseal(b.cursor);if(c.link!==link.id||c.account!==b.accountId||c.uid!==OWNER||c.exp<Date.now())throw Error('cursor');after=c.after;from=c.from;to=c.to;}catch{fail(400,'cursor','La página de movimientos venció. Actualiza las cuentas.');}}
