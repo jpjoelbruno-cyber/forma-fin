@@ -1,0 +1,25 @@
+const fs=require('node:fs'),assert=require('node:assert/strict'),{boot,settle}=require('./forma-finance-periods.cjs');
+async function academicBoot({version=2,empty=false}={}){
+ const ctx=await boot({reports:true}),{w,d}=ctx,calls=[],requests=new Map();let lose='',fail='';
+ const people=[{id:'p1',name:'Julio',email:'julio@example.test',phone:'5511999999999',language:'es',version:1},{id:'p2',name:'Ana <img onerror=1>',email:'ana@example.test',phone:'5511888888888',version:1}],courses=empty?[]:[{id:'c1',name:'Educación financiera',modules:['Presupuesto','Reserva'],active:true,version:1}],groups=empty?[]:[{id:'g1',course_id:'c1',course:'Educación financiera',name:'Noviembre',instructor:'Joel',room:'Sala 1',capacity:20,students:0,fee_cents:0,monthly_cents:50000,installments:1,active:true,version:1,module_plan:[],sessions:[{day:'2030-01-08',start_min:780,end_min:840,module:'Presupuesto',instructor:'Joel',room:'Sala 1'},{day:'2030-01-15',start_min:780,end_min:840,module:'Reserva',instructor:'Luis',room:'Sala 1'}]}],enrolments=[],receipts=[];
+ const detail=id=>({version:1,...(version===2?{academic_version:2}:{}),person:people.find(p=>p.id===id),enrolments:enrolments.filter(e=>e.person_id===id),receipts:receipts.filter(r=>r.person_id===id),sessions:[],debts:[],payment_notices:[],unconfigured:[]});
+ const original=w.FormaAgenda.rpc;
+ w.FormaAgenda.rpc=async(name,args)=>{if(!['forma_academic','forma_education'].includes(name))return original(name,args);const a=args.p_action,p=JSON.parse(JSON.stringify(args.p_data||{}));calls.push({name,a,p});if(fail===a){fail='';throw Object.assign(Error('Ocupado: prueba de validación'),{code:'23P01'});}
+ if(name==='forma_academic'){
+ if(a==='catalog')return JSON.parse(JSON.stringify({version:1,academic:true,...(version===2?{academic_version:2}:{}),courses,groups}));
+ if(a==='calendar')return{version:1,sessions:groups.flatMap(g=>g.sessions.map(s=>({...s,group_id:g.id,group_name:g.name,course:g.course})))};
+ if(a==='group_detail')return{version:1,students:enrolments.filter(e=>e.group_id===p.group_id).map(e=>({...e,...people.find(x=>x.id===e.person_id),person_id:e.person_id}))};
+ }else{if(a==='detail')return JSON.parse(JSON.stringify(detail(p.person_id)));if(a==='list')return{version:1,count:people.length,items:people.filter(x=>[x.name,x.email,x.phone].join(' ').toLowerCase().includes((p.query||'').toLowerCase()))};if(a==='alerts')return{items:[]};}
+ const request=p.request_id;if(requests.has(request))return requests.get(request);let result={version:1,saved:true};
+ if(a==='course_save'){const old=courses.find(c=>c.id===p.id);if(old){assert.equal(p.expected,old.version);Object.assign(old,{name:p.name,modules:p.modules,active:p.active,version:old.version+1});result.course_id=old.id;}else{const c={id:request,...p,version:1};courses.push(c);result.course_id=c.id;}}
+ if(a==='group_save'){const old=groups.find(g=>g.id===p.id),g={...p,id:old?.id||request,version:(old?.version||0)+1,course:courses.find(c=>c.id===p.course_id).name,students:old?.students||0};if(old){assert.equal(p.expected,old.version);Object.assign(old,g);}else groups.push(g);result.group_id=g.id;}
+ if(a==='person'){const person={id:request,...p,version:1};people.push(person);result.person_id=person.id;}
+ if(a==='enrol_group'){const g=groups.find(g=>g.id===p.group_id);assert.equal(p.expected,g.version);const e={id:request,person_id:p.person_id,group_id:g.id,course:g.course,state:'matriculado',fee_cents:p.fee_cents??g.fee_cents,monthly_cents:p.monthly_cents??g.monthly_cents,installments:p.installments??g.installments,modules:courses.find(c=>c.id===g.course_id).modules,paid_cents:p.advance_cents,version:1};e.total_cents=e.fee_cents+e.monthly_cents*e.installments;enrolments.push(e);g.students++;result.person_id=p.person_id;result.enrolment_id=e.id;}
+ if(a==='payment'){const e=enrolments.find(e=>e.id===p.enrolment_id);e.paid_cents+=p.amount_cents;result.person_id=p.person_id;receipts.push({id:request,...p,balance_after_cents:e.total_cents-e.paid_cents});}
+ requests.set(request,result);if(lose===a){lose='';throw Error('Lost response after commit');}return result;
+ };
+ for(const file of ['education-ui.js','forma-education.js','forma-academic.js','academic-calendar.js'])w.eval(fs.readFileSync(file,'utf8'));
+ d.querySelector('[data-view=education]').click();await settle();
+ return{...ctx,calls,people,courses,groups,enrolments,receipts,lose:a=>lose=a,fail:a=>fail=a,detail,set:async(name,value,form='academic-form')=>{const el=d.getElementById(form).elements[name];el.value=value;el.dispatchEvent(new w.Event('input',{bubbles:true}));await settle();},submit:async(id='academic-form')=>{d.getElementById(id).dispatchEvent(new w.Event('submit',{cancelable:true}));await settle();},findPerson:async q=>{const input=d.getElementById('academic-person-query');input.value=q;input.dispatchEvent(new w.Event('input',{bubbles:true}));await new Promise(r=>setTimeout(r,280));await settle();d.querySelector('[data-academic-person]').click();await settle();}};
+}
+module.exports={academicBoot,settle};
