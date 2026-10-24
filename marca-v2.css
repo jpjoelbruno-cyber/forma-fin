@@ -17,3 +17,57 @@ body{background:var(--bg)}
 .mi{width:26px;height:26px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .c-b{background:#EFE9FD;color:#3A0DB5}.c-g{background:#DCFCE7;color:#166534}.c-a{background:#FEF3C7;color:#92400E}.c-v{background:#EDE9FE;color:#5B21B6}.c-t{background:#CCFBF1;color:#0F766E}.c-r{background:#FCE7F3;color:#9D174D}
 .stat-val.g,.in{color:#166534}.stat-val.r,.out{color:#B91C1C}
+
+/* ===== Fase 3 · Sistema visual completo (alumno + René) ===== */
+:root{--m-ink:#1B1240;--m-ink2:#54497A;--m-line:#DDD6F0;--m-ok:#166534;--m-bad:#B91C1C}
+body{color:var(--m-ink);font-size:17px;line-height:1.5}
+/* Barra superior del alumno */
+.topbar{background:var(--marca-grad)!important;border:0!important;box-shadow:0 3px 14px rgba(42,6,217,.18)}
+.topbar .forma-brand img{filter:brightness(0) invert(1);background:none!important}
+.topbar .forma-brand strong,.topbar .forma-brand small,.topbar .tb-info h1,.topbar .tb-info p{color:#fff!important}
+.topbar .tb-logout,.topbar #forma-help-button,.topbar button{min-height:44px;border-radius:12px}
+/* Barra inferior */
+#bnav{background:#fff;border-top:1px solid var(--m-line)}
+#bnav .nb{min-height:56px}#bnav .nb .nl{font-size:12px;font-weight:600;color:var(--m-ink2)}
+#bnav .nb.active{background:#EFE9FD}#bnav .nb.active .nl{color:#3A0DB5}
+/* Títulos y tarjetas */
+.panel h2,.page-heading h2,.section-head h2{font-family:Sora,'DM Sans',sans-serif;color:var(--m-ink);font-weight:600}
+.eyebrow,.step-kicker{color:var(--m-ink2)}
+.card,.goal-item,.guide-card,.tx{background:#fff;border:1px solid var(--m-line);border-radius:16px;box-shadow:0 1px 2px rgba(27,18,64,.07)}
+.hero{background:var(--marca-grad)!important}
+/* Botones y campos grandes */
+.btn-sm,.action-main,.save-btn,.btn-primary{min-height:48px;border-radius:14px;font-weight:600;font-size:16px}
+.btn-sm{border:2px solid #5314D4;background:#fff;color:#3A0DB5}
+.action-main,.save-btn{background:var(--marca-btn)!important;color:#fff!important;border:0}
+input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:48px;border:1.5px solid #9C91C4;border-radius:12px;font-size:17px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid #7403E7;outline-offset:2px}
+/* Registrar: gasto rojo, entrada verde */
+.rtype-btn{min-height:56px;border-radius:14px;font-size:18px;font-weight:600;border:2px solid #DDD6F0;background:#fff}
+.rtype-btn.gas.active{background:#FEE2E2;border-color:#B91C1C;color:#B91C1C}
+.rtype-btn.ing.active{background:#DCFCE7;border-color:#166534;color:#166534}
+.reg-amount-display{font-size:44px;font-weight:600}
+/* Dinero: entra = verde, sale = rojo */
+.tx-amt.i,.stat-val.g,.g{color:#166534}.tx-amt.e,.stat-val.r,.r{color:#B91C1C}
+.prog,.goal-track{background:#E6DFF8}
+/* Etiquetas de estado */
+.status-pill{border-radius:8px;font-weight:600}
+
+/* ===== FORMA Gestão (René / propietario) ===== */
+body.forma-gestao,.forma-work-header~*{font-family:Sora,'DM Sans',system-ui,sans-serif}
+.finance-in-text{color:#166534!important}.finance-out-text,.finance-pending-text{color:#B91C1C!important}
+.finance-debt-row strong,.finance-collection-metrics strong,.income-stats strong+small{color:#B91C1C}
+.forma-work-header nav a.active,.forma-work-header nav button.active{background:rgba(255,255,255,.22)}
+main button,main select,main input{min-height:44px}
+main button:not(.crm-card-heading):not([data-board-toggle]){border-radius:12px}
+main article,main .finance-card,main .rene-card,main .rene-stat{border-radius:16px}
+.crm-lane{background:#EAE4F8;border:1px solid #DDD6F0;border-radius:16px}
+.crm-lane h3{font-size:15px;color:#3A0DB5}.crm-lane h3>span{background:#fff;color:#3A0DB5;font-size:13px;padding:3px 10px}
+.crm-person{background:#fff;border:1px solid #DDD6F0;border-radius:14px}
+.embudo{background:#fff;border:1px solid #DDD6F0;border-radius:16px;padding:16px 18px;margin:16px 0}
+.embudo h3{margin:0 0 12px;font-size:18px;color:#1B1240}
+.emb-row{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.emb-step{flex:1 1 120px;min-width:110px;background:#F5F2FC;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;position:relative;overflow:hidden}
+.emb-step b{font-size:26px;color:#3A0DB5;line-height:1.1}.emb-step span{font-size:14px;color:#54497A}
+.emb-step i{display:block;height:6px;border-radius:3px;background:linear-gradient(120deg,#B104D6,#2A06D9);margin-top:6px}
+.emb-arrow{align-self:center;color:#7403E7;font-weight:700}
+.embudo p{margin:12px 0 0;color:#54497A;font-size:15px}.embudo strong{color:#166534}
