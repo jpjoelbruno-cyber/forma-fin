@@ -1,0 +1,8 @@
+/* FORMÁ · Fase 1 · Marca v2: paleta del logo (magenta → violeta → azul). Solo visual. Para revertir: quitar este <link>. */
+:root{--brand:#5314D4;--brand2:#7403E7;--brand-lt:#EFE9FD;--brand-bg:#F5F2FC;--bg:#F5F2FC;--purple:#5314D4;--gold:#D7A932;--green:#166534;--red:#B91C1C;
+--marca-grad:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);--marca-btn:linear-gradient(135deg,#7A10DC 0%,#4A12D6 100%)}
+body{background:var(--bg)}
+.auth-brand .ab-logo{background:#fff;border-radius:50%;box-shadow:0 6px 20px rgba(42,6,217,.25);padding:8px;width:96px;height:96px}
+.auth-brand .ab-logo img{width:80px;height:80px}
+.btn-primary{background:var(--marca-btn)}
+.forma-work-header{background:var(--marca-grad)}
