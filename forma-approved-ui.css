@@ -1,0 +1,16 @@
+/* FORMA approved visual direction, scoped to the authenticated workspace.
+   No state, permission, business logic or persistence changes. */
+:root{--forma-ui-purple:#5a3bcc;--forma-ui-navy:#111d3b;--forma-ui-green:#14835c;--forma-ui-red:#cb3346;--forma-ui-amber:#b97710}
+body:has(#workspace:not([hidden])){background:#f6f7fc}
+body:has(#workspace:not([hidden])) .forma-work-header{background:var(--forma-ui-navy);box-shadow:0 2px 12px #15203b1a}
+body:has(#workspace:not([hidden])) .forma-primary-tabs button{border-radius:10px;transition:background .18s,color .18s}
+body:has(#workspace:not([hidden])) .forma-primary-tabs button:focus-visible{outline:3px solid #c4b5fd;outline-offset:2px}
+body:has(#workspace:not([hidden])) #workspace .heading h1{letter-spacing:-.035em}
+body:has(#workspace:not([hidden])) #workspace :is(.academic-main,.academic-catalogue,.edu-card,.edu-course,.booking-list){border-radius:16px;box-shadow:0 4px 22px #1720470b}
+body:has(#workspace:not([hidden])) #workspace :is(.academic-step,.edu-pill){font-weight:700}
+body:has(#workspace:not([hidden])) #workspace :is(.academic-step,.academic-course-choice.selected){color:var(--forma-ui-purple)}
+body:has(#workspace:not([hidden])) #workspace :is(.edu-pill.paid,.edu-green){color:var(--forma-ui-green)}
+body:has(#workspace:not([hidden])) #workspace :is(.edu-pill.due,.edu-amber){color:var(--forma-ui-amber)}
+body:has(#workspace:not([hidden])) #workspace :is(button,a,input,select,textarea):focus-visible{outline:3px solid #a78bfa;outline-offset:2px}
+@media(max-width:760px){body:has(#workspace:not([hidden])) main{padding:12px}body:has(#workspace:not([hidden])) .academic-layout{grid-template-columns:minmax(0,1fr)}body:has(#workspace:not([hidden])) .academic-catalogue{position:static}body:has(#workspace:not([hidden])) .academic-section{padding:16px}}
+@media(prefers-reduced-motion:reduce){body:has(#workspace:not([hidden])) .forma-primary-tabs button{transition:none}}
