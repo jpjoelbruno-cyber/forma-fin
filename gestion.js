@@ -282,8 +282,9 @@ window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();ins
 try{var th=localStorage.getItem('forma-gestion-theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
 
 function gate(msg,showLogin){
-  $('#app').innerHTML='<section class="gate card"><h1>FORMA Gestión</h1><p>'+esc(msg)+'</p>'+(showLogin?'<a class="btn p" href="/?next=gestion">Entrar con mi cuenta de FORMÁ</a>':'')+'</section>';
+  $('#app').innerHTML='<section class="gate card"><h1>FORMA Gestión</h1><p>'+esc(msg)+'</p>'+(showLogin?'<a class="btn p" href="/?next=agenda" id="gin">Entrar con mi cuenta de FORMÁ</a>':'')+'</section>';
   $('#tabs').innerHTML='';$('#bnav').hidden=true;
+  var gi=$('#gin');if(gi)gi.onclick=function(){try{sessionStorage.setItem('forma-return-agenda','1')}catch(e){}};
 }
 function boot(){
   var h=(location.hash||'').slice(1);
