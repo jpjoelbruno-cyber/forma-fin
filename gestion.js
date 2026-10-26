@@ -114,7 +114,7 @@ function hbars(rows,methods){
 
 /* ---------- vistas ---------- */
 var view='inicio',cobTab='resumen',cobPer='Mes',alF='Todos',agFilter='Todo';
-var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cobros','Cobros','cash'],['alumnos','Alumnos','users'],['interesados','Interesados','chat']];
+var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cursos','Cursos','cap'],['cobros','Cobros','cash'],['alumnos','Alumnos','users'],['interesados','Interesados','chat']];
 function navFor(){return manager()?NAV:NAV.slice(0,2)}
 function kpi(l,v,cls,d,dc){return '<div class="card kpi c3"><small>'+l+'</small><b class="num '+(cls||'')+'">'+v+'</b>'+(d?'<span class="d '+(dc||'flat')+'">'+d+'</span>':'')+'</div>'}
 function head(t,sub,right){return '<div class="head"><div><h1>'+t+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div><div style="display:flex;gap:10px;flex-wrap:wrap">'+(right||'')+'</div></div>'}
@@ -198,6 +198,7 @@ V.avisos=function(){
   var a=avisos();
   return head('Avisos','Cobranza y pendientes que piden una acción.','')+'<section class="card"><div class="list">'+(a.map(function(x){return '<div class="row"><span class="pill '+(x.k==='bad'?'down':x.k==='up'?'up':'flat')+'" style="'+(x.k==='warn'?'background:var(--warnbg);color:var(--warn)':'')+'">'+esc(x.t)+'</span><div class="t"><span style="color:var(--ink)">'+esc(x.s)+'</span></div><button class="btn s sm" data-act="'+x.act+'">'+({cobrar:'Cobrar',asist:'Registrar',interesados:'Responder'})[x.act]+'</button></div>'}).join('')||'<p class="note" style="margin:0">Sin avisos. Todo al día.</p>')+'</div></section>';
 };
+V.cursos=function(){return manager()?window.GestionCursos.html():head('Cursos','Solo para administración.','')};
 V.ajustes=function(){
   function row(t,s){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div><button class="btn s sm" data-act="viejo">Abrir</button></div>'}
   return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores y áreas','Quién da cada curso y qué áreas existen')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
@@ -208,6 +209,7 @@ function ensure(){
   if(view==='cobros'&&manager()&&cobTab!=='porcobrar'){var rr=periodRange(cobPer);Promise.all([getReport(rr.cur),getReport(rr.prev)]).then(function(){if(view==='cobros')render()},function(){errors.push('cobros');toast('No se pudo cargar ese período.')})}
   if(view==='alumnos'&&manager()&&!D.edu)loadEdu(false);
   if(view==='agenda')loadWeek();
+  if(view==='cursos'&&manager()&&!window.GestionCursos.loaded){window.GestionCursos.loaded=true;window.GestionCursos.load().then(function(){if(view==='cursos')render()})}
 }
 function loadEdu(more){
   var off=more?D.eduOffset+30:0;
@@ -231,7 +233,7 @@ function render(){
   var n=avisos().length,dot=$('#nAv');dot.textContent=n>9?'9+':String(n);dot.hidden=!n;
   if(keep&&$('#'+keep)){var el=$('#'+keep);el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}
 }
-function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['interesados','ajustes','avisos'].indexOf(view)>-1))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['alumnos','interesados','ajustes','avisos'].indexOf(view)>-1))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
 function buildNav(){
   var nv=navFor();
   $('#tabs').innerHTML=nv.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
@@ -241,7 +243,7 @@ function buildNav(){
 }
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
 function dlg(title,body){$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
@@ -317,6 +319,7 @@ function start(h){
 function demoRpc(name,a){
   var d=a.p_data||{},act=a.p_action;
   if(name==='forma_agenda_access')return{role:'manager'};
+  if(name==='forma_academic')return window.GestionCursos.demoAcademic(a);
   if(name==='forma_agenda_list'||(name==='forma_agenda_work'&&act==='state')){
     var wk=M.monday(T),bk=[{id:'d1',client:'Alumno de cierre',activity:'Mentoría particular',area:'Educación financiera',instructor:'René',instructors:['René'],start_date:wk,start_hour:15,duration:1,sessions:3,booking_state:'reservado'},{id:'d2',client:'Alumno de ejemplo',activity:'Mentoría particular',area:'Educación financiera',instructor:'René',instructors:['René'],start_date:T,start_hour:17,duration:1,sessions:1,booking_state:'reservado'},{id:'d3',client:'Curso FORMA · Grupo octubre',activity:'Clase grupal',group_name:'Grupo octubre',area:'Método FORMA',instructor:'Miguel',instructors:['Miguel'],start_date:M.plus(wk,2),start_hour:13,duration:2,sessions:4,booking_state:'reservado'}];
     return name==='forma_agenda_list'?{bookings:bk,role:'manager',calendar_version:4}:{version:1,bookings:bk,attendance:[],tasks:[],reminder_minutes:30};
@@ -338,5 +341,7 @@ function demoRpc(name,a){
   if(name==='forma_education'&&act==='list')return{version:1,count:3,has_more:false,items:[{id:'s1',name:'Ana Pérez',phone:'+55 11 90000-0001',courses:[{course:'Educación financiera',state:'activo',total_cents:120000,paid_cents:80000}]},{id:'s2',name:'Luis Gómez',phone:'+55 11 90000-0002',courses:[{course:'Inversiones básicas',state:'activo',total_cents:90000,paid_cents:90000}]},{id:'s3',name:'Carlos Rojas',phone:'',courses:[{course:'Mentoría particular',state:'activo',total_cents:240000,paid_cents:120000}]}]};
   return null;
 }
+window.GestionCursos.init({rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
+document.addEventListener('click',function(e){window.GestionCursos.click(e)});
 boot();
 })();
