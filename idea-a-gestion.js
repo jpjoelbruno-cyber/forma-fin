@@ -1,3 +1,5 @@
+/* asigna hidden solo si cambia: evita que un observador se dispare a sí mismo en bucle */
+function setH(e,v){if(e.hidden!==v)e.hidden=v}
 /* FORMA Gestión · Idea A: inicio con 4 botones grandes. Solo presentación y navegación: pulsa los botones que ya existen. No consulta ni guarda datos. */
 (()=>{const $=id=>document.getElementById(id);
 const ico=d=>'<svg class="ia-i" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
@@ -10,7 +12,7 @@ function build(){const W=$('workspace');if(!W||$('ia-rhome'))return;
  h.innerHTML='<div><h2>Buenos días</h2><p>¿Qué querés hacer ahora?</p></div><div class="ia-rgrid"></div><div class="ia-rpend"></div>';
  const g=h.querySelector('.ia-rgrid');
  BTNS.forEach(([v,t,s,i,c,rx])=>{if(!nav(v))return;const b=document.createElement('button');b.type='button';b.className='ia-rbig '+c;b.innerHTML=ico(I[i])+'<span>'+t+'<small>'+s+'</small></span>';b.dataset.iaView=v;b.addEventListener('click',()=>after(v,rx?new RegExp(rx,'i'):null));g.append(b)});
- function vis(){h.querySelectorAll('.ia-rbig').forEach(b=>{const n=nav(b.dataset.iaView);b.hidden=!(n&&!n.hidden)})}vis();const nv=document.querySelector('.forma-work-header nav');if(nv)new MutationObserver(vis).observe(nv,{attributes:true,subtree:true,childList:true});let k=0;const iv=setInterval(()=>{vis();if(++k>20)clearInterval(iv)},500);
+ function vis(){h.querySelectorAll('.ia-rbig').forEach(b=>{const n=nav(b.dataset.iaView);setH(b,!(n&&!n.hidden))})}vis();const nv=document.querySelector('.forma-work-header nav');if(nv)new MutationObserver(vis).observe(nv,{attributes:true,subtree:true,childList:true});let k=0;const iv=setInterval(()=>{vis();if(++k>20)clearInterval(iv)},500);
  const first=[...W.children].find(c=>c.id!=='demo-notice');W.insertBefore(h,first||null);
  const more=document.createElement('button');more.type='button';more.className='ia-rmore';more.textContent='Ver el detalle de mi día';more.addEventListener('click',()=>{const on=document.body.classList.toggle('ia-detail');more.textContent=on?'Ocultar el detalle de mi día':'Ver el detalle de mi día'});h.querySelector('.ia-rpend').append(more);
  const t=nav('tasks');if(t){const p=document.createElement('button');p.type='button';p.className='ia-rmore';p.addEventListener('click',()=>t.click());const upd=()=>{p.textContent=(t.textContent.trim().replace(/\s+/g,' ')||'Pendientes')};upd();new MutationObserver(upd).observe(t,{childList:true,subtree:true,characterData:true});h.querySelector('.ia-rpend').prepend(p)}}
@@ -27,7 +29,7 @@ function bar(){if($('ia-rbar'))return;const h=document.querySelector('.forma-wor
  const upd=()=>{const v=view();$('ia-rtitle').textContent=T[v]||'';document.body.classList.toggle('ia-rinner',v!=='today')};upd();new MutationObserver(upd).observe(document.body,{attributes:true,attributeFilter:['data-workspace-view']})}
 function links(){const r=document.querySelector('#ia-rhome .ia-rpend');if(!r||r.querySelector('.ia-rlinks'))return;const d=document.createElement('div');d.className='ia-rlinks';
  [['income','Finanzas'],['people','Personas'],['education','Cursos y matrículas'],['tasks','Avisos'],['review','Evaluar y mejorar']].forEach(([v,t])=>{const a=document.createElement('button');a.type='button';a.dataset.v=v;a.textContent=t;a.addEventListener('click',()=>nav(v)?.click());d.append(a)});r.append(d);
- const vis=()=>d.querySelectorAll('button').forEach(a=>{const n=nav(a.dataset.v);a.hidden=!(n&&!n.hidden)});vis();const nv=document.querySelector('.forma-work-header nav');if(nv)new MutationObserver(vis).observe(nv,{attributes:true,subtree:true,childList:true});let k=0;const iv=setInterval(()=>{vis();if(++k>20)clearInterval(iv)},500)}
+ const vis=()=>d.querySelectorAll('button').forEach(a=>{const n=nav(a.dataset.v);setH(a,!(n&&!n.hidden))});vis();const nv=document.querySelector('.forma-work-header nav');if(nv)new MutationObserver(vis).observe(nv,{attributes:true,subtree:true,childList:true});let k=0;const iv=setInterval(()=>{vis();if(++k>20)clearInterval(iv)},500)}
 function det(title,nodes,cls){const d=document.createElement('details');d.className='ia-rdet '+(cls||'');const s=document.createElement('summary');s.textContent=title;d.append(s);nodes.forEach(n=>n&&d.append(n));return d}
 function agenda(){const w=$('rene-week');if(!w||w.dataset.ia)return;const tools=w.querySelector('.calendar-tools');if(!tools)return;w.dataset.ia='1';
  const extra=[...tools.querySelectorAll(':scope>label')];const rf=$('refresh');if(rf)extra.push(rf);const tabs=w.querySelector('.agenda-type-tabs');
@@ -40,7 +42,7 @@ function caja(){const c=$('income-content');if(!c)return;const stats=c.querySele
   let label='',cls='';if(m){const neg=/^[\-−]/.test(m[1].trim());cls=neg?'ia-down':'ia-up';label=(neg?'▼ ':'▲ ')+(m[2]?m[2].replace(/^[+\-−]/,'')+'%':m[1].replace(/^[+\-−]\s*/,''))+' vs período anterior'}else{label='Sin comparación anterior';cls='ia-flat'}
   if(!h){h=document.createElement('em');h.className='ia-delta';first.append(h)}if(h.textContent!==label){h.textContent=label;h.className='ia-delta '+cls}}}
 function run(){bar();links();agenda();caja()}
-const mo=new MutationObserver(run);mo.observe(document.documentElement,{childList:true,subtree:true});run();})();
+let rt=0;const mo=new MutationObserver(()=>{if(rt)return;rt=setTimeout(()=>{rt=0;run()},80)});mo.observe(document.documentElement,{childList:true,subtree:true});run();})();
 
 (()=>{const $=id=>document.getElementById(id);const nv=v=>document.querySelector('.forma-work-header nav [data-view="'+v+'"]');
 const ico=d=>'<svg class="ia-i" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
@@ -56,6 +58,6 @@ function build(){const h=document.querySelector('.forma-work-header');if(!h||$('
  h.after(n);document.body.append(m);vis();sync()}
 function fill(){const box=$('ia-rmas').firstChild;box.innerHTML='';MAS.forEach(([v,t])=>{const n=nv(v);if(!n||n.hidden)return;const b=document.createElement('button');b.type='button';b.dataset.v=v;b.textContent=t;box.append(b)});
  const o=[...document.querySelectorAll('button')].find(x=>/Cerrar sesi/i.test(x.textContent));if(o){const b=document.createElement('button');b.type='button';b.dataset.out='1';b.className='ia-out';b.textContent='Cerrar sesión';box.append(b)}}
-function vis(){const n=$('ia-rnav');if(!n)return;const map={today:'today',cobrar:'income',week:'week',income:'income'};n.querySelectorAll('button').forEach(b=>{const k=b.dataset.k;if(k==='mas'){b.hidden=false;return}const x=nv(map[k]);b.hidden=!(x&&!x.hidden)})}
+function vis(){const n=$('ia-rnav');if(!n)return;const map={today:'today',cobrar:'income',week:'week',income:'income'};n.querySelectorAll('button').forEach(b=>{const k=b.dataset.k;if(k==='mas'){setH(b,false);return}const x=nv(map[k]);setH(b,!(x&&!x.hidden))})}
 function sync(){const n=$('ia-rnav');if(!n)return;const v=document.body.dataset.workspaceView||'today';const g=({today:'today',week:'week',income:'income'})[v]||'mas';n.querySelectorAll('button').forEach(b=>{if(b.dataset.k===g)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
-const mo=new MutationObserver(()=>{build();vis();sync()});mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-workspace-view','hidden']});build();})();
+let tm=0;const mo=new MutationObserver(()=>{if(tm)return;tm=setTimeout(()=>{tm=0;build();vis();sync()},60)});mo.observe(document.documentElement,{childList:true,subtree:true,attributes:true,attributeFilter:['data-workspace-view','hidden']});build();})();
