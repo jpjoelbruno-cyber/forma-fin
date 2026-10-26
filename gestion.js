@@ -241,7 +241,7 @@ function buildNav(){
 }
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
 function dlg(title,body){$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
@@ -250,6 +250,8 @@ function act(k){
   if(k==='theme'){var r=document.documentElement,nt=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',nt);try{localStorage.setItem('forma-gestion-theme',nt)}catch(e){}return}
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión. Intenta de nuevo.')});return}
+  if(k==='presupuesto'){location.href='/?personal=1';return}
+  if(k==='admin'){location.href='/';return}
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
   var T2={cobrar:'Cobrar un pago',matricular:'Matricular un alumno',agendar:'Agendar un servicio',interesado:'Nuevo interesado',asist:'Registrar la clase',ficha:'Ver la ficha',viejo:'Abrir esta opción'};
@@ -304,7 +306,7 @@ function boot(){
   },function(){gate('No se pudo verificar tu sesión. Vuelve a cargar la página.')});
 }
 function start(h){
-  buildNav();$('#bnav').hidden=false;
+  buildNav();$('#bnav').hidden=false;if($('#mAdmin'))$('#mAdmin').hidden=role!=='owner';
   view=V[h]&&(manager()||['inicio','agenda','avisos','ajustes'].indexOf(h)>-1)?h:'inicio';
   render();mark();
   loadCore().then(function(){render();mark();ensure()});
