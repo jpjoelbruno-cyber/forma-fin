@@ -146,17 +146,69 @@ V.inicio=function(){
 };
 function nextHour(list){var n=spNow(),f=list.filter(function(e){return e.b.start_hour>n.hour})[0]||list[0];return f.b.start_hour}
 function userName(){return ''}
+var agIns='Todos',agDens=(function(){try{var v=localStorage.getItem('forma-ag-dens');if(v==='det'||v==='cmp')return v}catch(e){}return window.innerWidth>=1100?'det':'cmp'})();
+var INS_C=['#7C3AED','#0D9488','#F97316','#2563EB','#DB2777','#CA8A04','#0891B2','#DC2626'];
+function insCol(n){var h=0;for(var i=0;i<n.length;i++)h=(h*31+n.charCodeAt(i))>>>0;return INS_C[h%INS_C.length]}
+function kindOf(b){return M.isPodcast(b)?'o':(b.activity==='Clase grupal'||b.group_name)?'g':'v'}
+function insList(b){return M.teachers(b).filter(function(t){return t!=='Sin asignar'})}
+function insChip(b){var l=insList(b);if(!l.length)return '<span class="ag-i"><span class="ag-av" style="background:#9A91BC">?</span>Sin asignar</span>';return '<span class="ag-i">'+l.slice(0,3).map(function(n){return '<span class="ag-av" style="background:'+insCol(n)+'">'+esc(n.charAt(0))+'</span>'}).join('')+esc(l.join(' · '))+'</span>'}
+function stLabel(b,day){try{return M.state(b,day)}catch(e){return ''}}
+function lanes(list){
+  var out=[],cl=[],end=0;
+  list.forEach(function(s){
+    var a=s.b.start_hour,z=Math.min(18,a+s.b.duration);
+    if(!cl.length||a>=end){flush();cl=[];end=0}
+    var lane=0;while(cl.some(function(c){return c.lane===lane&&c.z>a}))lane++;
+    var o={s:s,a:a,z:z,lane:lane};cl.push(o);out.push(o);end=Math.max(end,z);o.cl=cl;
+  });
+  function flush(){var m=0;cl.forEach(function(c){m=Math.max(m,c.lane+1)});cl.forEach(function(c){c.n=m})}
+  flush();return out;
+}
 V.agenda=function(){
   var from=D.weekFrom,days=[0,1,2,3,4,5].map(function(i){return M.plus(from,i)}),hrs=[13,14,15,16,17],NM=['Lun','Mar','Mié','Jue','Vie','Sáb'];
-  var bk=(D.week&&D.week.bookings)||[];
-  function ok(b){var curso=b.activity==='Clase grupal'||!!b.group_name;return agFilter==='Todo'||(agFilter==='Cursos'?curso:!curso)}
-  var g='<div class="h"></div>'+days.map(function(d,i){return '<div class="h'+(d===T?' t':'')+'">'+NM[i]+' '+d.slice(8)+'</div>'}).join('');
-  hrs.forEach(function(h){g+='<div class="tm">'+h+':00</div>';days.forEach(function(d){var l=sessionsOn(d,bk).filter(function(s){return ok(s.b)&&h>=s.b.start_hour&&h<s.b.start_hour+s.b.duration});g+='<div>'+(l.length?l.map(function(s){return '<div class="ev'+(s.b.activity==='Clase grupal'?' g':'')+'"><b>'+esc(s.b.client)+'</b>'+esc(s.b.activity)+'</div>'}).join(''):(manager()?'<button class="free" data-act="agendar" style="border:0;background:none">+ Libre</button>':''))+'</div>'})});
-  var dls=days.map(function(d,i){var items=sessionsOn(d,bk).filter(function(s){return ok(s.b)}).map(function(s){return '<div class="row"><span class="hour">'+hourLabel(s.b.start_hour)+'</span><div class="t"><b>'+esc(s.b.client)+'</b><span>'+esc(s.b.activity)+'</span></div></div>'}).join('');return '<div class="card day"><h3>'+NM[i]+' '+dl(d)+'</h3>'+(items||'<span class="free">Sin reservas</span>')+(manager()?'<div><button class="btn s sm" data-act="agendar" style="margin-top:8px">+ Agendar</button></div>':'')+'</div>'}).join('');
+  var bk=(D.week&&D.week.bookings)||[],HH=agDens==='det'?142:78;
+  var names={};bk.forEach(function(b){insList(b).forEach(function(n){names[n]=1})});var nl=Object.keys(names).sort();
+  if(agIns!=='Todos'&&!names[agIns])agIns='Todos';
+  function ok(b){var curso=kindOf(b)==='g';if(!(agFilter==='Todo'||(agFilter==='Cursos'?curso:!curso)))return false;return agIns==='Todos'||insList(b).indexOf(agIns)>-1}
+  var cols='';
+  days.forEach(function(d,i){
+    var l=sessionsOn(d,bk).filter(function(s){return ok(s.b)}),ln=lanes(l),h='';
+    hrs.forEach(function(hr){
+      var busy=l.some(function(s){return hr>=s.b.start_hour&&hr<s.b.start_hour+s.b.duration});
+      if(!busy&&manager())h+='<button class="ag-free" data-act="agendar" style="top:'+((hr-13)*HH)+'px;height:'+HH+'px">+ Libre</button>';
+    });
+    ln.forEach(function(o){
+      var b=o.s.b,k=kindOf(b),w=100/o.n,st=stLabel(b,d),top=(o.a-13)*HH,ht=Math.max(1,o.z-o.a)*HH-6;
+      var pc=b.booking_state==='por_confirmar'?' pc':'',tm=hourLabel(b.start_hour)+'–'+hourLabel(b.start_hour+b.duration);
+      var inner=agDens==='det'
+        ?'<div class="t"><span>'+tm+'</span><span class="st">'+esc(st)+'</span></div><div class="n">'+esc(M.isPodcast(b)?b.client:b.client)+'</div><div class="a">'+esc(M.isPodcast(b)?'Invitación para podcast':b.activity)+(b.area&&!M.isPodcast(b)?' · '+esc(b.area):'')+(b.room?'<br>'+esc(b.room):'')+'</div>'+insChip(b)
+        :'<div class="t"><span>'+tm+'</span></div><div class="n">'+esc(b.client)+'</div>'+(st&&ht>60?'<span class="st">'+esc(st)+'</span>':'');
+      h+='<button class="ag-b '+k+pc+(agDens==='cmp'?' cmp':'')+'" data-bk="'+esc(b.id)+'" data-day="'+d+'" style="top:'+(top+3)+'px;height:'+ht+'px;left:calc('+(o.lane*w)+'% + 3px);width:calc('+w+'% - 6px)" aria-label="'+esc(b.client+', '+NM[i]+' '+tm)+'">'+inner+'</button>';
+    });
+    cols+='<div class="ag-col" style="height:'+(5*HH)+'px;--hh:'+HH+'px">'+h+'</div>';
+  });
+  var hdr='<div class="ag-h"></div>'+days.map(function(d,i){var n=sessionsOn(d,bk).filter(function(s){return ok(s.b)}).length;return '<div class="ag-h'+(d===T?' t':'')+'">'+NM[i]+' '+d.slice(8)+'<small>'+(d===T?'hoy · ':'')+(n?n+(n===1?' clase':' clases'):'libre')+'</small></div>'}).join('');
+  var tcol='<div class="ag-tm">'+hrs.map(function(h){return '<div style="height:'+HH+'px">'+hourLabel(h)+'</div>'}).join('')+'</div>';
+  var wk='<div class="ag-wrap"><div class="ag-grid" style="grid-template-columns:56px repeat(6,minmax(0,1fr))">'+hdr+tcol+cols+'</div></div>';
+  var dls=days.map(function(d,i){
+    var items=sessionsOn(d,bk).filter(function(s){return ok(s.b)}).map(function(s){var b=s.b,k=kindOf(b),st=stLabel(b,d);return '<button class="ag-row '+k+'" data-bk="'+esc(b.id)+'" data-day="'+d+'"><div class="t"><b>'+hourLabel(b.start_hour)+'–'+hourLabel(b.start_hour+b.duration)+'</b><span class="st">'+esc(st)+'</span></div><div class="n">'+esc(b.client)+'</div><div class="a">'+esc(b.activity+(b.area?' · '+b.area:''))+'</div>'+insChip(b)+'</button>'}).join('');
+    return '<div class="card day"><h3>'+NM[i]+' '+dl(d)+'</h3>'+(items||'<span class="free">Sin reservas</span>')+(manager()?'<div><button class="btn s sm" data-act="agendar" style="margin-top:8px">+ Agendar</button></div>':'')+'</div>'}).join('');
   var cur=M.monday(T)===from;
+  var insBar=nl.length?'<span class="chips" role="group" aria-label="Instructor"><button class="chip" data-agi="Todos" aria-pressed="'+(agIns==='Todos')+'">Todo el equipo</button>'+nl.map(function(n){return '<button class="chip" data-agi="'+esc(n)+'" aria-pressed="'+(agIns===n)+'"><span class="ag-av" style="background:'+insCol(n)+'">'+esc(n.charAt(0))+'</span>'+esc(n)+'</button>'}).join('')+'</span>':'';
   return head('Agenda',dl(days[0])+' – '+dl(days[5])+' · lunes a sábado, 13:00 a 18:00','<div class="seg" role="group" aria-label="Semana"><button data-wk="-1" aria-pressed="false">← Anterior</button><button data-wk="0" aria-pressed="'+cur+'">Esta semana</button><button data-wk="1" aria-pressed="false">Siguiente →</button></div>'+(manager()?'<button class="btn p" data-act="agendar">'+ico('plus')+'Agendar servicio</button>':''))+
-   '<div class="chips" style="margin-bottom:14px" role="group" aria-label="Tipo">'+['Todo','Servicios','Cursos'].map(function(c){return '<button class="chip" data-ag="'+c+'" aria-pressed="'+(agFilter===c)+'">'+c+'</button>'}).join('')+'</div><div class="week">'+g+'</div><div class="days">'+dls+'</div>';
+   '<div class="ag-bar"><div class="chips" role="group" aria-label="Tipo">'+['Todo','Servicios','Cursos'].map(function(c){return '<button class="chip" data-ag="'+c+'" aria-pressed="'+(agFilter===c)+'">'+c+'</button>'}).join('')+'</div>'+insBar+'<span class="ag-sp"></span><div class="seg ag-dens" role="group" aria-label="Densidad"><button data-agd="det" aria-pressed="'+(agDens==='det')+'">Detallado</button><button data-agd="cmp" aria-pressed="'+(agDens==='cmp')+'">Compacto</button></div></div>'+(D.week?'':'<p class="skel" role="status">Cargando agenda…</p>')+'<div class="agw">'+wk+'</div><div class="days">'+dls+'</div>';
 };
+function openBooking(id,day){
+  var b=((D.week&&D.week.bookings)||[]).filter(function(x){return x.id===id})[0];if(!b)return;
+  var NMF=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'],n=-1;try{n=M.occurrence(b,day)}catch(e){}
+  var dd=M.date(day),when=NMF[dd.getUTCDay()]+' '+dl(day)+(day===T?' (hoy)':'')+' · '+hourLabel(b.start_hour)+'–'+hourLabel(b.start_hour+b.duration);
+  var att=attendanceOf(b,day),attL={asistio:'Asistió',no_asistio:'No asistió',cancelado:'Cancelada'}[att&&att.status]||(day<=T?'Sin registrar':'Pendiente');
+  var k=function(l,v){return v?'<div class="ag-k"><span>'+l+'</span><b>'+v+'</b></div>':''};
+  var prog=b.sessions>1&&n>=0?'<div class="ag-k"><span>Avance</span><b>Encuentro '+(n+1)+' de '+b.sessions+'</b></div><div class="ag-prog"><i style="width:'+Math.round((n+1)/b.sessions*100)+'%"></i></div>':'';
+  var h='<div class="ag-det"><span class="st">'+esc(stLabel(b,day))+'</span>'+k('Cuándo',esc(when))+k('Actividad',esc(M.isPodcast(b)?'Invitación para podcast':b.activity))+k('Área',esc(b.area||''))+k('Grupo',esc(b.group_name||''))+k('Sala',esc(b.room||''))+k('Instructor',esc(insList(b).join(' · ')||'Sin asignar'))+k('Teléfono',esc(b.phone||''))+k('Referencia',esc(b.student_reference||''))+k('Asistencia',esc(attL))+prog+'</div>'
+   +(manager()?'<div class="fi-acts">'+(kindOf(b)==='g'?'<button class="btn p" data-act="asist">Registrar la clase</button>':'')+'<button class="btn '+(kindOf(b)==='g'?'s':'p')+'" data-act="cobrar">Cobrar un pago</button><button class="btn s" data-act="viejo">Reprogramar o cancelar</button></div>':'');
+  dlg(esc(b.client),h,false);
+}
 V.cobros=function(){
   var tabs='<div class="seg" role="tablist">'+[['resumen','Resumen'],['porcobrar','Por cobrar'],['mov','Movimientos']].map(function(t){return '<button data-ct="'+t[0]+'" aria-pressed="'+(cobTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
   var per='<div class="seg" role="group" aria-label="Período">'+['Hoy','Semana','Mes','Año'].map(function(p){return '<button data-cp="'+p+'" aria-pressed="'+(cobPer===p)+'">'+p+'</button>'}).join('')+'</div>';
@@ -305,6 +357,9 @@ function act(k,el){
 }
 document.addEventListener('click',function(e){
   if(window.GestionAcciones&&window.GestionAcciones.click(e))return;
+  var bkb=e.target.closest('[data-bk]');if(bkb){openBooking(bkb.dataset.bk,bkb.dataset.day);return}
+  var agi=e.target.closest('[data-agi]');if(agi){agIns=agi.dataset.agi;render();return}
+  var agd=e.target.closest('[data-agd]');if(agd){agDens=agd.dataset.agd;try{localStorage.setItem('forma-ag-dens',agDens)}catch(x){}render();return}
   var fb=e.target.closest('[data-ficha]');if(fb){openFicha(fb.dataset.ficha);return}
   var b=e.target.closest('[data-v]');if(b){if(b.dataset.v==='mas'){openMas();return}go(b.dataset.v);return}
   var g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
