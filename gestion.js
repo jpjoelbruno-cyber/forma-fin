@@ -200,7 +200,7 @@ V.avisos=function(){
 };
 V.ajustes=function(){
   function row(t,s){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div><button class="btn s sm" data-act="viejo">Abrir</button></div>'}
-  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores y áreas','Quién da cada curso y qué áreas existen')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla actual de FORMA Gestão.</p></section>';
+  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores y áreas','Quién da cada curso y qué áreas existen')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
 };
 
 /* ---------- carga perezosa por vista ---------- */
@@ -245,7 +245,7 @@ function openMas(){
   $('#sheet').hidden=false;
 }
 function dlg(title,body){$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
-function toOld(what){dlg(what,'<p>Por ahora esta acción se hace en la pantalla actual de FORMA Gestão: ahí queda guardada con todos los controles de seguridad. En la próxima etapa se pasa a esta pantalla nueva, después de probarla contigo con datos reales.</p><a class="btn p" href="/agenda.html" style="text-decoration:none">Abrir pantalla actual</a>')}
+function toOld(what){dlg(what,'<p>Por ahora esta acción se hace en la pantalla clásica de FORMA Gestão: ahí queda guardada con todos los controles de seguridad. En la próxima etapa se pasa a esta pantalla nueva, después de probarla contigo con datos reales.</p><a class="btn p" href="/agenda-clasica.html" style="text-decoration:none">Abrir pantalla clásica</a>')}
 function act(k){
   if(k==='theme'){var r=document.documentElement,nt=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',nt);try{localStorage.setItem('forma-gestion-theme',nt)}catch(e){}return}
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
