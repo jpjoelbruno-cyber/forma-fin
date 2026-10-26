@@ -200,3 +200,11 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
 .fi-g h4{margin:0 0 6px;font-size:15px}
 .fi-av2{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:700}
 .fi-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+
+/* Editor por encuentro */
+.cu-edhead{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;background:var(--soft);border-radius:14px;padding:12px 14px}
+.cu-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}.cu-ins{display:inline-flex;align-items:center;height:28px;border-radius:999px;padding:0 12px;color:#fff;font-weight:700;font-size:13px}
+.cu-bulk{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;border:2px dashed var(--line);border-radius:14px;padding:10px 14px}
+.cu-bulk label{min-width:110px}.cu-bulk input,.cu-bulk select{min-height:40px}
+.cu-tb{min-width:620px}.cu-tb td{padding:6px 6px}.cu-tb input,.cu-tb select{min-height:40px;width:100%}.cu-tb tr.bad td{background:var(--badbg)}
+.cu-add{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.cu-add label{min-width:170px}
