@@ -17,7 +17,6 @@ function anotar(){const P=$('p-registrar'),m=$('manual-register');if(!P||!m||P.d
  const cancel=document.createElement('button');cancel.type='button';cancel.className='mb-cancel';cancel.textContent='Cancelar';cancel.addEventListener('click',()=>{const b=$('nb-resumo');if(b)b.click()});
  const wrap=document.createElement('div');wrap.className='mb-anotar';
  if(type)wrap.append(type);
- if(voice)wrap.append(voice);
  wrap.append(step(1,'¿Cuánto?',[amt]),step(2,'¿Qué fue?',[ql,qc,vt,ac,daily,desc]),step(3,'¿Cuándo?',[date]));
  const bar=document.createElement('div');bar.className='mb-actions';bar.append(cancel,save);wrap.append(bar);
  P.append(wrap);m.open=true;m.classList.add('mb-manual-done');}
