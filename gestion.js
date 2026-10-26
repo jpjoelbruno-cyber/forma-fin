@@ -183,7 +183,7 @@ V.alumnos=function(){
   var cs=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a]});
   return head('Alumnos','Cursos, matrículas y pagos en un solo lugar.',manager()?'<button class="btn p" data-act="matricular">'+ico('plus')+'Matricular un alumno</button>':'')+
    '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><input class="search" id="aq" placeholder="Buscar alumno o curso" aria-label="Buscar alumno o curso" value="'+esc(D.eduQuery)+'"><div class="chips" role="group" aria-label="Filtro">'+['Todos','Deben','Al día'].map(function(c){return '<button class="chip" data-al="'+c+'" aria-pressed="'+(alF===c)+'">'+c+'</button>'}).join('')+'</div></div>'+
-   '<div class="grid"><section class="card c8"><div class="tw"><table class="rt"><thead><tr><th>Alumno</th><th>Curso</th><th>Estado</th><th style="text-align:right">Saldo</th><th></th></tr></thead><tbody>'+(rows.map(function(x){var p=x.p,i=x.i,names=(i.act.length?i.act:(p.courses||[])).map(function(c){return c.course}).join(', ');return '<tr><td><b>'+esc(p.name)+'</b><br><span style="color:var(--ink2);font-size:13px">'+esc(p.phone||'')+'</span></td><td>'+esc(names||'Sin curso')+'</td><td><span class="pill '+(i.debt>0?'down':'up')+'">'+(i.debt>0?'con saldo':'al día')+'</span></td><td class="num '+(i.debt?'out':'in')+'" style="text-align:right"><b>'+R(i.debt)+'</b></td><td style="text-align:right">'+(i.debt>0&&manager()?'<button class="btn p sm" data-act="cobrar">Cobrar</button>':'<button class="btn s sm" data-act="ficha">Ver ficha</button>')+'</td></tr>'}).join('')||'<tr><td colspan="5" class="note">'+(D.edu?'No hay alumnos con ese filtro.':'Cargando…')+'</td></tr>')+'</tbody></table></div>'+(D.eduMore?'<p class="note"><button class="link" id="emore">Ver más alumnos</button></p>':'')+'</section>'+
+   '<div class="grid"><section class="card c8"><div class="tw"><table class="rt"><thead><tr><th>Alumno</th><th>Curso</th><th>Estado</th><th style="text-align:right">Saldo</th><th></th></tr></thead><tbody>'+(rows.map(function(x){var p=x.p,i=x.i,names=(i.act.length?i.act:(p.courses||[])).map(function(c){return c.course}).join(', ');return '<tr><td><b>'+esc(p.name)+'</b><br><span style="color:var(--ink2);font-size:13px">'+esc(p.phone||'')+'</span></td><td>'+esc(names||'Sin curso')+'</td><td><span class="pill '+(i.debt>0?'down':'up')+'">'+(i.debt>0?'con saldo':'al día')+'</span></td><td class="num '+(i.debt?'out':'in')+'" style="text-align:right"><b>'+R(i.debt)+'</b></td><td style="text-align:right">'+'<button class="btn s sm" data-ficha="'+esc(p.id)+'">Ver ficha</button>'+(i.debt>0&&manager()?' <button class="btn p sm" data-act="cobrar">Cobrar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5" class="note">'+(D.edu?'No hay alumnos con ese filtro.':'Cargando…')+'</td></tr>')+'</tbody></table></div>'+(D.eduMore?'<p class="note"><button class="link" id="emore">Ver más alumnos</button></p>':'')+'</section>'+
    '<section class="card c4"><h2>Cursos activos</h2><div class="list">'+(cs.map(function(c){return '<div class="row"><div class="t"><b>'+esc(c)+'</b><span>'+cc[c]+' alumno'+(cc[c]>1?'s':'')+'</span></div></div>'}).join('')||'<p class="note" style="margin:0">Sin cursos activos en la lista cargada.</p>')+'</div></section></div>';
 };
 var STG=[['nuevo','Nuevo'],['conversacion','En conversación'],['seguimiento','Seguimiento'],['preparar_matricula','Preparando matrícula'],['matriculado','Matriculado']];
@@ -246,8 +246,44 @@ function openMas(){
   $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
-function dlg(title,body){$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
+function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
 function toOld(what){dlg(what,'<p>Por ahora esta acción se hace en la pantalla clásica de FORMA Gestão: ahí queda guardada con todos los controles de seguridad. En la próxima etapa se pasa a esta pantalla nueva, después de probarla contigo con datos reales.</p><a class="btn p" href="/agenda-clasica.html" style="text-decoration:none">Abrir pantalla clásica</a>')}
+
+/* ---------- ficha del alumno (solo lectura) ---------- */
+var FI_STATE={activo:'En curso',matriculado:'Matriculado',pausa:'En pausa',cancelado:'Cancelado',concluido:'Concluido'},FI_SEL=null;
+function hm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function openFicha(id){
+  dlg('Ficha del alumno','<p class="skel" role="status">Consultando ficha…</p>',true);
+  edu('detail',{person_id:id}).then(function(d){
+    if(!d||!d.person)throw Error('ficha');
+    D.ficha=d;FI_SEL=(d.enrolments&&d.enrolments[0]&&d.enrolments[0].id)||null;paintFicha();
+  },function(){dlg('Ficha del alumno','<div class="err">No se pudo cargar la ficha. No se cambió nada.</div>')});
+}
+function paintFicha(){
+  var d=D.ficha,p=d.person,en=d.enrolments||[],e=en.filter(function(x){return x.id===FI_SEL})[0]||en[0];
+  var ini=(p.name||'?').split(/\s+/).slice(0,2).map(function(x){return x[0]}).join('');
+  var h='<div class="fi-id"><span class="fi-av">'+esc(ini)+'</span><div><h3>'+esc(p.name)+'</h3><span>'+esc(p.phone||'Sin teléfono')+' · '+esc(p.email||'Sin correo')+'</span></div></div>';
+  if(!e){return dlg('Ficha de '+esc(p.name),h+'<p class="note">Todavía no tiene cursos vinculados.</p><button class="btn s" data-act="viejo">Abrir en la pantalla clásica</button>',true)}
+  var ses=(d.sessions||[]).filter(function(x){return x.enrolment_id===e.id}).sort(function(a,b){return a.day<b.day?-1:1});
+  var total=Math.max(Number(e.planned_encounters||0),ses.length),att=ses.filter(function(x){return x.attendance==='asistio'}).length,miss=ses.filter(function(x){return x.attendance==='no_asistio'}).length;
+  var rec=(d.receipts||[]).filter(function(r){return r.enrolment_id===e.id&&!r.voided_at}).sort(function(a,b){return a.paid_on<b.paid_on?1:-1});
+  var adv=rec.filter(function(r){return /adelanto de matr|reserva de inscrip/i.test(r.note||'')}).reduce(function(n,r){return n+Number(r.amount_cents)},0);
+  var bal=Math.max(0,Number(e.total_cents)-Number(e.paid_cents)),nx=ses.filter(function(x){return x.day>=T&&['asistio','no_asistio','cancelado'].indexOf(x.attendance)<0})[0];
+  var deb=(d.debts||[]).filter(function(x){return x.enrolment_id===e.id&&!x.cancelled}).sort(function(a,b){return(a.due_on||'9')<(b.due_on||'9')?-1:1});
+  var sel=en.length>1?'<label class="fi-sel">Curso<select id="fiSel">'+en.map(function(x){return '<option value="'+esc(x.id)+'"'+(x.id===e.id?' selected':'')+'>'+esc(x.course+' · '+(x.group_name||FI_STATE[x.state]||x.state))+'</option>'}).join('')+'</select></label>':'';
+  var k=function(l,v,s,c){return '<div class="fi-k"><small>'+l+'</small><b class="num '+(c||'')+'">'+v+'</b>'+(s?'<span>'+s+'</span>':'')+'</div>'};
+  h+=sel+'<div class="fi-head"><h3>'+esc(e.course)+'</h3><span class="pill '+(e.state==='cancelado'?'flat':'up')+'">'+esc(FI_STATE[e.state]||e.state)+'</span><span class="note">'+esc(e.group_name||'Sin grupo')+(e.starts_on?' · '+dl(e.starts_on)+(e.ends_on?' → '+dl(e.ends_on):''):'')+'</span></div>';
+  h+='<div class="fi-ks">'+k('Valor del curso',R(Number(e.total_cents)))+k('Ya pagó',R(Number(e.paid_cents)),adv?'Incluye '+R(adv)+' de reserva':'','in')+k('Falta pagar',R(bal),miss?miss+' no asistió':'',bal?'out':'in')+k('Asistió',att+' de '+(total||'—'),nx?'Próxima clase: '+dl(nx.day):'Sin próxima clase')+'</div>';
+  var pl=deb.length?deb.map(function(x){var rest=Number(x.total_cents)-Number(x.paid_cents),st=rest<=0?['Pagado','up']:Number(x.paid_cents)>0?['Parcial','flat']:(x.due_on&&x.due_on<T?['Vencido','down']:['Pendiente','flat']);return '<div class="row"><div class="t"><b>'+esc(x.area||'Cuota')+'</b><span>Vence '+(x.due_on?dl(x.due_on):'sin fecha')+(rest>0&&Number(x.paid_cents)>0?' · faltan '+R(rest):'')+'</span></div><span class="v num">'+R(Number(x.total_cents))+'</span><span class="pill '+st[1]+'">'+st[0]+'</span></div>'}).join(''):'<p class="note" style="margin:0">Sin cuotas registradas.</p>';
+  var pg=rec.slice(0,5).map(function(r){return '<div class="row"><div class="t"><b>'+dl(r.paid_on)+'</b><span>'+esc(methodLabel(r.method))+(r.note?' · '+esc(r.note):'')+'</span></div><span class="v num in">'+R(Number(r.amount_cents))+'</span></div>'}).join('')||'<p class="note" style="margin:0">Aún no hay pagos confirmados.</p>';
+  var cl=ses.filter(function(x){return x.day>=M.plus(T,-14)}).slice(0,8).map(function(x){var a=x.attendance||'pendiente',b=a==='asistio'?['Asistió','up']:a==='no_asistio'?['No asistió','down']:a==='cancelado'?['Cancelada','flat']:(x.day<T?['Sin confirmar','flat']:['Programada','flat']);return '<div class="row"><div class="t"><b>'+dl(x.day)+' · '+hm(x.start_min||0)+'</b><span>'+esc(x.module||'Encuentro')+(x.instructor?' · '+esc(x.instructor):'')+(x.room?' · '+esc(x.room):'')+'</span></div><span class="pill '+b[1]+'">'+b[0]+'</span></div>'}).join('')||'<p class="note" style="margin:0">Sin clases vinculadas.</p>';
+  var av=(d.payment_notices||[]).filter(function(n){return n.state==='reportado'});
+  h+='<div class="fi-g"><section><h4>Plan de pago</h4><div class="list">'+pl+'</div></section><section><h4>Últimos pagos</h4><div class="list">'+pg+'</div></section><section><h4>Clases</h4><div class="list">'+cl+'</div></section></div>';
+  if(av.length)h+='<div class="fi-av2">'+av.length+' aviso(s) de pago por revisar: '+av.map(function(n){return R(Number(n.amount_cents))+' · '+dl(n.paid_on)}).join(', ')+'</div>';
+  h+='<div class="fi-acts">'+(manager()&&bal>0?'<button class="btn p" data-act="cobrar">Cobrar un pago</button>':'')+'<button class="btn s" data-act="viejo">Editar matrícula o contrato</button></div><p class="note">Solo consulta. Cobrar y editar se hacen en la pantalla clásica por ahora.</p>';
+  dlg('Ficha de '+esc(p.name),h,true);
+  var s2=$('#fiSel');if(s2)s2.onchange=function(){FI_SEL=this.value;paintFicha()};
+}
 function act(k){
   if(k==='theme'){var r=document.documentElement,nt=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',nt);try{localStorage.setItem('forma-gestion-theme',nt)}catch(e){}return}
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
@@ -260,6 +296,7 @@ function act(k){
   toOld(T2[k]||'Acción');
 }
 document.addEventListener('click',function(e){
+  var fb=e.target.closest('[data-ficha]');if(fb){openFicha(fb.dataset.ficha);return}
   var b=e.target.closest('[data-v]');if(b){if(b.dataset.v==='mas'){openMas();return}go(b.dataset.v);return}
   var g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
   var a=e.target.closest('[data-act]');if(a){act(a.dataset.act);return}
@@ -338,6 +375,7 @@ function demoRpc(name,a){
     if(act==='alerts')return{version:1,total_count:2,items:[{id:'i1',name:'Rita Campos',next_action:'Responder precios',due_on:T},{id:'i2',name:'Hugo Ríos',next_action:'Enviar programa',due_on:M.plus(T,-2)}]};
     if(act==='sales')return{counts:{nuevo:9,conversacion:6,seguimiento:4,preparar_matricula:2,matriculado:3,cerrado:5},items:[{id:'i1',stage:'nuevo',name:'Rita Campos',area:'Educación financiera',next_action:'Responder precios',due_on:T},{id:'i2',stage:'nuevo',name:'Pablo Vera',area:'Informática'},{id:'i3',stage:'conversacion',name:'Hugo Ríos',area:'Educación financiera',next_action:'Enviar programa',due_on:M.plus(T,-2)},{id:'i4',stage:'seguimiento',name:'Marta Díaz',area:'Mentoría',next_action:'Clase de prueba'},{id:'i5',stage:'matriculado',name:'Iván Cruz',area:'Educación financiera'}]};
   }
+  if(name==='forma_education'&&act==='detail')return{person:{id:d.person_id,name:'Ana Pérez',phone:'+55 11 90000-0001',email:'ana@ejemplo.com'},enrolments:[{id:'e1',course:'Educación financiera',state:'activo',group_name:'Grupo octubre',starts_on:M.plus(T,-20),ends_on:M.plus(T,60),total_cents:120000,paid_cents:80000,planned_encounters:8}],sessions:[0,1,2,3].map(function(i){return{enrolment_id:'e1',day:M.plus(T,-14+i*7),start_min:780,end_min:900,module:'Módulo '+(i+1),instructor:'René',room:'Sala 1',attendance:i<2?'asistio':'pendiente'}}),receipts:[{id:'r1',enrolment_id:'e1',paid_on:M.plus(T,-18),method:'efectivo',amount_cents:20000,note:'Reserva de inscripción'},{id:'r2',enrolment_id:'e1',paid_on:M.plus(T,-5),method:'pix',amount_cents:60000,note:''}],debts:[{enrolment_id:'e1',area:'Cuota 1',due_on:M.plus(T,-5),total_cents:60000,paid_cents:60000},{enrolment_id:'e1',area:'Cuota 2',due_on:M.plus(T,25),total_cents:40000,paid_cents:0}],payment_notices:[]};
   if(name==='forma_education'&&act==='list')return{version:1,count:3,has_more:false,items:[{id:'s1',name:'Ana Pérez',phone:'+55 11 90000-0001',courses:[{course:'Educación financiera',state:'activo',total_cents:120000,paid_cents:80000}]},{id:'s2',name:'Luis Gómez',phone:'+55 11 90000-0002',courses:[{course:'Inversiones básicas',state:'activo',total_cents:90000,paid_cents:90000}]},{id:'s3',name:'Carlos Rojas',phone:'',courses:[{course:'Mentoría particular',state:'activo',total_cents:240000,paid_cents:120000}]}]};
   return null;
 }

@@ -186,3 +186,17 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
 .cu-d{background:var(--soft);border-radius:8px;padding:4px 8px;font-size:12px}.cu-d b{color:var(--brand2)}.cu-d.bad{background:var(--badbg);color:var(--bad)}
 .cu-foot{display:flex;justify-content:space-between;gap:10px;position:sticky;bottom:calc(76px + env(safe-area-inset-bottom,0px));background:var(--card);padding-top:8px}
 @media(min-width:900px){.cu-foot{bottom:0}}
+
+/* Ficha del alumno */
+.fi-id{display:flex;align-items:center;gap:12px;margin-bottom:12px}.fi-id h3{font-size:20px}.fi-id span{color:var(--ink2);font-size:14px}
+.fi-av{width:46px;height:46px;border-radius:50%;background:var(--grad);color:#fff;display:grid;place-items:center;font:700 16px var(--f1)}
+.fi-sel{margin-bottom:10px}
+.fi-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px}.fi-head h3{font-size:18px}
+.fi-ks{display:grid;gap:10px;grid-template-columns:repeat(2,1fr);margin-bottom:14px}
+@media(min-width:700px){.fi-ks{grid-template-columns:repeat(4,1fr)}}
+.fi-k{background:var(--soft);border-radius:14px;padding:10px 12px;min-width:0}.fi-k small{color:var(--ink2);display:block}.fi-k b{font:800 20px var(--f1);display:block}.fi-k span{font-size:12px;color:var(--ink2)}
+.fi-g{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:760px){.fi-g{grid-template-columns:repeat(3,1fr)}}
+.fi-g h4{margin:0 0 6px;font-size:15px}
+.fi-av2{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:10px 14px;margin-top:12px;font-weight:700}
+.fi-acts{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
