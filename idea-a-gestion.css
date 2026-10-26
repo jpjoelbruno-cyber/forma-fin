@@ -1,0 +1,36 @@
+/* FORMA Gestión · Idea A. Se carga al final. Para revertir: quitar este <link>, idea-a-gestion.js y embudo.js. */
+:root{--a-ink:#1B1240;--a-ink2:#54497A;--a-line:#DDD6F0;--a-brand:#5314D4;--a-dark:#3A0DB5;--a-ok:#166534;--a-bad:#B91C1C;--a-grad:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);--a-btn:linear-gradient(135deg,#7A10DC 0%,#4A12D6 100%)}
+body{background:#F5F2FC;color:var(--a-ink);font-size:17px}
+.ia-i{width:44px;height:44px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.forma-work-header{background:var(--a-grad)}
+main h1,main h2{font-family:Sora,'DM Sans',sans-serif;font-weight:700}
+main button,main select,main input:not([type=checkbox]):not([type=radio]){min-height:48px;border-radius:12px}
+main button:focus-visible,main input:focus-visible,main select:focus-visible{outline:3px solid #7403E7;outline-offset:2px}
+/* inicio con 4 botones */
+#ia-rhome{display:flex;flex-direction:column;gap:20px;margin-bottom:22px}
+body:not([data-workspace-view="today"]) #ia-rhome{display:none}
+#ia-rhome h2{margin:0;font-size:34px}#ia-rhome p{margin:2px 0 0;color:var(--a-ink2);font-size:21px}
+.ia-rgrid{display:grid;grid-template-columns:1fr;gap:16px}@media(min-width:760px){.ia-rgrid{grid-template-columns:1fr 1fr}}
+.ia-rbig{border:0;border-radius:24px;padding:30px 26px;display:flex;align-items:center;gap:20px;font:700 25px/1.2 'DM Sans',sans-serif;text-align:left;cursor:pointer;min-height:120px}
+.ia-rbig small{display:block;font-size:17px;font-weight:500;margin-top:3px}
+.ia-g{background:#DCFCE7;color:#166534}.ia-v{background:#EFE9FD;color:#3A0DB5}.ia-a{background:#FEF3C7;color:#92400E}.ia-r{background:#FCE7F3;color:#9D174D}
+.ia-rpend{display:flex;gap:12px;flex-wrap:wrap}
+.ia-rmore{background:#fff;border:2px solid var(--a-brand);color:var(--a-dark);border-radius:16px;padding:0 22px;font:700 18px 'DM Sans',sans-serif;min-height:56px;cursor:pointer}
+body[data-workspace-view="today"]:not(.ia-detail) #workspace>.heading,body[data-workspace-view="today"]:not(.ia-detail) #rene-assistant{display:none}
+/* dinero: entra/cobrado/pagado = verde; sale/por cobrar/vencido = rojo */
+.finance-in-text{color:#166534!important}.finance-out-text,.finance-pending-text{color:#B91C1C!important}
+.finance-debt-row strong,.finance-collection-metrics strong{color:#B91C1C}
+main article,main .rene-card,main .rene-stat,main .crm-person{border-radius:18px}
+/* ventas y embudo */
+.crm-lane{background:#EAE4F8;border:1px solid var(--a-line);border-radius:18px}
+.crm-lane h3{font-size:16px;color:var(--a-dark)}.crm-lane h3>span{background:#fff;color:var(--a-dark);font-size:14px;padding:3px 10px}
+.crm-person{background:#fff}
+.embudo{background:#fff;border:1px solid var(--a-line);border-radius:18px;padding:18px 20px;margin:16px 0}
+.embudo h3{margin:0 0 12px;font-size:20px}
+.emb-row{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.emb-step{flex:1 1 120px;min-width:100px;background:#F5F2FC;border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.emb-step b{font-size:28px;color:var(--a-dark);line-height:1.1}.emb-step span{font-size:15px;color:var(--a-ink2)}
+.emb-step i{display:block;height:6px;border-radius:3px;background:var(--a-grad);margin-top:6px}
+.emb-arrow{align-self:center;color:#7403E7;font-weight:700}
+.embudo p{margin:12px 0 0;color:var(--a-ink2);font-size:16px}.embudo strong{color:#166534}
+.ia-rbig[hidden]{display:none}
