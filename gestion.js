@@ -183,7 +183,7 @@ V.alumnos=function(){
   var cs=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a]});
   return head('Alumnos','Cursos, matrículas y pagos en un solo lugar.',manager()?'<button class="btn p" data-act="matricular">'+ico('plus')+'Matricular un alumno</button>':'')+
    '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px"><input class="search" id="aq" placeholder="Buscar alumno o curso" aria-label="Buscar alumno o curso" value="'+esc(D.eduQuery)+'"><div class="chips" role="group" aria-label="Filtro">'+['Todos','Deben','Al día'].map(function(c){return '<button class="chip" data-al="'+c+'" aria-pressed="'+(alF===c)+'">'+c+'</button>'}).join('')+'</div></div>'+
-   '<div class="grid"><section class="card c8"><div class="tw"><table class="rt"><thead><tr><th>Alumno</th><th>Curso</th><th>Estado</th><th style="text-align:right">Saldo</th><th></th></tr></thead><tbody>'+(rows.map(function(x){var p=x.p,i=x.i,names=(i.act.length?i.act:(p.courses||[])).map(function(c){return c.course}).join(', ');return '<tr><td><b>'+esc(p.name)+'</b><br><span style="color:var(--ink2);font-size:13px">'+esc(p.phone||'')+'</span></td><td>'+esc(names||'Sin curso')+'</td><td><span class="pill '+(i.debt>0?'down':'up')+'">'+(i.debt>0?'con saldo':'al día')+'</span></td><td class="num '+(i.debt?'out':'in')+'" style="text-align:right"><b>'+R(i.debt)+'</b></td><td style="text-align:right">'+'<button class="btn s sm" data-ficha="'+esc(p.id)+'">Ver ficha</button>'+(i.debt>0&&manager()?' <button class="btn p sm" data-act="cobrar">Cobrar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5" class="note">'+(D.edu?'No hay alumnos con ese filtro.':'Cargando…')+'</td></tr>')+'</tbody></table></div>'+(D.eduMore?'<p class="note"><button class="link" id="emore">Ver más alumnos</button></p>':'')+'</section>'+
+   '<div class="grid"><section class="card c8"><div class="tw"><table class="rt"><thead><tr><th>Alumno</th><th>Curso</th><th>Estado</th><th style="text-align:right">Saldo</th><th></th></tr></thead><tbody>'+(rows.map(function(x){var p=x.p,i=x.i,names=(i.act.length?i.act:(p.courses||[])).map(function(c){return c.course}).join(', ');return '<tr><td><b>'+esc(p.name)+'</b><br><span style="color:var(--ink2);font-size:13px">'+esc(p.phone||'')+'</span></td><td>'+esc(names||'Sin curso')+'</td><td><span class="pill '+(i.debt>0?'down':'up')+'">'+(i.debt>0?'con saldo':'al día')+'</span></td><td class="num '+(i.debt?'out':'in')+'" style="text-align:right"><b>'+R(i.debt)+'</b></td><td style="text-align:right">'+'<button class="btn s sm" data-ficha="'+esc(p.id)+'">Ver ficha</button>'+(i.debt>0&&manager()?' <button class="btn p sm" data-act="cobrar" data-pid="'+esc(p.id)+'">Cobrar</button>':'')+'</td></tr>'}).join('')||'<tr><td colspan="5" class="note">'+(D.edu?'No hay alumnos con ese filtro.':'Cargando…')+'</td></tr>')+'</tbody></table></div>'+(D.eduMore?'<p class="note"><button class="link" id="emore">Ver más alumnos</button></p>':'')+'</section>'+
    '<section class="card c4"><h2>Cursos activos</h2><div class="list">'+(cs.map(function(c){return '<div class="row"><div class="t"><b>'+esc(c)+'</b><span>'+cc[c]+' alumno'+(cc[c]>1?'s':'')+'</span></div></div>'}).join('')||'<p class="note" style="margin:0">Sin cursos activos en la lista cargada.</p>')+'</div></section></div>';
 };
 var STG=[['nuevo','Nuevo'],['conversacion','En conversación'],['seguimiento','Seguimiento'],['preparar_matricula','Preparando matrícula'],['matriculado','Matriculado']];
@@ -283,11 +283,11 @@ function paintFicha(){
   var av=(d.payment_notices||[]).filter(function(n){return n.state==='reportado'});
   h+='<div class="fi-g"><section><h4>Plan de pago</h4><div class="list">'+pl+'</div></section><section><h4>Últimos pagos</h4><div class="list">'+pg+'</div></section><section><h4>Clases</h4><div class="list">'+cl+'</div></section></div>';
   if(av.length)h+='<div class="fi-av2">'+av.length+' aviso(s) de pago por revisar: '+av.map(function(n){return R(Number(n.amount_cents))+' · '+dl(n.paid_on)}).join(', ')+'</div>';
-  h+='<div class="fi-acts">'+(manager()&&bal>0?'<button class="btn p" data-act="cobrar">Cobrar un pago</button>':'')+'<button class="btn s" data-act="viejo">Editar matrícula o contrato</button></div><p class="note">Solo consulta. Cobrar y editar se hacen en la pantalla clásica por ahora.</p>';
+  h+='<div class="fi-acts">'+(manager()&&bal>0?'<button class="btn p" data-act="cobrar" data-pid="'+esc(p.id)+'" data-eid="'+esc(e.id)+'">Cobrar un pago</button>':'')+'<button class="btn s" data-act="viejo">Editar matrícula o contrato</button></div><p class="note">Solo consulta. Cobrar y editar se hacen en la pantalla clásica por ahora.</p>';
   dlg('Ficha de '+esc(p.name),h,true);
   var s2=$('#fiSel');if(s2)s2.onchange=function(){FI_SEL=this.value;paintFicha()};
 }
-function act(k){
+function act(k,el){
   if(k==='theme'){var r=document.documentElement,nt=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',nt);try{localStorage.setItem('forma-gestion-theme',nt)}catch(e){}return}
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión. Intenta de nuevo.')});return}
@@ -295,14 +295,17 @@ function act(k){
   if(k==='admin'){location.href='/administracion.html';return}
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
+  if(k==='cobrar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.cobrar(el&&el.dataset.pid?{person_id:el.dataset.pid,enrolment_id:el.dataset.eid||null}:null);return}
+  if(k==='matricular'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.matricular(el&&el.dataset.pid?{person_id:el.dataset.pid}:null);return}
   var T2={cobrar:'Cobrar un pago',matricular:'Matricular un alumno',agendar:'Agendar un servicio',interesado:'Nuevo interesado',asist:'Registrar la clase',ficha:'Ver la ficha',viejo:'Abrir esta opción'};
   toOld(T2[k]||'Acción',({cobrar:'cobrar',matricular:'matricular',agendar:'agendar',interesado:'interesado',asist:'asistencia'})[k]||'');
 }
 document.addEventListener('click',function(e){
+  if(window.GestionAcciones&&window.GestionAcciones.click(e))return;
   var fb=e.target.closest('[data-ficha]');if(fb){openFicha(fb.dataset.ficha);return}
   var b=e.target.closest('[data-v]');if(b){if(b.dataset.v==='mas'){openMas();return}go(b.dataset.v);return}
   var g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
-  var a=e.target.closest('[data-act]');if(a){act(a.dataset.act);return}
+  var a=e.target.closest('[data-act]');if(a){act(a.dataset.act,a);return}
   var c=e.target.closest('[data-ct]'),p=e.target.closest('[data-cp]'),al=e.target.closest('[data-al]'),ag=e.target.closest('[data-ag]'),wk=e.target.closest('[data-wk]');
   if(c){cobTab=c.dataset.ct;render();ensure();return}
   if(p){cobPer=p.dataset.cp;render();ensure();return}
@@ -382,6 +385,7 @@ function demoRpc(name,a){
   if(name==='forma_education'&&act==='list')return{version:1,count:3,has_more:false,items:[{id:'s1',name:'Ana Pérez',phone:'+55 11 90000-0001',courses:[{course:'Educación financiera',state:'activo',total_cents:120000,paid_cents:80000}]},{id:'s2',name:'Luis Gómez',phone:'+55 11 90000-0002',courses:[{course:'Inversiones básicas',state:'activo',total_cents:90000,paid_cents:90000}]},{id:'s3',name:'Carlos Rojas',phone:'',courses:[{course:'Mentoría particular',state:'activo',total_cents:240000,paid_cents:120000}]}]};
   return null;
 }
+window.GestionAcciones.init({rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
 window.GestionCursos.init({rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
 document.addEventListener('click',function(e){window.GestionCursos.click(e)});
 boot();

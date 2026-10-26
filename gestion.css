@@ -208,3 +208,22 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
 .cu-bulk label{min-width:110px}.cu-bulk input,.cu-bulk select{min-height:40px}
 .cu-tb{min-width:620px}.cu-tb td{padding:6px 6px}.cu-tb input,.cu-tb select{min-height:40px;width:100%}.cu-tb tr.bad td{background:var(--badbg)}
 .cu-add{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}.cu-add label{min-width:170px}
+
+/* acciones nativas: matricular y cobrar */
+.ac-steps{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ac-steps span{font-size:12px;font-weight:700;padding:6px 10px;border-radius:999px;background:var(--card2,var(--card));border:1px solid var(--line,#0002);color:var(--ink2)}
+.ac-steps span.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.ac-steps span.ok{color:var(--brand2)}
+.ac-chosen{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:12px 14px;border-radius:14px;border:2px solid var(--brand);margin-bottom:12px}
+.ac-chosen span{color:var(--ink2);font-size:13px;flex:1;min-width:120px}
+.ac-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.ac-grid .ac-bal,.ac-grid .ac-chk{grid-column:1/-1}
+.ac-chk{display:flex!important;flex-direction:row;align-items:center;gap:10px}
+.ac-chk input{width:22px;height:22px}
+.ac-g{width:100%;text-align:left;border:2px solid transparent;border-radius:14px;background:none}
+.ac-g.on{border-color:var(--brand)}
+.ac-g:disabled{opacity:.5}
+.ac-rev{display:grid;gap:10px}
+.ac-rev p{margin:0;display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line,#0002);padding-bottom:8px}
+.ac-rev small{color:var(--ink2)}
+.ac-ok{background:var(--goodbg,#e6f6ec);color:var(--good,#116b3a);padding:14px;border-radius:14px;margin-bottom:12px}
