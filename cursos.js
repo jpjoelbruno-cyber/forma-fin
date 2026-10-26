@@ -285,5 +285,5 @@ function demoApply(kind,a,b){
   var cg=C.demoCat.courses.filter(function(c){return c.id===a.course_id})[0];
   C.demoCat.groups.push({id:b,course_id:a.course_id,course:cg?cg.name:'',name:a.name,instructor:a.instructor,room:a.room,capacity:a.capacity,students:0,active:true,fee_cents:a.fee_cents,installments:a.installments,monthly_cents:a.monthly_cents,sessions:a.sessions.map(function(s){return{id:uuid(),day:s.day,start_min:s.start_min,end_min:s.end_min,instructor:a.instructor,room:a.room,module:s.module}})});
 }
-window.GestionCursos={init:function(ctx){X=ctx},html:html,load:load,click:click,demoAcademic:function(a){return a.p_action==='course_save'?{saved:true,course_id:a.p_data.request_id}:a.p_action==='group_save'?{saved:true,group_id:a.p_data.request_id}:null}};
+window.GestionCursos={init:function(ctx){X=ctx},cat:function(){return C.cat},html:html,load:load,click:click,demoAcademic:function(a){return a.p_action==='course_save'?{saved:true,course_id:a.p_data.request_id}:a.p_action==='group_save'?{saved:true,group_id:a.p_data.request_id}:null}};
 })();
