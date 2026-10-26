@@ -38,7 +38,7 @@ input:not([type=checkbox]):not([type=radio]),select,textarea{min-height:52px;bor
 .hero{background:var(--b-grad)!important}
 /* --- Anotar en 3 pasos --- */
 #p-registrar .register-heading,#manual-register>summary,#manual-register .reg-opts{display:none}
-#p-registrar{display:flex;flex-direction:column;gap:14px}.mb-anotar,.register-methods,#manual-register{display:contents}
+#p-registrar.active{display:flex;flex-direction:column;gap:14px}.mb-anotar,.register-methods,#manual-register{display:contents}
 #p-registrar .reg-type-row{order:1}#p-registrar .voice-card{order:2}#p-registrar .mb-step{order:3}#p-registrar .mb-actions{order:4}
 #p-registrar .reg-type-row{display:flex;gap:8px;background:#E6DFF8;border-radius:14px;padding:4px;margin:0}
 #p-registrar .rtype-btn{flex:1;min-height:52px;border:0;border-radius:11px;background:transparent;color:var(--b-ink2);font:600 17px Lexend,sans-serif}
