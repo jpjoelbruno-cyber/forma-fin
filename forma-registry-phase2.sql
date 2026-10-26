@@ -1,0 +1,15 @@
+-- FORMA · Fase 2 · instructores dinámicos. APLICADA en producción el 2026-10-26 (proyecto irsuevjqmgpwunvymxbc).
+-- Qué hace: forma_private.academic (grupos y encuentros) y forma_private.agenda_save (reservas) aceptan, además de los
+-- 5 nombres históricos, a cualquier instructor activo de forma_private.academic_instructors.
+-- Respaldo: las definiciones originales quedaron guardadas en forma_private.function_backup (2 filas, nota
+-- 'antes de fase 2 instructores dinamicos 2026-10-26'). Para volver atrás: ejecutar la columna definition de esas filas.
+-- No toca datos. La restricción agenda_staff_instructor_check (cuentas de usuario) se deja igual a propósito.
+--
+-- Cambios exactos (reemplazo de texto con verificación de coincidencias; si no coincidían, la migración se cancelaba):
+--  academic (2 lugares):   array['Joel','René','Luis','Emerson','Miguel']
+--      -> (array['Joel','René','Luis','Emerson','Miguel']||coalesce((select array_agg(name) from forma_private.academic_instructors where active),'{}'::text[]))
+--  agenda_save (lugar 1):  p_data->>'instructor' not in ('Sin asignar','Joel','René','Luis','Emerson','Miguel')
+--      -> not (p_data->>'instructor'=any(array['Sin asignar','Joel','René','Luis','Emerson','Miguel']||coalesce((select array_agg(name) from forma_private.academic_instructors where active),'{}'::text[])))
+--  agenda_save (lugar 2):  array['Sin asignar','Joel','René','Luis','Emerson','Miguel']::text[]
+--      -> (array['Sin asignar','Joel','René','Luis','Emerson','Miguel']::text[]||coalesce((select array_agg(name) from forma_private.academic_instructors where active),'{}'::text[]))
+-- Prueba hecha (con rollback automático): instructor nuevo registrado -> guardado; no registrado -> rechazado como antes.
