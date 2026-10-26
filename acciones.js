@@ -399,6 +399,47 @@ function saveInt(force){
   },function(){S.busy=false;go()});
 }
 
+
+/* ---------- AGENDAR UN SERVICIO ---------- */
+function openAgendar(){
+  var M=X.M,d=X.T;
+  while(M.date(d).getUTCDay()===0)d=M.plus(d,1);
+  S={kind:'ag',busy:false,pending:false,f:{client:'',phone:'',activity:'Mentoría particular',area:M.areas[0],instructor:'Sin asignar',room:'',start_date:d,start_hour:'15',duration:'1',sessions:'1',booking_state:'reservado',group_name:''}};
+  paintAg();
+}
+function paintAg(){
+  var M=X.M,f=S.f;
+  var opt=function(list,v){return list.map(function(x){return '<option'+(x===v?' selected':'')+'>'+X.esc(x)+'</option>'}).join('')};
+  var hours=[13,14,15,16,17].map(function(h){return '<option value="'+h+'"'+(String(h)===String(f.start_hour)?' selected':'')+'>'+h+':00</option>'}).join('');
+  var h='<form id="ac-ag" class="cu-form ac-grid">'+field('Cliente o invitado','client','text',f.client,'required maxlength="160" autocomplete="off"')+field('Teléfono','phone','tel',f.phone,'maxlength="40"')+
+   '<label>Actividad<select name="activity">'+opt(M.activities,f.activity)+'</select></label><label>Área<select name="area">'+opt(M.areas,f.area)+'</select></label><label>Instructor<select name="instructor">'+opt(M.instructors,f.instructor)+'</select></label>'+field('Sala (opcional)','room','text',f.room,'maxlength="60"')+
+   field('Primer día','start_date','date',f.start_date,'required')+'<label>Hora de inicio<select name="start_hour">'+hours+'</select></label><label>Duración (horas)<select name="duration">'+[1,2,3,4,5].map(function(n){return '<option'+(String(n)===String(f.duration)?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label>'+field('Cantidad de encuentros (1 por semana)','sessions','number',f.sessions,'min="1" max="52" data-nowheel="1"')+
+   '<label>Estado<select name="booking_state"><option value="reservado"'+(f.booking_state==='reservado'?' selected':'')+'>Reservado</option><option value="por_confirmar"'+(f.booking_state==='por_confirmar'?' selected':'')+'>Por confirmar</option></select></label>'+field('Grupo (opcional)','group_name','text',f.group_name,'maxlength="80"')+'</form>';
+  h+='<p class="note">Lunes a sábado, de 13:00 a 18:00. Si el instructor ya está ocupado, el sistema lo avisa y no guarda nada.</p><div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cancelar</button><button class="btn p" data-ac="aggo"'+(S.busy?' disabled':'')+'>Guardar en la agenda</button></div>';
+  shell('Agendar un servicio',h);say(S.msg);S.msg='';
+}
+function saveAg(){
+  if(S.busy)return;
+  var fd=new FormData($('#ac-ag')),g=function(k){return String(fd.get(k)==null?'':fd.get(k)).trim()};
+  S.f={client:g('client'),phone:g('phone'),activity:g('activity'),area:g('area'),instructor:g('instructor'),room:g('room'),start_date:g('start_date'),start_hour:g('start_hour'),duration:g('duration'),sessions:g('sessions'),booking_state:g('booking_state'),group_name:g('group_name')};
+  var f=S.f,b;
+  try{
+    b={client:f.client,phone:f.phone,activity:f.activity,area:f.area,profession:'',room:f.room,instructor:f.instructor,start_date:f.start_date,start_hour:Number(f.start_hour),duration:Number(f.duration),sessions:Number(f.sessions),instructors:[f.instructor],student_reference:'',booking_state:f.booking_state,override_conflict:false,override_reason:''};
+    if(f.group_name)b.group_name=f.group_name;
+    X.M.validate(b);
+  }catch(e){say(e.message);return}
+  S.busy=true;paintAg();
+  (X.demo?simulate('ag'):X.rpc('forma_agenda_save',{p_id:null,p_expected:null,p_data:b,p_reason:''})).then(function(r){
+    if(!r||!r.saved||!(r.id||X.demo))throw Error('Sin confirmar');
+    S.busy=false;X.refresh();
+    X.dlg('Reserva guardada','<div class="ac-ok"><b>'+X.esc(b.client)+'</b> quedó agendado: '+X.esc(b.activity)+' · '+X.dl(b.start_date)+' · '+b.start_hour+':00'+(b.sessions>1?' · '+b.sessions+' encuentros':'')+'.</div><div class="fi-acts"><button class="btn p" data-ac="agnew">Agendar otro</button><button class="btn s" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){
+    S.busy=false;
+    S.msg=/timeout/i.test((e&&e.message)||'')?'No se confirmó a tiempo. Mira la Agenda antes de guardar otra vez para no duplicar la reserva.':errText(e);
+    paintAg();
+  });
+}
+
 /* ---------- eventos ---------- */
 function click(e){
   var b=e.target.closest('[data-ac]');if(!b||!S)return false;
@@ -423,6 +464,8 @@ function click(e){
   else if(k==='intgo')saveInt(false);
   else if(k==='intforce')saveInt(true);
   else if(k==='intnew')openInt();
+  else if(k==='aggo')saveAg();
+  else if(k==='agnew')openAgendar();
   return true;
 }
 document.addEventListener('change',function(e){var t=e.target;if(S&&S.kind==='cls'&&t&&t.dataset&&t.dataset.acAtt!==undefined){S.rows[Number(t.dataset.acAtt)].val=t.value}});
@@ -435,6 +478,7 @@ window.GestionAcciones={
   cobrar:openPay,
   clase:openClase,
   interesado:openInt,
+  agendar:openAgendar,
   click:click
 };
 })();
