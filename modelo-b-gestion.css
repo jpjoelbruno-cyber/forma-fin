@@ -1,0 +1,23 @@
+/* FORMÁ Gestión · Modelo B. Se carga al final. Para revertir: quitar este <link> y embudo.js. */
+:root{--b-ink:#1B1240;--b-ink2:#54497A;--b-line:#DDD6F0;--b-brand:#5314D4;--b-dark:#3A0DB5;--b-grad:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);--b-btn:linear-gradient(135deg,#7A10DC 0%,#4A12D6 100%)}
+body{background:#F5F2FC;color:var(--b-ink);font-family:Lexend,Sora,'DM Sans',system-ui,sans-serif;font-size:17px}
+.forma-work-header{background:var(--b-grad)}
+main h1,main h2{font-family:Lexend,Sora,sans-serif;font-weight:600}
+main button,main select,main input:not([type=checkbox]):not([type=radio]){min-height:48px;border-radius:12px;font-size:16px}
+main button:focus-visible,main input:focus-visible,main select:focus-visible{outline:3px solid #7403E7;outline-offset:2px}
+main article,main .finance-card,main .rene-card,main .rene-stat,main .crm-person{border-radius:16px;border:1px solid var(--b-line)}
+/* dinero: entra/cobrado/pagado = verde; sale/por cobrar/vencido = rojo */
+.finance-in-text{color:#166534!important}.finance-out-text,.finance-pending-text{color:#B91C1C!important}
+.finance-debt-row strong,.finance-collection-metrics strong{color:#B91C1C}
+/* ventas */
+.crm-lane{background:#EAE4F8;border:1px solid var(--b-line);border-radius:16px}
+.crm-lane h3{font-size:15px;color:var(--b-dark)}.crm-lane h3>span{background:#fff;color:var(--b-dark);font-size:13px;padding:3px 10px}
+.crm-person{background:#fff}
+.embudo{background:#fff;border:1px solid var(--b-line);border-radius:16px;padding:16px 18px;margin:16px 0}
+.embudo h3{margin:0 0 12px;font-size:18px;color:var(--b-ink)}
+.emb-row{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.emb-step{flex:1 1 120px;min-width:110px;background:#F5F2FC;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;overflow:hidden}
+.emb-step b{font-size:26px;color:var(--b-dark);line-height:1.1}.emb-step span{font-size:14px;color:var(--b-ink2)}
+.emb-step i{display:block;height:6px;border-radius:3px;background:var(--b-grad);margin-top:6px}
+.emb-arrow{align-self:center;color:#7403E7;font-weight:700}
+.embudo p{margin:12px 0 0;color:var(--b-ink2);font-size:15px}.embudo strong{color:#166534}
