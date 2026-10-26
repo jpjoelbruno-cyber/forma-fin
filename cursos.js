@@ -106,9 +106,12 @@ function startWiz(courseId,fromGroupId){
   if(!w.start){var t=X.M.date(X.T);w.start=X.M.iso(new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,1)))}
   if(!w.days.length)w.days=[4];
   var sd=X.M.date(w.start),mn=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  w.groupName='Grupo '+mn[sd.getUTCMonth()]+' '+sd.getUTCFullYear();
+  w.groupName='Grupo '+mn[sd.getUTCMonth()]+' '+sd.getUTCFullYear();w.i0=w.instructor;w.r0=w.room;
   C.wiz=w;C.msg='';X.render();window.scrollTo(0,0);
 }
+function tplSessions(w){return w.tpl?(w.tpl.sessions||[]).slice().sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min}):[]}
+function insAt(w,i){var t=tplSessions(w)[i];return(w.instructor===w.i0&&t&&t.instructor)?t.instructor:w.instructor}
+function roomAt(w,i){var t=tplSessions(w)[i];return(w.room===w.r0&&t&&t.room)?t.room:w.room}
 function plan(w){
   var list=[],skipped=[],n=0,d=w.start,guard=0,cnt=Math.max(0,Math.min(104,Number(w.count)||0));
   if(!/^\d{4}-\d{2}-\d{2}$/.test(w.start||'')||!w.days.length||!cnt)return{list:[],skipped:[],end:null};
@@ -126,9 +129,9 @@ function conflicts(w,p){
   p.list.forEach(function(x){C.cat.groups.forEach(function(g){
     if(g.active===false)return;(g.sessions||[]).forEach(function(s){
       if(s.day!==x.day||s.cancelled)return;if(!(a0<s.end_min&&s.start_min<a1))return;
-      var ins=(s.instructor||g.instructor)===w.instructor,room=(s.room||g.room)===w.room;if(!ins&&!room)return;
+      var wi=insAt(w,x.n-1),wr=roomAt(w,x.n-1),ins=(s.instructor||g.instructor)===wi,room=(s.room||g.room)===wr;if(!ins&&!room)return;
       var k=g.id+(ins?'i':'')+(room?'r':'');if(seen[k])return;seen[k]=1;
-      out.push({day:x.day,who:(g.course||'')+' · '+g.name,why:(ins&&room?'mismo instructor y sala':ins?'mismo instructor ('+w.instructor+')':'misma sala ('+w.room+')'),time:hhmm(s.start_min)+'–'+hhmm(s.end_min)});
+      out.push({day:x.day,who:(g.course||'')+' · '+g.name,why:(ins&&room?'mismo instructor y sala':ins?'mismo instructor ('+wi+')':'misma sala ('+wr+')'),time:hhmm(s.start_min)+'–'+hhmm(s.end_min)});
     })
   })});
   return out;
@@ -144,7 +147,7 @@ function wizard(){
   var durs=[1,1.5,2,2.5,3,4].map(function(h){return '<option value="'+h+'"'+(Number(w.hours)===h?' selected':'')+'>'+h+' h</option>'}).join('');
   var sk=p.skipped.map(function(s){return '<span class="cu-skip">'+dm(s.day)+' · '+esc(s.why)+' <button type="button" class="link" data-cu="inc" data-d="'+s.day+'">dar clase igual</button></span>'}).join('');
   var weeks=p.list.length?Math.round((X.M.date(p.end)-X.M.date(w.start))/86400000/7):0;
-  var prev=p.list.length?'<div class="cu-prev">'+p.list.map(function(x){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'" title="'+esc(x.why)+'"><b>'+x.n+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+'</span>'}).join('')+'</div>':'<p class="note">Elige la fecha de inicio y los días.</p>';
+  var multi=(function(){var set={};p.list.forEach(function(x){set[insAt(w,x.n-1)]=1});return Object.keys(set)})();var prev0=multi.length>1?'<div class="cu-ok" style="background:var(--soft);color:var(--brand2)">Instructores de este grupo: <b>'+multi.map(esc).join(', ')+'</b> · se mantienen como en el grupo anterior. Si eliges otro instructor arriba, se aplica a todos los encuentros.</div>':'';var prev=p.list.length?'<div class="cu-prev">'+p.list.map(function(x){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'" title="'+esc(x.why)+'"><b>'+x.n+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+(multi.length>1?' · '+esc(insAt(w,x.n-1)):'')+'</span>'}).join('')+'</div>':'<p class="note">Elige la fecha de inicio y los días.</p>';
   var cfh=cf.length?'<div class="err"><b>Choca con otro grupo — corrige antes de guardar</b><ul style="margin:6px 0 0;padding-left:18px">'+cf.slice(0,6).map(function(k){return '<li>'+dm(k.day)+' '+k.time+' · '+esc(k.who)+' ('+k.why+')</li>'}).join('')+'</ul><span class="note">Cambia la sala, el instructor o la hora.</span></div>':(p.list.length?'<div class="cu-ok">Sin cruces con otros grupos ✓</div>':'');
   return X.head(isC?'Nuevo curso':'Nuevo grupo · '+esc(c?c.name:''),isC?'Crea el curso y su primer grupo en un solo paso.':(w.tpl?'Repetido desde “'+esc(w.tpl.name)+'”: mismos días, hora, sala e instructor. Cambia solo lo que haga falta.':'Define días, hora y cupos.'),'<button class="btn s" data-cu="cancel">Cancelar</button>')
   +(w.msg?'<div class="err" id="cuErr" role="alert">'+esc(w.msg)+'</div>':'')
@@ -158,7 +161,7 @@ function wizard(){
   +'<label>Instructor<select data-cuf="instructor">'+opt(instructors(),w.instructor)+'</select></label><label>Sala<select data-cuf="room">'+opt(rooms(),w.room)+'</select></label>'
   +'<label>Precio de referencia (R$)<input inputmode="decimal" data-cuf="price" value="'+esc(w.price)+'" placeholder="0"></label></div>'
   +(p.list.length?'<div class="cu-sum"><b>'+p.list.length+' encuentros → termina el '+DOW[dow(p.end)]+' '+dmy(p.end)+'</b> <span class="note">(≈ '+weeks+' semanas)</span>'+(sk?'<div style="margin-top:6px">Se saltan: '+sk+'</div>':'')+'</div>':'')
-  +cfh+prev
+  +cfh+prev0+prev
   +'<div class="cu-foot"><button class="btn s" type="button" data-cu="cancel">Cancelar</button><button class="btn p" type="submit" id="cuSave"'+(C.busy?' disabled':'')+'>'+(C.busy?'Guardando…':(isC?'Crear curso y grupo':'Guardar grupo'))+'</button></div>'
   +(w.msg?'<div class="err" style="margin-top:12px" role="alert">'+esc(w.msg)+'</div>':'')+'</form>';
 }
@@ -192,11 +195,11 @@ function save(){
   if(a1>1440||a0<0)return bad('Revisa la hora de inicio y la duración.');
   var cat=C.cat,c=cat.courses.filter(function(x){return x.id===w.courseId})[0],v2=cat.academic_version===2,tpl=w.tpl;
   var tplS=tpl?(tpl.sessions||[]).slice().sort(function(a,b){return a.day<b.day?-1:1}):[];
-  var sessions=p.list.map(function(x,i){var o={day:x.day,start_min:a0,end_min:a1,module:(tplS[i]&&tplS[i].module)||'',instructor:w.instructor,room:w.room};if(!v2){delete o.instructor;delete o.room}return o});
+  var sessions=p.list.map(function(x,i){var o={day:x.day,start_min:a0,end_min:a1,module:(tplS[i]&&tplS[i].module)||'',instructor:insAt(w,i),room:roomAt(w,i)};if(!v2){delete o.instructor;delete o.room}return o});
   var mods=c?(c.modules||[]):[];
   var same=tpl&&w.price===w.priceBase;
   var group={name:gname,course_id:'',instructor:w.instructor,room:w.room,capacity:cap,fee_cents:same?Number(tpl.fee_cents):0,installments:same?Number(tpl.installments):(total>0?1:0),monthly_cents:same?Number(tpl.monthly_cents):total,active:true,sessions:sessions};
-  if(v2)group.module_plan=mods.map(function(n){return{name:n,instructor:w.instructor,room:w.room}});
+  if(v2)group.module_plan=mods.map(function(n){var old=tpl&&(tpl.module_plan||[]).filter(function(m){return m.name===n})[0];return(old&&w.instructor===w.i0&&w.room===w.r0)?old:{name:n,instructor:w.instructor,room:w.room}});
   var sig=JSON.stringify(group)+name;if(w.sig!==sig){w.sig=sig;w.rid={c:uuid(),g:uuid()}}
   C.busy=true;X.render();
   var courseStep=isC&&!w.saved?ac('course_save',(function(){var d={name:name,modules:[],active:true,request_id:w.rid.c};if(cat.course_templates===1){d.encounter_count=p.list.length;d.module_counts={}}return d})()).then(function(r){if(!r||!r.saved)throw Error('El servidor no confirmó el curso.');w.saved={courseId:r.course_id||w.rid.c};if(X.demo)demoApply('course',name,w.saved.courseId)}):Promise.resolve();
@@ -239,7 +242,7 @@ function demoCatalog(){
   var T=X.T,M=X.M,mon=M.monday(T);function mk(start,days,n,sm,em,ins,room){var out=[],d=start,i=0,g=0;while(i<n&&g++<400){if(days.indexOf(dow(d))>-1){out.push({id:uuid(),day:d,start_min:sm,end_min:em,instructor:ins,room:room,module:'Módulo '+(i+1)});i++}d=M.plus(d,1)}return out}
   var c1='c-met',c2='c-est',c3='c-edu';
   return{version:1,academic:true,academic_version:2,course_templates:1,courses:[{id:c1,name:'Método FORMA',modules:[],active:true,encounter_count:25},{id:c2,name:'Estructura Empresarial',modules:[],active:true,encounter_count:12},{id:c3,name:'Educación Financiera',modules:[],active:true,encounter_count:10}],groups:[
-   {id:'g1',course_id:c1,course:'Método FORMA',name:'Grupo octubre',instructor:'Joel',room:'Sala 3',capacity:12,students:9,active:true,fee_cents:20000,installments:3,monthly_cents:90000,sessions:mk(M.plus(mon,-14),[1,4],25,900,1020,'Joel','Sala 3')},
+   {id:'g1',course_id:c1,course:'Método FORMA',name:'Grupo octubre',instructor:'Joel',room:'Sala 3',capacity:12,students:9,active:true,fee_cents:20000,installments:3,monthly_cents:90000,sessions:mk(M.plus(mon,-14),[1,4],25,900,1020,'Joel','Sala 3').map(function(x,i){if(i%3===1)x.instructor='René';if(i%3===2)x.instructor='Luis';return x})},
    {id:'g2',course_id:c2,course:'Estructura Empresarial',name:'Grupo octubre',instructor:'René',room:'Sala 2',capacity:10,students:6,active:true,fee_cents:0,installments:1,monthly_cents:120000,sessions:mk(M.plus(mon,-7),[2,4],12,780,900,'René','Sala 2')},
    {id:'g3',course_id:c3,course:'Educación Financiera',name:'Grupo noviembre',instructor:'Miguel',room:'Sala 1',capacity:10,students:1,active:true,fee_cents:20000,installments:3,monthly_cents:30000,sessions:mk(M.plus(mon,14),[1,4],10,780,900,'Miguel','Sala 1')}]};
 }
