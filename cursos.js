@@ -2,7 +2,7 @@
    Usa las mismas operaciones del servidor que la pantalla clásica (forma_academic: catalog, course_save, group_save, group_detail).
    Antes de guardar valida fechas, cupos y cruces de horario para no dejar un curso a medias. No borra nada. */
 (function(){'use strict';
-var X=null,C={cat:null,err:'',busy:false,selG:null,detail:{},wiz:null,msg:'',demoCat:null};
+var X=null,C={reg:null,cat:null,err:'',busy:false,selG:null,detail:{},wiz:null,msg:'',demoCat:null};
 var PAL=['#7C3AED','#0D9488','#F97316','#DB2777','#2563EB','#CA8A04','#DC2626','#0891B2'];
 var DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 var FERIADOS={'2026-11-02':'Finados','2026-11-20':'Conciencia Negra','2026-12-25':'Navidad','2027-01-01':'Año Nuevo','2027-02-16':'Carnaval','2027-04-02':'Viernes Santo','2027-04-21':'Tiradentes','2027-05-01':'Día del Trabajo'};
@@ -11,12 +11,16 @@ function esc(s){return X.esc(s)}
 function uuid(){return window.crypto&&crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
 function hash(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h}
 function colorOf(c){
+  if(C.reg&&C.reg.colors[c.id])return C.reg.colors[c.id];
   try{var v=localStorage.getItem('forma-color-'+c.id);if(v&&PAL.indexOf(v)>-1)return v}catch(e){}
   var used={};if(C.cat)C.cat.courses.forEach(function(o){if(o.id===c.id)return;try{var u=localStorage.getItem('forma-color-'+o.id);if(u)used[u]=(used[u]||0)+1}catch(e){}});
   var best=null,bi=hash(c.id||c.name||'')%PAL.length;for(var k=0;k<PAL.length;k++){var p=PAL[(bi+k)%PAL.length];if(best===null||(used[p]||0)<(used[best]||0))best=p;if(!used[p])break}
   setColor(c.id,best);return best;
 }
-function setColor(id,col){try{localStorage.setItem('forma-color-'+id,col)}catch(e){}}
+function setColor(id,col){
+  try{localStorage.setItem('forma-color-'+id,col)}catch(e){}
+  if(C.reg){C.reg.colors[id]=col;if(!X.demo&&/^[0-9a-f-]{36}$/i.test(id))X.rpc('forma_registry',{p_action:'color_save',p_data:{course_id:id,color:col}}).catch(function(){})}
+}
 function hhmm(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
 function dow(d){return new Date(d+'T12:00:00Z').getUTCDay()}
 function dmy(d){var p=d.split('-');return p[2]+'/'+p[1]+'/'+p[0]}
@@ -35,11 +39,25 @@ function seats(cap,n){
 /* ---------- carga ---------- */
 function load(force){
   if(C.cat&&!force)return Promise.resolve();
-  if(X.demo){if(!C.demoCat)C.demoCat=demoCatalog();C.cat=C.demoCat;return Promise.resolve()}
+  if(X.demo){if(!C.demoCat)C.demoCat=demoCatalog();C.cat=C.demoCat;return loadReg()}
   return ac('catalog').then(function(d){
     if(!d||d.version!==1||!Array.isArray(d.courses)||!Array.isArray(d.groups))throw Error('catálogo');
-    C.cat=d;C.err=''
+    C.cat=d;C.err='';
+    return loadReg();
   },function(e){C.err='No se pudo cargar los cursos. No se cambió nada.';C.cat=C.cat||null});
+}
+function applyIns(){
+  if(!C.reg||!X.M||!X.M.instructors)return;
+  C.reg.ins.forEach(function(i){if(i.active&&X.M.instructors.indexOf(i.name)<0)X.M.instructors.push(i.name)});
+}
+function loadReg(){
+  if(X.demo){if(!C.reg)C.reg={ins:['Joel','René','Luis','Emerson','Miguel'].map(function(n){return{name:n,active:true}}),colors:{}};applyIns();return Promise.resolve()}
+  return Promise.all([X.rpc('forma_registry',{p_action:'instructors_list',p_data:{}}),X.rpc('forma_registry',{p_action:'colors_list',p_data:{}})]).then(function(r){
+    var cols={};((r[1]&&r[1].items)||[]).forEach(function(x){cols[x.course_id]=x.color});
+    C.reg={ins:(r[0]&&r[0].items)||[],colors:cols};applyIns();
+    /* colores que ya había elegido este navegador: se comparten una sola vez */
+    C.cat.courses.forEach(function(k){if(!cols[k.id]){try{var v=localStorage.getItem('forma-color-'+k.id);if(v&&PAL.indexOf(v)>-1)setColor(k.id,v)}catch(e){}}});
+  },function(){C.reg=null});
 }
 function loadDetail(gid){
   if(C.detail[gid])return;
@@ -90,13 +108,39 @@ function panel(){
 function html(){
   if(!C.cat)return X.head('Cursos','Grupos por mes, con cupos y horarios.','')+(C.err?'<div class="err">'+esc(C.err)+'</div>':'<p class="skel" role="status">Cargando cursos…</p>');
   if(C.wiz)return wizard();
-  var right='<button class="btn p" data-cu="newc">+ Nuevo curso</button>';
+  var right='<button class="btn s" data-cu="insman">Instructores</button> <button class="btn p" data-cu="newc">+ Nuevo curso</button>';
   var leg=C.cat.courses.map(function(c){return '<span><i class="cu-dot" style="background:'+colorOf(c)+'"></i>'+esc(c.name)+'</span>'}).join('');
   return X.head('Cursos','Cada barra es un grupo, con el color de su curso.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+board()+'</section>'+panel()+'</div>';
 }
 /* ---------- asistente ---------- */
-function instructors(){var s=['Joel','René','Luis','Emerson','Miguel'];C.cat.groups.forEach(function(g){if(g.instructor&&s.indexOf(g.instructor)<0)s.push(g.instructor)});return s}
+function instructors(){var s=['Joel','René','Luis','Emerson','Miguel'];if(C.reg)C.reg.ins.forEach(function(i){if(i.active&&s.indexOf(i.name)<0)s.push(i.name)});C.cat.groups.forEach(function(g){if(g.instructor&&s.indexOf(g.instructor)<0)s.push(g.instructor)});return s}
 function rooms(){var s=['Sala 1','Sala 2','Sala 3'];C.cat.groups.forEach(function(g){if(g.room&&s.indexOf(g.room)<0)s.push(g.room)});return s}
+function insDialog(msg){
+  if(!C.reg){X.dlg('Instructores','<div class="err">No se pudo cargar el registro de instructores. No se cambió nada.</div>');return}
+  var used={};(C.cat?C.cat.groups:[]).forEach(function(g){used[g.instructor]=1});
+  var h=(msg?'<div class="'+(msg.ok?'ac-ok':'err')+'" role="alert">'+esc(msg.t)+'</div>':'')+'<p class="note">Quién puede dar clases. Puedes sumar instructores nuevos y desactivar a quien salga; sus clases anteriores se conservan.</p><div class="list">'+C.reg.ins.map(function(i){
+    return '<div class="row"><div class="t"><b>'+esc(i.name)+'</b><span>'+(i.active?'Activo':'Desactivado')+(used[i.name]?' · tiene grupos':'')+'</span></div><button class="btn s sm" data-cu="instog" data-n="'+esc(i.name)+'" data-a="'+(i.active?'0':'1')+'">'+(i.active?'Desactivar':'Activar')+'</button></div>';
+  }).join('')+'</div><form class="cu-form" id="insForm" style="margin-top:14px" onsubmit="return false"><label>Nuevo instructor<input id="insName" maxlength="60" placeholder="Nombre" autocomplete="off"></label><button class="btn p" data-cu="insadd" type="button">Agregar instructor</button></form>';
+  X.dlg('Instructores',h,false);
+}
+function insSave(name,active){
+  if(X.demo){var f=C.reg.ins.filter(function(i){return i.name===name})[0];if(f)f.active=active;else C.reg.ins.push({name:name,active:active});applyIns();return Promise.resolve({saved:true})}
+  return X.rpc('forma_registry',{p_action:'instructor_save',p_data:{name:name,active:active}}).then(function(r){
+    if(!r||!r.saved)throw Error('Sin confirmar');
+    var f=C.reg.ins.filter(function(i){return i.name===name})[0];if(f)f.active=active;else C.reg.ins.push({name:name,active:active});C.reg.ins.sort(function(a,b){return a.name.localeCompare(b.name)});applyIns();return r;
+  });
+}
+function insAdd(){
+  var n=(document.getElementById('insName').value||'').trim().replace(/\s+/g,' ');
+  if(n.length<2){insDialog({t:'Escribe el nombre del instructor.'});return}
+  if(/^sin asignar$/i.test(n)){insDialog({t:'Ese nombre no es válido.'});return}
+  var ex=C.reg.ins.filter(function(i){return i.name.toLowerCase()===n.toLowerCase()})[0];
+  if(ex&&ex.active){insDialog({t:n+' ya está en la lista.'});return}
+  insSave(ex?ex.name:n,true).then(function(){insDialog({ok:true,t:(ex?ex.name:n)+' quedó disponible para grupos y reservas.'});X.render()},function(){insDialog({t:'No se pudo guardar. No se cambió nada.'})});
+}
+function insToggle(n,a){
+  insSave(n,a).then(function(){insDialog({ok:true,t:n+(a?' activado.':' desactivado. Sus clases anteriores se conservan.')});X.render()},function(){insDialog({t:'No se pudo guardar. No se cambió nada.'})});
+}
 function startWiz(courseId,fromGroupId){
   var cat=C.cat,c=cat.courses.filter(function(x){return x.id===courseId})[0],tpl=null;
   if(c){var gs=cat.groups.filter(function(g){return g.course_id===courseId}).sort(function(a,b){return(span(b).from||'')<(span(a).from||'')?-1:1});tpl=fromGroupId?cat.groups.filter(function(g){return g.id===fromGroupId})[0]:gs[0]}
@@ -247,9 +291,12 @@ function save(){
 }
 /* ---------- eventos ---------- */
 function click(e){
-  var b=e.target.closest('[data-cu]');if(!b||X.view()!=='cursos')return false;
+  var b=e.target.closest('[data-cu]');if(!b)return false;if(X.view()!=='cursos'&&['insman','insadd','instog'].indexOf(b.dataset.cu)<0)return false;
   var k=b.dataset.cu,w=C.wiz;
   if(k==='pick'){C.selG=b.dataset.id;C.msg='';X.render();return true}
+  if(k==='insman'){insDialog();return true}
+  if(k==='insadd'){insAdd();return true}
+  if(k==='instog'){insToggle(b.dataset.n,b.dataset.a==='1');return true}
   if(k==='newc'){startWiz('',null);return true}
   if(k==='newg'){startWiz(b.dataset.id,null);return true}
   if(k==='repeat'){var g=C.cat.groups.filter(function(x){return x.id===b.dataset.id})[0];if(g)startWiz(g.course_id,g.id);return true}
@@ -285,5 +332,5 @@ function demoApply(kind,a,b){
   var cg=C.demoCat.courses.filter(function(c){return c.id===a.course_id})[0];
   C.demoCat.groups.push({id:b,course_id:a.course_id,course:cg?cg.name:'',name:a.name,instructor:a.instructor,room:a.room,capacity:a.capacity,students:0,active:true,fee_cents:a.fee_cents,installments:a.installments,monthly_cents:a.monthly_cents,sessions:a.sessions.map(function(s){return{id:uuid(),day:s.day,start_min:s.start_min,end_min:s.end_min,instructor:a.instructor,room:a.room,module:s.module}})});
 }
-window.GestionCursos={init:function(ctx){X=ctx},cat:function(){return C.cat},html:html,load:load,click:click,demoAcademic:function(a){return a.p_action==='course_save'?{saved:true,course_id:a.p_data.request_id}:a.p_action==='group_save'?{saved:true,group_id:a.p_data.request_id}:null}};
+window.GestionCursos={insDialog:function(){return load(false).then(function(){insDialog()})},init:function(ctx){X=ctx},cat:function(){return C.cat},html:html,load:load,click:click,demoAcademic:function(a){return a.p_action==='course_save'?{saved:true,course_id:a.p_data.request_id}:a.p_action==='group_save'?{saved:true,group_id:a.p_data.request_id}:null}};
 })();

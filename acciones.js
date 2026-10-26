@@ -402,6 +402,9 @@ function saveInt(force){
 
 /* ---------- AGENDAR UN SERVICIO ---------- */
 function openAgendar(){
+  X.cursos.load(false).then(openAgendar2,openAgendar2);
+}
+function openAgendar2(){
   var M=X.M,d=X.T;
   while(M.date(d).getUTCDay()===0)d=M.plus(d,1);
   S={kind:'ag',busy:false,pending:false,f:{client:'',phone:'',activity:'Mentoría particular',area:M.areas[0],instructor:'Sin asignar',room:'',start_date:d,start_hour:'15',duration:'1',sessions:'1',booking_state:'reservado',group_name:''}};

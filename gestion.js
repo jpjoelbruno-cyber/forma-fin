@@ -200,8 +200,8 @@ V.avisos=function(){
 };
 V.cursos=function(){return manager()?window.GestionCursos.html():head('Cursos','Solo para administración.','')};
 V.ajustes=function(){
-  function row(t,s){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div><button class="btn s sm" data-act="viejo">Abrir</button></div>'}
-  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores y áreas','Quién da cada curso y qué áreas existen')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
+  function row(t,s,a){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div><button class="btn s sm" data-act="'+(a||'viejo')+'">Abrir</button></div>'}
+  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores','Quién da clases: agregar o desactivar','instructores')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
 };
 
 /* ---------- carga perezosa por vista ---------- */
@@ -294,6 +294,7 @@ function act(k,el){
   if(k==='admin'){location.href='/administracion.html';return}
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
+  if(k==='instructores'){window.GestionCursos.insDialog();return}
   if(k==='cobrar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.cobrar(el&&el.dataset.pid?{person_id:el.dataset.pid,enrolment_id:el.dataset.eid||null}:null);return}
   if(k==='matricular'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.matricular(el&&el.dataset.pid?{person_id:el.dataset.pid}:null);return}
   if(k==='agendar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.agendar();return}
@@ -388,7 +389,7 @@ function demoRpc(name,a){
   return null;
 }
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
-window.GestionCursos.init({rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
+window.GestionCursos.init({dlg:dlg,rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
 document.addEventListener('click',function(e){window.GestionCursos.click(e)});
 boot();
 })();
