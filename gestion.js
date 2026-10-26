@@ -247,7 +247,10 @@ function openMas(){
   $('#sheet').hidden=false;
 }
 function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
-function toOld(what){dlg(what,'<p>Por ahora esta acción se hace en la pantalla clásica de FORMA Gestão: ahí queda guardada con todos los controles de seguridad. En la próxima etapa se pasa a esta pantalla nueva, después de probarla contigo con datos reales.</p><a class="btn p" href="/agenda-clasica.html" style="text-decoration:none">Abrir pantalla clásica</a>')}
+function toOld(what,key){
+  var go=key?'#ir='+key:'';
+  dlg(what,'<p><b>Esta acción todavía no está en la pantalla nueva.</b> Para no hacerte buscar, el botón te lleva directo al lugar correcto de la pantalla de siempre; ahí queda guardada con todos sus controles. Después vuelves con «Volver a la versión nueva».</p><a class="btn p" href="/agenda-clasica.html'+go+'" style="text-decoration:none">'+esc(what)+' · abrir ahora</a><p class="note">Estamos pasando estas acciones una por una a la pantalla nueva. Orden: Matricular, Cobrar, Agendar, Nuevo interesado, Registrar clase.</p>')
+}
 
 /* ---------- ficha del alumno (solo lectura) ---------- */
 var FI_STATE={activo:'En curso',matriculado:'Matriculado',pausa:'En pausa',cancelado:'Cancelado',concluido:'Concluido'},FI_SEL=null;
@@ -293,7 +296,7 @@ function act(k){
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
   var T2={cobrar:'Cobrar un pago',matricular:'Matricular un alumno',agendar:'Agendar un servicio',interesado:'Nuevo interesado',asist:'Registrar la clase',ficha:'Ver la ficha',viejo:'Abrir esta opción'};
-  toOld(T2[k]||'Acción');
+  toOld(T2[k]||'Acción',({cobrar:'cobrar',matricular:'matricular',agendar:'agendar',interesado:'interesado',asist:'asistencia'})[k]||'');
 }
 document.addEventListener('click',function(e){
   var fb=e.target.closest('[data-ficha]');if(fb){openFicha(fb.dataset.ficha);return}
