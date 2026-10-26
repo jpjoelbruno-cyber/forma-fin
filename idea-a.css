@@ -107,3 +107,36 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
  #p-historico,#p-aprender,#p-banco,#p-anual,#p-more,#p-institution{max-width:900px!important}
  .accounts-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
 }
+/* ===== Menú fijo estilo banco + números uniformes ===== */
+#ia-nav{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:#fff;border-top:1px solid var(--a-line);padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 20px rgba(42,6,217,.08)}
+#ia-nav .ia-nav-brand{display:none}
+#ia-nav button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:0;background:none;color:var(--a-ink2);font:700 12px/1.1 'DM Sans',sans-serif;min-height:58px;border-radius:14px;cursor:pointer}
+#ia-nav button .ia-i{width:24px;height:24px;stroke-width:1.9}
+#ia-nav button[aria-current=page]{color:var(--a-brand);background:#EFE9FD}
+#ia-nav button:focus-visible{outline:3px solid #7403E7;outline-offset:-3px}
+#ia-bar .ia-homebtn{display:none}
+#app-screen{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+#p-metas .section-head .btn-sm{bottom:calc(78px + env(safe-area-inset-bottom,0px))!important}
+.ia-big{font-size:34px!important}
+.ia-card .ia-row{font-size:16px}
+@media(min-width:900px){
+ #ia-nav{position:sticky;top:0;bottom:auto;display:flex;align-items:center;gap:6px;padding:0 max(24px,calc((100% - 1040px)/2));min-height:68px;background:var(--a-grad);border:0;box-shadow:0 4px 18px rgba(42,6,217,.2)}
+ #ia-nav .ia-nav-brand{display:flex;align-items:center;gap:10px;color:#fff;font:800 20px Sora,'DM Sans',sans-serif;margin-right:auto}
+ #ia-nav button{flex-direction:row;gap:8px;color:#fff;font-size:16px;min-height:46px;padding:0 18px;background:transparent}
+ #ia-nav button .ia-i{width:20px;height:20px}
+ #ia-nav button[aria-current=page]{background:rgba(255,255,255,.2);color:#fff}
+ #app-screen{padding-bottom:0!important}
+ #ia-bar{display:none!important}
+ .ia-big{font-size:38px!important}
+ #p-metas .section-head .btn-sm{bottom:auto!important}
+}
+/* Administración (propietario): mismo lenguaje */
+#p-admin .admin-heading h2{font:800 26px Sora,'DM Sans',sans-serif}
+#p-admin .admin-tabs{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:thin}
+#p-admin .admin-tabs button{flex:none;min-height:48px;border-radius:14px;border:2px solid var(--a-line);background:#fff;color:var(--a-ink2);font:700 16px 'DM Sans',sans-serif;padding:0 18px}
+#p-admin .admin-tabs button[aria-pressed="true"]{background:#EFE9FD;border-color:var(--a-brand);color:var(--a-dark)}
+#p-admin .admin-metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+#p-admin .admin-metrics>*{background:#fff;border:1px solid var(--a-line);border-radius:16px;padding:14px 16px}
+#p-admin .admin-metrics strong,#p-admin .admin-metrics b{display:block;font:800 26px Sora,'DM Sans',sans-serif;color:var(--a-ink)}
+#p-admin .admin-table-wrap{background:#fff;border:1px solid var(--a-line);border-radius:16px;overflow:auto}
+#p-admin button.action-main{min-height:52px;border-radius:14px;font-weight:700}
