@@ -251,7 +251,7 @@ function act(k){
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión. Intenta de nuevo.')});return}
   if(k==='presupuesto'){location.href='/?personal=1';return}
-  if(k==='admin'){location.href='/';return}
+  if(k==='admin'){location.href='/administracion.html';return}
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
   var T2={cobrar:'Cobrar un pago',matricular:'Matricular un alumno',agendar:'Agendar un servicio',interesado:'Nuevo interesado',asist:'Registrar la clase',ficha:'Ver la ficha',viejo:'Abrir esta opción'};

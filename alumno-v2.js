@@ -55,7 +55,7 @@ function sheet(){
 function act(k){
   if(k==='anio'){goPanel('anual');return;}
   if(k==='alumnos'){$('nb-alunos')?.click();return;}
-  if(k==='admin'){$('forma-admin-button')?.click();return;}
+  if(k==='admin'){location.href='/administracion.html';return;}
   if(k==='gestion'){location.href='/agenda.html';return;}
   if(k==='ayuda'){$('forma-help-button')?.click();return;}
   if(k==='instalar'){const b=document.querySelector('.forma-install-button');if(b)b.click();return;}
