@@ -143,3 +143,13 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 
 /* alumno: el menú fijo ya tiene Metas y Movimientos; se quitan de la lista del inicio */
 .ia-links [data-forma-click="36"],.ia-links [data-forma-click="35"]{display:none}
+
+@media(min-width:900px){
+ .panel{max-width:1320px!important}
+ #ia-nav{padding-left:max(24px,calc((100% - 1320px)/2));padding-right:max(24px,calc((100% - 1320px)/2))}
+ #ia-home{grid-template-columns:1fr 1fr}
+ #ia-home>.ia-hi,#ia-home>.ia-links{grid-column:1/-1}
+ .ia-links{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+ #goals-list{grid-template-columns:repeat(3,1fr)}
+ body.ia-inner .topbar .tb-inner,body.ia-home-on .topbar .tb-inner{max-width:1320px}
+}

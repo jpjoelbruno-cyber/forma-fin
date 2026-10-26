@@ -149,3 +149,15 @@ body[data-workspace-view="income"] .income-heading>div:first-child{display:none}
 body[data-workspace-view="income"] .income-heading{display:block}
 body[data-workspace-view="income"] .finance-periods{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 .ia-rbig{max-width:520px}
+
+/* menú: celular = 3 fijos + Más; PC = todo visible, sin "Más" */
+@media(max-width:899px){#ia-rnav button[data-k=sales],#ia-rnav button[data-k=education],#ia-rnav button[data-k=people],#ia-rnav button[data-k=tasks],#ia-rnav button[data-k=review]{display:none}}
+@media(min-width:900px){
+ #ia-rnav button[data-k=mas]{display:none}
+ #ia-rnav button{padding:0 12px;font-size:15px;gap:6px}
+ #ia-rnav button .ia-i{width:19px;height:19px}
+ #workspace{max-width:1560px!important;padding-left:32px;padding-right:32px}
+ #ia-rhome .ia-rgrid{grid-template-columns:repeat(3,1fr)}
+ .ia-rbig{max-width:none}
+}
+@media(min-width:900px) and (max-width:1180px){#ia-rnav button span{font-size:14px}#ia-rnav button{padding:0 9px}.forma-work-header .brand span{display:none}}
