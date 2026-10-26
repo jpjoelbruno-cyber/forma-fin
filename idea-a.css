@@ -83,3 +83,27 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 .ia-next{display:flex!important;align-items:center;justify-content:center}
 .goal-actions{display:flex!important;flex-direction:column!important;gap:10px}.goal-actions button{width:100%;flex:none}
 .ia-cats label{font-weight:700;font-size:18px}
+/* ===== PC: contenido centrado y bien aprovechado ===== */
+@media(min-width:900px){
+ #app-screen{padding-left:0!important}
+ #ia-bar{padding-left:max(40px,calc((100% - 1040px)/2));padding-right:max(40px,calc((100% - 1040px)/2))}
+ .panel{max-width:1040px!important;width:100%;margin-left:auto!important;margin-right:auto!important;padding:34px 40px 70px!important}
+ body.ia-home-on .topbar .tb-inner{max-width:1040px;padding:16px 40px}
+ #ia-home{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:stretch}
+ #ia-home>.ia-hi,#ia-home>.ia-links{grid-column:1/-1}
+ #ia-home>.ia-cta{min-height:100%}
+ .ia-big{font-size:54px}
+ .ia-wiz{max-width:760px;margin:0 auto}
+ .ia-s h2{font-size:34px}
+ .ia-s.s1{display:none}.ia-wiz[data-step="1"] .s1{display:grid;grid-template-columns:1fr 1fr;gap:20px}.ia-wiz[data-step="1"] .s1>h2,.ia-wiz[data-step="1"] .s1>.ia-voicebox{grid-column:1/-1}
+ .ia-big2{min-height:200px;justify-content:center}
+ .ia-more{margin-top:26px}
+ #p-metas .section-head .btn-sm{position:static;width:auto;min-width:340px;margin:0 0 20px;box-shadow:none}
+ #p-metas{padding-bottom:70px!important}
+ #goals-list{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+ #goals-list .goal-item{margin:0}
+ #goals-list>:only-child{grid-column:1/-1;max-width:520px}
+ .more-options{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+ #p-historico,#p-aprender,#p-banco,#p-anual,#p-more,#p-institution{max-width:900px!important}
+ .accounts-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+}
