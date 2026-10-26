@@ -1,0 +1,83 @@
+/* Área del alumno · estructura nueva (barra única). Presentación solamente. */
+#ia-bar,#app-screen>.topbar,#bnav,#ia-nav{display:none!important}
+#av-nav{--g:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);position:fixed;left:0;right:0;bottom:0;z-index:70;background:#fff;border-top:1px solid #DDD6F0;padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 20px rgba(42,6,217,.08);font-family:'DM Sans',system-ui,sans-serif}
+#av-nav .av-brand,#av-nav .av-tools,#av-nav .av-pc{display:none}
+#av-nav .av-items{display:grid;grid-template-columns:repeat(5,1fr);gap:2px}
+#av-nav button{border:0;background:none;color:#54497A;font:700 12px/1.1 'DM Sans',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;border-radius:14px;cursor:pointer}
+#av-nav button[aria-current=page]{background:#EFE9FD;color:#5314D4}
+#av-nav button:focus-visible{outline:3px solid #7403E7;outline-offset:-3px}
+.av-i{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;flex:none}
+#av-sheet{position:fixed;inset:0;z-index:80;background:rgba(18,12,43,.55);display:flex;align-items:flex-end}
+#av-sheet[hidden]{display:none}
+#av-sheet-in{width:100%;background:#fff;border-radius:24px 24px 0 0;padding:14px 16px calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:8px}
+#av-sheet-in button{flex-direction:row;justify-content:flex-start;min-height:54px;border:2px solid #DDD6F0;border-radius:16px;padding:0 18px;font-size:17px;color:#1B1240;background:#fff}
+#av-sheet-in .av-out,#av-menu .av-out{color:#B91C1C}
+#app-screen{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))}
+#app-screen .panel{max-width:1320px;margin-inline:auto}
+@media (min-width:900px){
+ #av-nav{position:sticky;top:0;bottom:auto;display:flex;align-items:center;gap:8px;padding:0 max(24px,calc((100% - 1320px)/2));min-height:68px;background:var(--g);border:0;box-shadow:0 4px 18px rgba(42,6,217,.2)}
+ #av-nav .av-brand{display:flex;align-items:center;gap:10px;color:#fff;font:800 20px Sora,'DM Sans',sans-serif;margin-right:auto}
+ #av-nav .av-items{display:flex;gap:2px}
+ #av-nav .av-pc{display:flex}#av-nav .av-mob{display:none}
+ #av-nav .av-items button{flex-direction:row;gap:8px;color:#fff;font-size:15px;min-height:46px;padding:0 13px;border-radius:12px}
+ #av-nav .av-items button[aria-current=page]{background:rgba(255,255,255,.22);color:#fff}
+ #av-nav .av-items button:hover{background:rgba(255,255,255,.14)}
+ #av-nav .av-i{width:20px;height:20px}
+ #av-nav .av-tools{display:flex;gap:6px;align-items:center;margin-left:8px;position:relative}
+ #av-nav .av-tools button{width:44px;height:44px;min-height:44px;border-radius:50%;color:#fff;position:relative;justify-content:center}
+ #av-nav #av-user{background:#fff;color:#3A0DB5}
+ #av-dot{position:absolute;top:4px;right:3px;background:#F472B6;color:#fff;font:700 11px 'DM Sans',sans-serif;border-radius:999px;min-width:18px;height:18px;display:grid;place-items:center}
+ #av-dot[hidden]{display:none}
+ #av-menu{position:absolute;right:max(24px,calc((100% - 1320px)/2));top:62px;background:#fff;color:#1B1240;border:1px solid #DDD6F0;border-radius:16px;box-shadow:0 18px 40px rgba(42,6,217,.2);padding:8px;min-width:230px;display:grid;gap:2px}
+ #av-menu[hidden]{display:none}
+ #av-menu button{flex-direction:row;justify-content:flex-start;color:#1B1240;font-weight:500;font-size:15px;min-height:44px;padding:0 14px;border-radius:10px;width:100%;text-align:left}
+ #av-menu button:hover{background:#EFE9FD}
+ #app-screen{padding-bottom:40px}
+}
+/* Mi camino */
+#p-camino{padding:20px 16px 8px;font-family:'DM Sans',system-ui,sans-serif;color:#1B1240}
+.cm-head h1{font:800 clamp(26px,3.4vw,34px) Sora,'DM Sans',sans-serif;margin:0}.cm-head p{margin:2px 0 16px;color:#54497A}
+.cm-grid{display:grid;gap:16px;grid-template-columns:1fr}
+.cm-hero{background:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);color:#fff;border-radius:20px;padding:22px 24px;display:grid;gap:8px;align-content:start}
+.cm-hero small{opacity:.85;font-weight:700;letter-spacing:.04em}.cm-hero h2{color:#fff;font:800 24px/1.2 Sora,'DM Sans',sans-serif;margin:0}.cm-hero p{margin:0;opacity:.92}
+.cm-card{background:#fff;border:1px solid #DDD6F0;border-radius:18px;padding:18px 20px;box-shadow:0 1px 2px rgba(42,6,217,.06),0 8px 24px rgba(42,6,217,.06);min-width:0}
+.cm-card h2{font:700 18px Sora,'DM Sans',sans-serif;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.cm-card p{margin:4px 0;color:#54497A}.cm-big{display:block;font:800 28px Sora,'DM Sans',sans-serif;margin:2px 0;color:#166534}
+.cm-link{border:0;background:none;color:#5314D4;font:700 14px 'DM Sans',sans-serif;cursor:pointer;text-decoration:underline}
+.cm-btn{border:0;border-radius:14px;min-height:48px;padding:0 20px;font:700 16px 'DM Sans',sans-serif;cursor:pointer;background:linear-gradient(135deg,#7A10DC,#4A12D6);color:#fff;margin-top:6px}
+.cm-white{background:#fff;color:#3A0DB5;justify-self:start;margin-top:8px}.cm-sec{background:#fff;border:2px solid #5314D4;color:#3A0DB5;min-height:44px;font-size:15px}
+.cm-cta{background:#EFE9FD;border:2px dashed #5314D4;box-shadow:none}
+.cm-pill{font:700 12px 'DM Sans',sans-serif;background:#EFE9FD;color:#3A0DB5;border-radius:999px;padding:3px 10px}
+.cm-path{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.cm-st{flex:1 0 170px;border-radius:14px;padding:12px 14px;background:#EFE9FD;border:2px solid transparent;display:grid;gap:2px;align-content:start}
+.cm-st b{font:800 22px Sora,'DM Sans',sans-serif;color:#3A0DB5}.cm-st span{font-weight:700}.cm-st small{color:#54497A;font-size:13px}
+.cm-st.done{background:#DCFCE7}.cm-st.done b{color:#166534}.cm-st.now{border-color:#5314D4;background:#fff}.cm-st.star{background:#FEF3C7}.cm-st.star b{color:#92400E}
+.cm-note{font-size:13px}
+#av-learn-cta{margin-top:16px}
+@media (min-width:900px){.cm-grid{grid-template-columns:2fr 1fr}.cm-wide{grid-column:1/-1}#p-camino{padding:24px 24px 8px}}
+/* Mis cursos */
+#p-institution .edu-heading p,#p-institution .edu-eyebrow,#student-refresh,#student-budget{display:none}
+.sv-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap}.sv-head h3{font:800 24px Sora,'DM Sans',sans-serif;margin:2px 0}.sv-head p{margin:0;color:#54497A}
+.sv-state{font:700 12px 'DM Sans',sans-serif;background:#EFE9FD;color:#3A0DB5;border-radius:999px;padding:3px 10px}
+.sv-primary{border:0;border-radius:14px;min-height:48px;padding:0 20px;font:700 16px 'DM Sans',sans-serif;background:linear-gradient(135deg,#7A10DC,#4A12D6);color:#fff;cursor:pointer}
+.sv-paid{font-weight:700;color:#166534;background:#DCFCE7;border-radius:999px;padding:6px 14px}
+.sv-kpis{display:grid;gap:12px;grid-template-columns:repeat(2,1fr);margin:16px 0}
+.sv-k{background:#fff;border:1px solid #DDD6F0;border-radius:16px;padding:14px 16px;display:grid;gap:2px}.sv-k small{color:#54497A}.sv-k b{font:800 22px Sora,'DM Sans',sans-serif}.sv-k span{font-size:13px;color:#54497A}
+.sv-ok{color:#166534}.sv-bad{color:#B91C1C}
+.sv-two{display:grid;gap:16px;grid-template-columns:1fr;margin-bottom:16px}
+.sv-card{background:#fff;border:1px solid #DDD6F0;border-radius:18px;padding:16px 18px;min-width:0}.sv-card h4{font:700 17px Sora,'DM Sans',sans-serif;margin:0 0 8px}
+.sv-line{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #EFE9FD}.sv-line:last-child{border:0}
+.sv-line>span{flex:1;min-width:0;display:grid}.sv-line small{color:#54497A}
+.sv-dot{width:14px;height:14px;border-radius:50%;border:3px solid #DDD6F0;flex:none}.sv-dot.ok{background:#166534;border-color:#166534}.sv-dot.next{border-color:#5314D4;background:#EFE9FD}
+.sv-pill{font-style:normal;font:700 12px 'DM Sans',sans-serif;border-radius:999px;padding:3px 10px;background:#EFE9FD;color:#54497A;white-space:nowrap}.sv-pill.ok{background:#DCFCE7;color:#166534}.sv-pill.bad{background:#FEE2E2;color:#B91C1C}
+.sv-note{font-size:13px;color:#54497A;margin:10px 0 0}
+.sv-cta{background:#EFE9FD;border:2px dashed #5314D4}
+@media (min-width:900px){.sv-kpis{grid-template-columns:repeat(4,1fr)}.sv-two{grid-template-columns:1fr 1fr}}
+@media (prefers-color-scheme:dark){
+ :root:not([data-theme="light"]) #p-camino,:root:not([data-theme="light"]) .sv-card{color:#F1EEFB}
+}
+/* Mi mes: el resumen completo directamente (la lista de atajos de Idea A sobra con la barra nueva) */
+#ia-home{display:none!important}.ia-more>summary{display:none!important}
+#av-title{max-width:1320px;margin:18px auto 0;padding:0 16px;font:800 clamp(24px,3vw,30px) Sora,'DM Sans',sans-serif;color:#1B1240}
+#av-title[hidden]{display:none}
+@media (min-width:900px){#av-title{padding:0 24px}}
