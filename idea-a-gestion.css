@@ -16,7 +16,7 @@ body:not([data-workspace-view="today"]) #ia-rhome{display:none}
 .ia-g{background:#DCFCE7;color:#166534}.ia-v{background:#EFE9FD;color:#3A0DB5}.ia-a{background:#FEF3C7;color:#92400E}.ia-r{background:#FCE7F3;color:#9D174D}
 .ia-rpend{display:flex;gap:12px;flex-wrap:wrap}
 .ia-rmore{background:#fff;border:2px solid var(--a-brand);color:var(--a-dark);border-radius:16px;padding:0 22px;font:700 18px 'DM Sans',sans-serif;min-height:56px;cursor:pointer}
-body[data-workspace-view="today"]:not(.ia-detail) #workspace>.heading,body[data-workspace-view="today"]:not(.ia-detail) #rene-assistant{display:none}
+
 /* dinero: entra/cobrado/pagado = verde; sale/por cobrar/vencido = rojo */
 .finance-in-text{color:#166534!important}.finance-out-text,.finance-pending-text{color:#B91C1C!important}
 .finance-debt-row strong,.finance-collection-metrics strong{color:#B91C1C}
@@ -111,3 +111,41 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 .finance-trend-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:14px;font-weight:700;margin-top:6px}
 .finance-growth{margin-top:14px;border-top:1px solid var(--a-line);padding-top:12px}
 .finance-growth summary{font:800 17px 'DM Sans',sans-serif;color:var(--a-dark);cursor:pointer}
+
+/* ===== simplificación (auditoría) ===== */
+/* Inicio: 3 acciones + resumen del día; sin textos de evaluación ni duplicados */
+body[data-workspace-view="today"] #workspace>.heading,body[data-workspace-view="today"] .rene-evaluation,body[data-workspace-view="today"] #rene-state,body[data-workspace-view="today"] #rene-review,body[data-workspace-view="today"] #rene-tasks{display:none!important}
+#ia-rhome{margin-bottom:10px}
+.ia-rbig{min-height:76px;padding:14px 20px;font-size:19px}
+.ia-rbig .ia-i{width:32px;height:32px}
+/* Finanzas: 3 números, sin botones repetidos */
+.ia-rdebe{display:none!important}
+body[data-workspace-view="income"] #income-refresh,body[data-workspace-view="income"] .finance-stats article:nth-child(3){display:none!important}
+.finance-stats{grid-template-columns:repeat(3,1fr)!important}
+@media(max-width:759px){.finance-stats{grid-template-columns:1fr 1fr!important}.finance-stats article:last-child{grid-column:1/-1}}
+.finance-stats article strong{font-size:24px!important}
+.finance-date-nav button,.finance-date-nav input{min-height:44px}
+/* Agenda: sin título repetido; controles en una fila */
+body[data-workspace-view="week"] #workspace>.heading>div:first-child,body[data-workspace-view="week"] #workspace>.heading>h1,body[data-workspace-view="week"] #workspace>.heading>p{display:none!important}
+#rene-week .calendar-tools{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
+#rene-week .week-controls{flex:1 1 320px}
+#rene-week .week-controls button{min-height:48px;font-size:16px;padding:0 10px}
+.ia-rdet>summary{min-height:44px;padding:10px 16px}
+.agenda-type-tabs button{min-height:44px}
+/* encabezado + menú en una sola barra en PC */
+.forma-work-header{position:sticky;top:0;z-index:55}
+@media(min-width:900px){
+ .forma-work-header{min-height:72px}
+ #ia-rnav{position:absolute;top:0;left:50%;transform:translateX(-50%);bottom:auto;right:auto;height:72px;display:flex;align-items:center;gap:4px;background:transparent;border:0;box-shadow:none;padding:0}
+ #ia-rnav button{color:#fff;background:transparent;min-height:44px}
+ #ia-rnav button[aria-current=page]{background:rgba(255,255,255,.22);color:#fff}
+}
+@media(max-width:899px){#ia-rnav{position:fixed}}
+/* el menú no hereda las reglas de la navegación del encabezado */
+#ia-rnav{justify-self:stretch!important;grid-column:auto!important;margin:0!important}
+@media(max-width:899px){#ia-rnav{width:auto!important;left:0!important;right:0!important}}
+@media(min-width:900px){.forma-work-header{grid-template-columns:1fr auto!important}#ia-rnav{width:auto!important}}
+body[data-workspace-view="income"] .income-heading>div:first-child{display:none}
+body[data-workspace-view="income"] .income-heading{display:block}
+body[data-workspace-view="income"] .finance-periods{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
+.ia-rbig{max-width:520px}

@@ -140,3 +140,6 @@ button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visi
 #p-admin .admin-metrics strong,#p-admin .admin-metrics b{display:block;font:800 26px Sora,'DM Sans',sans-serif;color:var(--a-ink)}
 #p-admin .admin-table-wrap{background:#fff;border:1px solid var(--a-line);border-radius:16px;overflow:auto}
 #p-admin button.action-main{min-height:52px;border-radius:14px;font-weight:700}
+
+/* alumno: el menú fijo ya tiene Metas y Movimientos; se quitan de la lista del inicio */
+.ia-links [data-forma-click="36"],.ia-links [data-forma-click="35"]{display:none}
