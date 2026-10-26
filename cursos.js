@@ -112,7 +112,17 @@ function startWiz(courseId,fromGroupId){
 function tplSessions(w){return w.tpl?(w.tpl.sessions||[]).slice().sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min}):[]}
 function insAt(w,i){var t=tplSessions(w)[i];return(w.instructor===w.i0&&t&&t.instructor)?t.instructor:w.instructor}
 function roomAt(w,i){var t=tplSessions(w)[i];return(w.room===w.r0&&t&&t.room)?t.room:w.room}
-function plan(w){
+function rowOf(w,x){
+  var o=(w.ov&&w.ov[x.day])||{},t=x.t>=0?tplSessions(w)[x.t]:null;
+  return{module:o.module!==undefined?o.module:((t&&t.module)||''),instructor:o.instructor||(x.t>=0?insAt(w,x.t):w.instructor),room:o.room||(x.t>=0?roomAt(w,x.t):w.room)};
+}
+function plan(w){var p=plan0(w);
+  var rm=w.rm||{};p.list.forEach(function(x){x.t=x.n-1});var list=p.list.filter(function(x){return !rm[x.day]});
+  (w.extra||[]).forEach(function(d){if(!list.some(function(x){return x.day===d})&&!rm[d])list.push({n:0,t:-1,day:d,why:'añadido'})});
+  list.sort(function(a,b){return a.day<b.day?-1:1});list.forEach(function(x,i){x.n=i+1});
+  return{list:list,skipped:p.skipped,end:list.length?list[list.length-1].day:null};
+}
+function plan0(w){
   var list=[],skipped=[],n=0,d=w.start,guard=0,cnt=Math.max(0,Math.min(104,Number(w.count)||0));
   if(!/^\d{4}-\d{2}-\d{2}$/.test(w.start||'')||!w.days.length||!cnt)return{list:[],skipped:[],end:null};
   while(n<cnt&&guard++<900){
@@ -129,12 +139,30 @@ function conflicts(w,p){
   p.list.forEach(function(x){C.cat.groups.forEach(function(g){
     if(g.active===false)return;(g.sessions||[]).forEach(function(s){
       if(s.day!==x.day||s.cancelled)return;if(!(a0<s.end_min&&s.start_min<a1))return;
-      var wi=insAt(w,x.n-1),wr=roomAt(w,x.n-1),ins=(s.instructor||g.instructor)===wi,room=(s.room||g.room)===wr;if(!ins&&!room)return;
+      var rw=rowOf(w,x),wi=rw.instructor,wr=rw.room,ins=(s.instructor||g.instructor)===wi,room=(s.room||g.room)===wr;if(!ins&&!room)return;
       var k=g.id+(ins?'i':'')+(room?'r':'');if(seen[k])return;seen[k]=1;
       out.push({day:x.day,who:(g.course||'')+' · '+g.name,why:(ins&&room?'mismo instructor y sala':ins?'mismo instructor ('+wi+')':'misma sala ('+wr+')'),time:hhmm(s.start_min)+'–'+hhmm(s.end_min)});
     })
   })});
   return out;
+}
+
+var INS_COL=['#7C3AED','#0D9488','#F97316','#DB2777','#2563EB','#CA8A04','#DC2626','#0891B2'];
+function insColor(n){var l=instructors(),i=l.indexOf(n);return INS_COL[(i<0?0:i)%INS_COL.length]}
+function editor(w,p,cf){
+  if(!p.list.length)return '';
+  var ins=instructors(),rms=rooms(),mods=(C.cat.courses.filter(function(c){return c.id===w.courseId})[0]||{modules:[]}).modules||[];
+  var cnt={};p.list.forEach(function(x){var r=rowOf(w,x);cnt[r.instructor]=(cnt[r.instructor]||0)+1});
+  var res='<div class="cu-chips">'+Object.keys(cnt).map(function(k){return '<span class="cu-ins" style="background:'+insColor(k)+'">'+esc(k)+' · '+cnt[k]+'</span>'}).join('')+'</div>';
+  if(!w.edit)return '<div class="cu-edhead"><div><b>Instructores de este grupo</b>'+res+'</div><button type="button" class="btn s" data-cu="edit">Editar encuentro por encuentro</button></div>';
+  var opt=function(list,v){var l=list.indexOf(v)<0&&v?list.concat([v]):list;return l.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
+  var badDays={};cf.forEach(function(k){badDays[k.day]=1});
+  var rows=p.list.map(function(x){var r=rowOf(w,x);return '<tr'+(badDays[x.day]?' class="bad"':'')+'><td><b>'+x.n+'</b></td><td>'+DOW[dow(x.day)]+' '+dm(x.day)+(x.why==='añadido'?' <small>(añadido)</small>':'')+'</td><td><input list="cuMods" maxlength="160" data-cuo="'+x.day+'|module" value="'+esc(r.module)+'" placeholder="Nombre del módulo"></td><td><select data-cuo="'+x.day+'|instructor" style="border-left:6px solid '+insColor(r.instructor)+'">'+opt(ins,r.instructor)+'</select></td><td><select data-cuo="'+x.day+'|room">'+opt(rms,r.room)+'</select></td><td><button type="button" class="link" data-cu="rm" data-d="'+x.day+'" aria-label="Quitar encuentro">Quitar</button></td></tr>'}).join('');
+  var dl='<datalist id="cuMods">'+mods.map(function(m){return '<option value="'+esc(m)+'">'}).join('')+'</datalist>';
+  return '<div class="cu-edhead"><div><b>Encuentro por encuentro</b>'+res+'</div><button type="button" class="btn s" data-cu="edit">Ocultar</button></div>'
+   +'<div class="cu-bulk"><b>Asignar en bloque</b><label>Del encuentro<input type="number" min="1" max="'+p.list.length+'" data-cuf="bFrom" data-nowheel value="'+esc(w.bFrom||1)+'"></label><label>Al<input type="number" min="1" max="'+p.list.length+'" data-cuf="bTo" data-nowheel value="'+esc(w.bTo||p.list.length)+'"></label><label>Instructor<select data-cuf="bIns">'+opt(ins,w.bIns||w.instructor)+'</select></label><label>Sala<select data-cuf="bRoom"><option value="">(no cambiar)</option>'+opt(rms,'')+'</select></label><button type="button" class="btn p sm" data-cu="bulk">Aplicar</button></div>'
+   +'<div class="tw"><table class="cu-tb"><thead><tr><th>#</th><th>Fecha</th><th>Módulo</th><th>Instructor</th><th>Sala</th><th></th></tr></thead><tbody>'+rows+'</tbody></table></div>'+dl
+   +'<div class="cu-add"><label>Añadir un encuentro<input type="date" data-cuf="newDay" value="'+esc(w.newDay||'')+'"></label><button type="button" class="btn s sm" data-cu="addday">+ Añadir</button><span class="note">Para quitar o añadir encuentros extra, sin cambiar los demás. Si un instructor no aparece en la lista, hay que registrarlo primero en el sistema (pídeselo a Joel).</span></div>';
 }
 function wizard(){
   var w=C.wiz,p=plan(w),cf=conflicts(w,p),isC=w.mode==='course',c=C.cat.courses.filter(function(x){return x.id===w.courseId})[0];
@@ -147,8 +175,9 @@ function wizard(){
   var durs=[1,1.5,2,2.5,3,4].map(function(h){return '<option value="'+h+'"'+(Number(w.hours)===h?' selected':'')+'>'+h+' h</option>'}).join('');
   var sk=p.skipped.map(function(s){return '<span class="cu-skip">'+dm(s.day)+' · '+esc(s.why)+' <button type="button" class="link" data-cu="inc" data-d="'+s.day+'">dar clase igual</button></span>'}).join('');
   var weeks=p.list.length?Math.round((X.M.date(p.end)-X.M.date(w.start))/86400000/7):0;
-  var multi=(function(){var set={};p.list.forEach(function(x){set[insAt(w,x.n-1)]=1});return Object.keys(set)})();var prev0=multi.length>1?'<div class="cu-ok" style="background:var(--soft);color:var(--brand2)">Instructores de este grupo: <b>'+multi.map(esc).join(', ')+'</b> · se mantienen como en el grupo anterior. Si eliges otro instructor arriba, se aplica a todos los encuentros.</div>':'';var prev=p.list.length?'<div class="cu-prev">'+p.list.map(function(x){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'" title="'+esc(x.why)+'"><b>'+x.n+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+(multi.length>1?' · '+esc(insAt(w,x.n-1)):'')+'</span>'}).join('')+'</div>':'<p class="note">Elige la fecha de inicio y los días.</p>';
+  var multi=(function(){var set={};p.list.forEach(function(x){set[rowOf(w,x).instructor]=1});return Object.keys(set)})();var prev0=multi.length>1?'<div class="cu-ok" style="background:var(--soft);color:var(--brand2)">Instructores de este grupo: <b>'+multi.map(esc).join(', ')+'</b> · se mantienen como en el grupo anterior. Si eliges otro instructor arriba, se aplica a todos los encuentros.</div>':'';var prev=p.list.length?'<div class="cu-prev">'+p.list.map(function(x){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'" title="'+esc(x.why)+'"><b>'+x.n+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+(multi.length>1?' · '+esc(rowOf(w,x).instructor):'')+'</span>'}).join('')+'</div>':'<p class="note">Elige la fecha de inicio y los días.</p>';
   var cfh=cf.length?'<div class="err"><b>Choca con otro grupo — corrige antes de guardar</b><ul style="margin:6px 0 0;padding-left:18px">'+cf.slice(0,6).map(function(k){return '<li>'+dm(k.day)+' '+k.time+' · '+esc(k.who)+' ('+k.why+')</li>'}).join('')+'</ul><span class="note">Cambia la sala, el instructor o la hora.</span></div>':(p.list.length?'<div class="cu-ok">Sin cruces con otros grupos ✓</div>':'');
+  var edt=editor(w,p,cf);
   return X.head(isC?'Nuevo curso':'Nuevo grupo · '+esc(c?c.name:''),isC?'Crea el curso y su primer grupo en un solo paso.':(w.tpl?'Repetido desde “'+esc(w.tpl.name)+'”: mismos días, hora, sala e instructor. Cambia solo lo que haga falta.':'Define días, hora y cupos.'),'<button class="btn s" data-cu="cancel">Cancelar</button>')
   +(w.msg?'<div class="err" id="cuErr" role="alert">'+esc(w.msg)+'</div>':'')
   +'<form class="card cu-form" id="cuForm" novalidate><div class="cu-two">'
@@ -161,7 +190,7 @@ function wizard(){
   +'<label>Instructor<select data-cuf="instructor">'+opt(instructors(),w.instructor)+'</select></label><label>Sala<select data-cuf="room">'+opt(rooms(),w.room)+'</select></label>'
   +'<label>Precio de referencia (R$)<input inputmode="decimal" data-cuf="price" value="'+esc(w.price)+'" placeholder="0"></label></div>'
   +(p.list.length?'<div class="cu-sum"><b>'+p.list.length+' encuentros → termina el '+DOW[dow(p.end)]+' '+dmy(p.end)+'</b> <span class="note">(≈ '+weeks+' semanas)</span>'+(sk?'<div style="margin-top:6px">Se saltan: '+sk+'</div>':'')+'</div>':'')
-  +cfh+prev0+prev
+  +cfh+prev0+edt+prev
   +'<div class="cu-foot"><button class="btn s" type="button" data-cu="cancel">Cancelar</button><button class="btn p" type="submit" id="cuSave"'+(C.busy?' disabled':'')+'>'+(C.busy?'Guardando…':(isC?'Crear curso y grupo':'Guardar grupo'))+'</button></div>'
   +(w.msg?'<div class="err" style="margin-top:12px" role="alert">'+esc(w.msg)+'</div>':'')+'</form>';
 }
@@ -195,7 +224,7 @@ function save(){
   if(a1>1440||a0<0)return bad('Revisa la hora de inicio y la duración.');
   var cat=C.cat,c=cat.courses.filter(function(x){return x.id===w.courseId})[0],v2=cat.academic_version===2,tpl=w.tpl;
   var tplS=tpl?(tpl.sessions||[]).slice().sort(function(a,b){return a.day<b.day?-1:1}):[];
-  var sessions=p.list.map(function(x,i){var o={day:x.day,start_min:a0,end_min:a1,module:(tplS[i]&&tplS[i].module)||'',instructor:insAt(w,i),room:roomAt(w,i)};if(!v2){delete o.instructor;delete o.room}return o});
+  var sessions=p.list.map(function(x,i){var r=rowOf(w,x),o={day:x.day,start_min:a0,end_min:a1,module:(r.module||'').trim().slice(0,160),instructor:r.instructor,room:r.room};if(!v2){delete o.instructor;delete o.room}return o});
   var mods=c?(c.modules||[]):[];
   var same=tpl&&w.price===w.priceBase;
   var group={name:gname,course_id:'',instructor:w.instructor,room:w.room,capacity:cap,fee_cents:same?Number(tpl.fee_cents):0,installments:same?Number(tpl.installments):(total>0?1:0),monthly_cents:same?Number(tpl.monthly_cents):total,active:true,sessions:sessions};
@@ -231,10 +260,15 @@ function click(e){
   if(k==='day'){var d=Number(b.dataset.d),i=w.days.indexOf(d);if(i>-1){if(w.days.length>1)w.days.splice(i,1)}else w.days.push(d);X.render();return true}
   if(k==='perweek'){var n=Number(b.dataset.n);if(w.days.length>n)w.days=w.days.slice(0,n);else while(w.days.length<n){var cand=[1,4,2,5,3,6,0].filter(function(x){return w.days.indexOf(x)<0})[0];w.days.push(cand)}X.render();return true}
   if(k==='wcolor'){w.color=b.dataset.c;X.render();return true}
+  if(k==='edit'){w.edit=!w.edit;X.render();return true}
+  if(k==='rm'){w.rm=w.rm||{};w.rm[b.dataset.d]=true;if(w.ov)delete w.ov[b.dataset.d];X.render();return true}
+  if(k==='addday'){var nd=w.newDay;if(!/^\d{4}-\d{2}-\d{2}$/.test(nd||'')){w.msg='Elige la fecha del encuentro que quieres añadir.';X.render();return true}w.extra=w.extra||[];if(w.extra.indexOf(nd)<0)w.extra.push(nd);if(w.rm)delete w.rm[nd];w.newDay='';w.msg='';X.render();return true}
+  if(k==='bulk'){var P=plan(w),f=Math.max(1,Number(w.bFrom)||1),t=Math.min(P.list.length,Number(w.bTo)||P.list.length);w.ov=w.ov||{};P.list.forEach(function(x){if(x.n>=f&&x.n<=t){var o=w.ov[x.day]=w.ov[x.day]||{};if(w.bIns)o.instructor=w.bIns;if(w.bRoom)o.room=w.bRoom}});X.render();return true}
   if(k==='inc'){w.include[b.dataset.d]=true;X.render();return true}
   return false;
 }
-document.addEventListener('change',function(e){if(C.wiz&&e.target.dataset&&e.target.dataset.cuf&&X&&X.view()==='cursos'){readForm();C.wiz.msg='';X.render()}});
+document.addEventListener('change',function(e){if(C.wiz&&e.target.dataset&&e.target.dataset.cuo&&X&&X.view()==='cursos'){var pr=e.target.dataset.cuo.split('|'),W=C.wiz;W.ov=W.ov||{};(W.ov[pr[0]]=W.ov[pr[0]]||{})[pr[1]]=e.target.value;W.msg='';X.render();return}
+if(C.wiz&&e.target.dataset&&e.target.dataset.cuf&&X&&X.view()==='cursos'){readForm();C.wiz.msg='';X.render()}});
 document.addEventListener('submit',function(e){if(e.target.id==='cuForm'){e.preventDefault();save()}});
 document.addEventListener('wheel',function(e){var t=document.activeElement;if(t&&t.type==='number'&&t.dataset&&t.dataset.nowheel!==undefined)t.blur()},{passive:true});
 /* ---------- ejemplo ---------- */
