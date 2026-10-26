@@ -34,3 +34,45 @@ main article,main .rene-card,main .rene-stat,main .crm-person{border-radius:18px
 .emb-arrow{align-self:center;color:#7403E7;font-weight:700}
 .embudo p{margin:12px 0 0;color:var(--a-ink2);font-size:16px}.embudo strong{color:#166534}
 .ia-rbig[hidden]{display:none}
+
+/* ---- estructura Gestión ---- */
+#ia-rbar{display:none}
+.forma-work-header nav,.forma-work-header .brand~* #search-person{}
+.forma-work-header nav.forma-primary-tabs{display:none!important}
+body.ia-rinner .forma-work-header{display:none!important}
+body.ia-rinner #ia-rbar{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--a-grad);color:#fff;position:sticky;top:0;z-index:30}
+#ia-rbar strong{font:800 24px Sora,'DM Sans',sans-serif;flex:1}
+.ia-rhome-btn{display:flex;align-items:center;gap:8px;background:#fff;color:#3A0DB5;border:0;border-radius:14px;padding:0 18px;font:800 19px 'DM Sans',sans-serif;min-height:52px;cursor:pointer}
+.ia-rhome-btn .ia-i{width:24px;height:24px}
+.ia-rlinks{display:flex;gap:10px;flex-wrap:wrap;width:100%;margin-top:6px}
+.ia-rlinks button{background:transparent;border:0;color:var(--a-dark);font:700 18px 'DM Sans',sans-serif;text-decoration:underline;min-height:48px;padding:0 6px;cursor:pointer}
+.ia-rlinks button[hidden]{display:none}
+/* agenda */
+body[data-workspace-view="week"] #workspace>.heading .eyebrow,body[data-workspace-view="week"] #rene-week #calendar-version-note,body[data-workspace-view="week"] #rene-week .legend,body[data-workspace-view="week"] #rene-week .footnote,body[data-workspace-view="week"] #rene-week #status{display:none}
+#rene-week .calendar-tools{display:flex;flex-direction:column;gap:12px}
+#rene-week .week-controls{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+#rene-week .week-controls button{min-height:64px;font:700 18px 'DM Sans',sans-serif;border:2px solid var(--a-line);background:#fff;border-radius:16px;color:var(--a-ink)}
+#rene-week .week-controls #today{border-color:var(--a-brand);background:#EFE9FD;color:var(--a-dark)}
+.ia-rdet{background:#fff;border:1.5px dashed #BDB3E0;border-radius:16px;margin:8px 0}
+.ia-rdet>summary{padding:16px 18px;font:700 17px 'DM Sans',sans-serif;color:var(--a-ink2);cursor:pointer;min-height:52px}
+.ia-rdet>*:not(summary){margin:0 16px 16px}
+.ia-rdet label{display:block;font-weight:700}.ia-rdet select{width:100%}
+#workspace>.heading button,#workspace>.heading .primary,#workspace .heading #new-booking{min-height:64px;font:800 20px 'DM Sans',sans-serif;border-radius:18px}
+.mobile-day h3{font-size:20px}
+.mobile-day .slot{min-height:60px;font-size:18px;border-radius:14px}
+/* finanzas */
+body[data-workspace-view="income"] .income-heading p,body[data-workspace-view="income"] #income-status,body[data-workspace-view="income"] #finance-activation,body[data-workspace-view="income"] .finance-workspace-heading>div:first-child,body[data-workspace-view="income"] #finance-tip,body[data-workspace-view="income"] .finance-stats article:nth-child(3){display:none}
+body[data-workspace-view="income"] .income-heading h2{font-size:30px}
+.finance-period-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.finance-period-tabs button{min-height:60px;font:700 18px 'DM Sans',sans-serif;border-radius:16px;border:2px solid var(--a-line);background:#fff}
+.finance-period-tabs button[aria-pressed="true"],.finance-period-tabs button.active{background:#EFE9FD;border-color:var(--a-brand);color:var(--a-dark)}
+.finance-stats{display:grid;grid-template-columns:1fr;gap:12px}@media(min-width:760px){.finance-stats{grid-template-columns:repeat(3,1fr)}}
+.finance-stats article{background:#fff;border-radius:20px;padding:18px 22px;display:flex;flex-direction:column;gap:4px}
+.finance-stats article small{font-size:18px;color:var(--a-ink2)}
+.finance-stats article strong{font:800 40px Sora,'DM Sans',sans-serif}
+.finance-stats article span{font-size:14px;color:var(--a-ink2)}
+.ia-rdebe{display:flex;align-items:center;justify-content:center;width:100%;min-height:64px;border-radius:18px;border:2px solid var(--a-brand);background:#fff;color:var(--a-dark);font:800 20px 'DM Sans',sans-serif;margin:14px 0;cursor:pointer}
+body:not([data-workspace-view="income"]) .ia-rdebe{display:none}
+.finance-view-tabs button{min-height:56px;font:700 18px 'DM Sans',sans-serif}
+#finance-summary-pane .finance-charts{display:none}
+@media(min-width:900px){#workspace{max-width:1040px;margin-left:auto;margin-right:auto}#ia-rbar{padding-left:max(40px,calc((100% - 1040px)/2));padding-right:max(40px,calc((100% - 1040px)/2))}}
