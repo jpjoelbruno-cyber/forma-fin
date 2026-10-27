@@ -320,3 +320,42 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 .lane.em-ok h3{color:var(--ink)}
 
 .vs{display:inline-block;justify-self:start;margin-top:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;color:var(--ink);background:color-mix(in srgb,var(--kc,#94A3B8) 22%,var(--card));border:1px solid var(--kc,#94A3B8)}
+
+/* Agenda · vista Mes */
+.mo{border:1px solid var(--line);border-radius:18px;background:var(--card);overflow:hidden}
+.mo-h,.mo-g{display:grid;grid-template-columns:repeat(6,minmax(0,1fr))}
+.mo-h div{background:var(--soft);color:var(--brand2);font-weight:700;font-size:13px;text-align:center;padding:8px 4px}
+.mo-d{min-height:118px;border-top:1px solid var(--line);border-left:1px solid var(--line);padding:6px;display:flex;flex-direction:column;gap:4px;cursor:pointer;min-width:0}
+.mo-d:nth-child(6n+1){border-left:0}
+.mo-d.out{background:var(--soft);opacity:.55}
+.mo-d.t{box-shadow:inset 0 0 0 2px var(--brand)}
+.mo-dh{display:flex;justify-content:space-between;align-items:center}
+.mo-num{border:0;background:none;font:700 14px var(--f1);color:var(--ink);padding:2px 6px;border-radius:8px}
+.mo-d.t .mo-num{background:var(--brand);color:#fff}
+.mo-n{display:none;font-size:11px;font-weight:800;background:var(--brand);color:#fff;border-radius:99px;padding:1px 7px}
+.mo-cs{display:flex;flex-direction:column;gap:3px;min-width:0}
+.mo-c{border:0;border-left:4px solid;border-radius:6px;font-size:12px;line-height:1.25;text-align:left;padding:3px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;width:100%}
+.mo-c b{font-weight:800}
+.mo-c.v{background:#F1EBFF;border-color:#7C3AED;color:#3A0DB5}.mo-c.g{background:#E3F8EE;border-color:#0D9488;color:#065F52}.mo-c.o{background:#FFEFE0;border-color:#F97316;color:#9A3C06}
+.mo-m{border:0;background:none;color:var(--brand2);font-size:12px;font-weight:700;text-align:left;padding:2px 4px}
+@media(max-width:759px){.mo-d{min-height:64px;padding:4px}.mo-cs{display:none}.mo-n{display:inline-block}.mo-num{font-size:13px}}
+
+/* Logo oficial */
+.brand img{width:34px;height:34px;display:block}
+/* Agenda · paleta profesional (servicio = índigo, clase grupal = verde petróleo, otros = ámbar) */
+.ag-b,.ag-row{border:1px solid transparent;border-left-width:5px;border-radius:10px;box-shadow:0 1px 2px rgba(27,18,64,.08)}
+.ag-b.v,.ag-row.v{background:linear-gradient(180deg,#F3F4FF,#E8EBFF);border-color:#C7CCFA;border-left-color:#4338CA;color:#26217A}
+.ag-b.g,.ag-row.g{background:linear-gradient(180deg,#EDF8F5,#DDF1EC);border-color:#BFE3DA;border-left-color:#0F766E;color:#0B4F49}
+.ag-b.o,.ag-row.o{background:linear-gradient(180deg,#FFF8EA,#FDEFD3);border-color:#F3DDB0;border-left-color:#B45309;color:#733508}
+.ag-b .a,.ag-row .a{color:inherit;opacity:.78}
+.ag-b .n,.ag-row .n{font-weight:700}
+.ag-b .st,.ag-row .st{background:rgba(255,255,255,.7);border-color:currentColor;color:inherit;font-size:10px;font-weight:700;text-transform:uppercase}
+.ag-b.pc{box-shadow:inset 0 0 0 2px #D97706,0 1px 2px rgba(27,18,64,.08)}
+.ag-h{background:var(--soft);color:var(--ink);font-weight:700}
+.ag-h.t{background:var(--brand);color:#fff}
+.mo-c.v{background:#E8EBFF;border-color:#4338CA;color:#26217A}.mo-c.g{background:#DDF1EC;border-color:#0F766E;color:#0B4F49}.mo-c.o{background:#FDEFD3;border-color:#B45309;color:#733508}
+:root[data-theme="dark"] .ag-b.v,:root[data-theme="dark"] .ag-row.v,:root[data-theme="dark"] .mo-c.v{background:#25235C;border-color:#4338CA;color:#DCDDFF}
+:root[data-theme="dark"] .ag-b.g,:root[data-theme="dark"] .ag-row.g,:root[data-theme="dark"] .mo-c.g{background:#0F3B36;border-color:#0F766E;color:#BDEFE5}
+:root[data-theme="dark"] .ag-b.o,:root[data-theme="dark"] .ag-row.o,:root[data-theme="dark"] .mo-c.o{background:#43290F;border-color:#B45309;color:#FFE3B8}
+/* Leyenda de colores */
+.ag-leg{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 12px;font-size:13px;color:var(--ink2)}.ag-leg span{display:inline-flex;align-items:center;gap:6px}.ag-leg i{width:12px;height:12px;border-radius:4px;display:inline-block}
