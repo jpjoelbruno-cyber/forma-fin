@@ -22,7 +22,7 @@
 .cl-inp{margin-top:6px;border:2px solid #DDD6F0;border-radius:12px;padding:0 10px;min-height:44px;display:flex;align-items:center;gap:6px;background:#fff}
 .cl-inp:focus-within{border-color:#5314D4;box-shadow:0 0 0 4px rgba(83,20,212,.15)}
 .cl-inp.bad{border-color:#B91C1C}
-.cl-inp input{border:0!important;outline:0!important;box-shadow:none!important;background:none!important;border-radius:0!important;height:auto!important;min-height:0!important;margin:0!important;font:600 16px 'DM Sans',sans-serif;color:#1B1240;min-width:30px;flex:1 1 30px;width:100%;padding:0!important}
+.cl-inp input{border:0!important;outline:0!important;box-shadow:none!important;background:none!important;border-radius:0!important;height:auto!important;min-height:0!important;margin:0!important;font:600 15px 'DM Sans',sans-serif;font-size:15px!important;color:#1B1240;min-width:30px;flex:1 1 30px;width:100%;padding:0!important}
 .cl-inp small{font-size:13px;color:#6B6490;font-weight:500;white-space:nowrap}
 .cl-h{font-size:12px;color:#6B6490;margin-top:3px;min-height:0}.cl-h:empty{display:none}
 .cl-chips,.cl-mode{grid-column:1/-1}
