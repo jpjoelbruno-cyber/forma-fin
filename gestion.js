@@ -446,6 +446,7 @@ function demoRpc(name,a){
   return null;
 }
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
+window.GestionEmbudo=window.GestionEmbudo||{init:function(){},click:function(){},html:function(s,h){return h('Interesados','','')+'<p class="skel">Recarga la página para ver el embudo.</p>'}};
 window.GestionEmbudo.init({crm:crm,esc:esc,dl:dl,dlg:dlg,plus:ico('plus'),data:function(){return D.crmSales},manager:manager,close:function(){var d=$('#dlg');if(d&&d.open)d.close()},render:function(){if(view==='interesados')render()},reload:function(){crm('sales',{stage:'',offset:0}).then(function(d){D.crmSales=d;D.crmAlerts=null;if(view==='interesados')render()},function(){toast('No se pudo actualizar la lista.')})}});
 window.GestionCursos.init({dlg:dlg,rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
 document.addEventListener('click',function(e){window.GestionCursos.click(e);window.GestionEmbudo.click(e)});
