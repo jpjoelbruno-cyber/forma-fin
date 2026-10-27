@@ -95,3 +95,9 @@
 .cl-top p{display:none}
 .cl-h3{margin:2px 0 4px}
 @media (max-width:639px){.cl-kc b{white-space:normal;line-height:1.15}}
+
+.cl-calc{grid-column:1/-1;border:0;border-radius:12px;min-height:44px;background:linear-gradient(135deg,#7A10DC,#4A12D6);color:#fff;font:700 15px 'DM Sans',sans-serif;cursor:pointer;margin-top:2px}
+.cl-calc:hover{filter:brightness(1.07)}
+.cl-stale{background:#FEF3C7;border:1px solid #F3DFA2;color:#6B4E00;border-radius:12px;padding:10px 14px;font-size:13px}
+.cl-out.stale>:not(.cl-stale){opacity:.45}
+.cl-empty{grid-column:1/-1;border:2px dashed #DDD6F0;border-radius:14px;padding:26px 16px;text-align:center;background:#fff;display:grid;gap:4px}.cl-empty b{font:700 16px Sora,'DM Sans',sans-serif;color:#1B1240}.cl-empty span{font-size:13px;color:#6B6490}
