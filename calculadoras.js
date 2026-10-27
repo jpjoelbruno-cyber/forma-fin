@@ -8,7 +8,7 @@ const BLUE='#2f6fdd',GREEN='#1f9d6b',GOAL='#c2410c';
 const CUR={BRL:['pt-BR','R$ Real'],USD:['en-US','US$ Dólar'],EUR:['es-ES','€ Euro'],ARS:['es-AR','$ Peso argentino'],MXN:['es-MX','$ Peso mexicano'],COP:['es-CO','$ Peso colombiano'],CLP:['es-CL','$ Peso chileno'],PEN:['es-PE','S/ Sol'],UYU:['es-UY','$ Peso uruguayo'],PYG:['es-PY','₲ Guaraní']};
 const REGION={AR:'ARS',MX:'MXN',CO:'COP',CL:'CLP',PE:'PEN',UY:'UYU',PY:'PYG',US:'USD',ES:'EUR',PT:'EUR',BR:'BRL'};
 const T={
-es:{title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instante.',t1:'Interés',t2:'Independencia',t3:'Primer millón',
+es:{calcBtn:'Calcular',stale:'Cambiaste los números. Presiona Calcular para actualizar el resultado.',emptyT:'Escribe tus números y presiona Calcular',emptyD:'El resultado y el gráfico aparecerán aquí.',title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instante.',t1:'Interés',t2:'Independencia',t3:'Primer millón',
  ini:'Monto inicial',ap:'Aporte mensual',rate:'Tasa de rendimiento',time:'Tiempo',year:'Año',month:'Mes',years:'Años',months:'Meses',
  eqM:'equivale a {x}% al mes',eqY:'equivale a {x}% al año',isM:'son {x} meses',isY:'son {x}',ex:'Ejemplos al año:',exY:'al año',
  put:'Tú pusiste',gain:'Rendimientos',will:'Tendrás en {t}',bridge:'Con este total podrías retirar {x} al mes',bridgeBtn:'Usar en Independencia →',
@@ -21,7 +21,7 @@ es:{title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instan
  foot:'Ejemplo educativo. Las tasas son estimaciones que tú escribes: no son una promesa de rentabilidad ni una recomendación de inversión. Los cálculos se hacen en tu equipo y no se guardan.',
  back:'← Interés',indep:'Independencia →',chartPut:'Lo que tú pones',chartGain:'Lo que gana tu dinero',chartGoal:'Tu meta',currency:'Moneda',lang:'Idioma',
  tillGoal:'{y} y {m}',yS:'{n} año',yP:'{n} años',mS:'{n} mes',mP:'{n} meses',and:' y ',inY:'en el año {n}',inM:'en el mes {n}',already:'Ya llegaste',linkBtn:'Usar el total de mi simulación',noSim:'Tu total de la simulación'},
-pt:{title:'Calculadoras',sub:'Digite seus números e veja o resultado na hora.',t1:'Juros',t2:'Independência',t3:'Primeiro milhão',
+pt:{calcBtn:'Calcular',stale:'Você mudou os números. Pressione Calcular para atualizar o resultado.',emptyT:'Digite seus números e pressione Calcular',emptyD:'O resultado e o gráfico aparecerão aqui.',title:'Calculadoras',sub:'Digite seus números e veja o resultado na hora.',t1:'Juros',t2:'Independência',t3:'Primeiro milhão',
  ini:'Valor inicial',ap:'Aporte mensal',rate:'Taxa de rendimento',time:'Tempo',year:'Ano',month:'Mês',years:'Anos',months:'Meses',
  eqM:'equivale a {x}% ao mês',eqY:'equivale a {x}% ao ano',isM:'são {x} meses',isY:'são {x}',ex:'Exemplos ao ano:',exY:'ao ano',
  put:'Você colocou',gain:'Rendimentos',will:'Você terá em {t}',bridge:'Com este total você poderia retirar {x} por mês',bridgeBtn:'Usar em Independência →',
@@ -43,7 +43,7 @@ const S={tab:'int',lang:lang0,cur:detectCur(lang0),
  int:{ini:1000,ap:150,rate:8,rateU:'y',time:20,timeU:'y'},
  ind:{want:2000,have:0,ap:150,rate:8,rateU:'y',pct:4,linked:false},
  mil:{goal:1000000,have:1000,ap:500,rate:8,rateU:'y',time:20,timeU:'y',mode:'t'},
- tbl:{int:'r',mil:'r'},open:{int:{},mil:{}},last:null};
+ done:{int:false,ind:false,mil:false},tbl:{int:'r',mil:'r'},open:{int:{},mil:{}},last:null};
 const t=(k,v)=>{let s=(T[S.lang][k]!=null?T[S.lang][k]:T.es[k]||k);if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s;};
 /* ---------- formato ---------- */
 const loc=()=>CUR[S.cur][0];
@@ -90,6 +90,8 @@ function fieldsHTML(){
   '<div class="cl-chips">'+esc(t('ex'))+' '+[6,9,12].map(v=>'<button type="button" class="cl-chip" data-rate="'+v+'">'+v+'%</button>').join('')+'</div>';
  else if(tab==='ind')h=mfield('want',t('want'),d.want,{focus:true})+mfield('have',t('have'),d.have,{hint:d.linked?t('haveLinked'):''})+mfield('ap',t('ap'),d.ap)+rate;
  else h='<div class="cl-mode" role="group">'+['t','a'].map(m=>'<button type="button" data-mode="'+m+'" class="'+(d.mode===m?'on':'')+'" aria-pressed="'+(d.mode===m)+'">'+esc(t(m==='t'?'gm1':'gm2'))+'</button>').join('')+'</div>'+mfield('goal',t('goal'),d.goal,{focus:true})+mfield('have',t('have'),d.have)+(d.mode==='t'?mfield('ap',t('ap'),d.ap):time)+rate;
+
+ h+='<button type="button" class="cl-calc" data-calc="1">'+esc(t('calcBtn'))+'</button>';
  return h;
 }
 /* ---------- lectura de campos ---------- */
@@ -129,8 +131,8 @@ function tableHTML(key,rows){
 /* ---------- cálculo y pantalla ---------- */
 const kc=(cls,label,val,extra)=>'<div class="cl-kc '+(cls||'')+'"><span>'+label+'</span><b>'+val+'</b>'+(extra||'')+'</div>';
 const dot=c=>'<i class="cl-dot" style="background:'+c+'"></i>';
-function update(){
- const out=$('cl-out');if(!out)return;out.dataset.tab=S.tab;const ok=read();hints();
+function render(){
+ const out=$('cl-out');if(!out)return;out.dataset.tab=S.tab;stale(false);['cl-chartbox','cl-table','cl-sticky'].forEach(id=>{const e=$(id);if(e)e.hidden=false;});const ok=read();hints();
  const d=S[S.tab];const kpi=$('cl-kpi'),ch=$('cl-chartbox'),ex=$('cl-extra'),tb=$('cl-table'),st=$('cl-sticky');
  S.last=null;
  const lim=C.validate(Object.assign({},d,{months:S.tab==='ind'?1:(S.tab==='mil'&&d.mode==='t'?1:C.toMonths(d.time,d.timeU))}));
@@ -168,18 +170,29 @@ function update(){
 }
 function drawChart(){const el=$('cl-chart');if(!el)return;if(S.last)chart(el,S.last.pts,S.last.goal);else el.innerHTML='';}
 /* ---------- estructura ---------- */
+/* Los resultados aparecen solo al presionar "Calcular". Si cambias un número después, se avisa hasta que vuelvas a calcular. */
+function stale(on){const m=$('cl-stale'),o=$('cl-out');if(m)m.hidden=!on;if(o)o.classList.toggle('stale',!!on);}
+function empty(){
+ const o=$('cl-out');if(!o)return;o.dataset.tab=S.tab;stale(false);
+ $('cl-kpi').innerHTML='<div class="cl-empty"><b>'+esc(t('emptyT'))+'</b><span>'+esc(t('emptyD'))+'</span></div>';
+ ['cl-chartbox','cl-table','cl-sticky'].forEach(id=>{const e=$(id);if(e)e.hidden=true;});$('cl-extra').innerHTML='';
+}
+function refresh(){read();hints();if(S.done[S.tab])render();else empty();}
+function soft(){read();hints();if(S.done[S.tab])stale(true);}
+function calc(){S.done[S.tab]=true;render();}
 function shell(){
  const p=$('p-calculadoras');if(!p)return;
  p.innerHTML='<div id="cl-root"><div class="cl-top"><div><h1>'+esc(t('title'))+'</h1><p>'+esc(t('sub'))+'</p></div><div class="cl-tools"><label>'+esc(t('currency'))+'<select id="cl-cur" aria-label="'+esc(t('currency'))+'">'+Object.keys(CUR).map(c=>'<option value="'+c+'"'+(c===S.cur?' selected':'')+'>'+esc(CUR[c][1])+'</option>').join('')+'</select></label><span class="cl-sg2" role="group" aria-label="'+esc(t('lang'))+'"><button type="button" data-lang="es" class="'+(S.lang==='es'?'on':'')+'">ES</button><button type="button" data-lang="pt" class="'+(S.lang==='pt'?'on':'')+'">PT</button></span></div></div>'+
  '<div class="cl-tabs" role="tablist">'+[['int','t1'],['ind','t2'],['mil','t3']].map(([k,l])=>'<button type="button" role="tab" data-tab="'+k+'" aria-selected="'+(S.tab===k)+'" class="'+(S.tab===k?'on':'')+'">'+esc(t(l))+'</button>').join('')+'</div>'+
- '<div class="cl-grid"><section class="cl-card cl-in" id="cl-in"></section><div class="cl-out" id="cl-out"><div class="cl-k3" id="cl-kpi"></div><div class="cl-card cl-chartbox" id="cl-chartbox"><div class="cl-legend"><span>'+dot(BLUE)+esc(t('chartPut'))+'</span><span>'+dot(GREEN)+esc(t('chartGain'))+'</span>'+(S.tab!=='int'?'<span class="cl-gl">- - '+esc(t('chartGoal'))+'</span>':'')+'</div><div id="cl-chart"></div></div><div id="cl-extra"></div><section class="cl-card cl-tbl" id="cl-table"></section></div></div>'+
+ '<div class="cl-grid"><section class="cl-card cl-in" id="cl-in"></section><div class="cl-out" id="cl-out"><div class="cl-stale" id="cl-stale" hidden>'+esc(t('stale'))+'</div><div class="cl-k3" id="cl-kpi"></div><div class="cl-card cl-chartbox" id="cl-chartbox"><div class="cl-legend"><span>'+dot(BLUE)+esc(t('chartPut'))+'</span><span>'+dot(GREEN)+esc(t('chartGain'))+'</span>'+(S.tab!=='int'?'<span class="cl-gl">- - '+esc(t('chartGoal'))+'</span>':'')+'</div><div id="cl-chart"></div></div><div id="cl-extra"></div><section class="cl-card cl-tbl" id="cl-table"></section></div></div>'+
  '<p class="cl-foot">'+esc(t('foot'))+'</p><div class="cl-sticky" id="cl-sticky"></div></div>';
- $('cl-in').innerHTML=fieldsHTML();update();
+ $('cl-in').innerHTML=fieldsHTML();refresh();
 }
-function fieldsOnly(){$('cl-in').innerHTML=fieldsHTML();update();}
+function fieldsOnly(){$('cl-in').innerHTML=fieldsHTML();refresh();}
 function formatMoneyInput(i){const v=C.parseNumber(i.value);if(!Number.isNaN(v))i.value=dec2(v).replace(/[.,]00$/,'');}
 function click(e){
  const b=e.target.closest('button,tr[data-y]');if(!b)return;
+ if(b.dataset.calc){calc();return;}
  if(b.dataset.tab){if(S.tab!==b.dataset.tab){S.tab=b.dataset.tab;shell();}return;}
  if(b.dataset.lang){S.lang=b.dataset.lang;store.set('forma-calc-lang',S.lang);shell();return;}
  if(b.dataset.seg){const [k,v]=b.dataset.seg.split(':');const d=S[S.tab];
@@ -190,10 +203,10 @@ function click(e){
    d[k]=v;fieldsOnly();}return;}
  if(b.dataset.rate){const d=S[S.tab];d.rate=Number(b.dataset.rate);d.rateU='y';fieldsOnly();return;}
  if(b.dataset.mode){S.mil.mode=b.dataset.mode;fieldsOnly();return;}
- if(b.dataset.pct){S.ind.pct=Number(b.dataset.pct);update();return;}
- if(b.dataset.tbl){S.tbl[S.tab]=b.dataset.tbl;update();return;}
- if(b.dataset.y){const k=S.tab,y=b.dataset.y;S.open[k][y]=!S.open[k][y];update();return;}
- if(b.dataset.go){if(b.dataset.go==='ind'&&b.dataset.total){S.ind.have=Number(b.dataset.total);S.ind.linked=true;S.ind.ap=S.int.ap;S.ind.rate=S.int.rate;S.ind.rateU=S.int.rateU;}
+ if(b.dataset.pct){S.ind.pct=Number(b.dataset.pct);render();return;}
+ if(b.dataset.tbl){S.tbl[S.tab]=b.dataset.tbl;render();return;}
+ if(b.dataset.y){const k=S.tab,y=b.dataset.y;S.open[k][y]=!S.open[k][y];render();return;}
+ if(b.dataset.go){if(b.dataset.go==='ind'&&b.dataset.total){S.ind.have=Number(b.dataset.total);S.ind.linked=true;S.ind.ap=S.int.ap;S.ind.rate=S.int.rate;S.ind.rateU=S.int.rateU;S.done.ind=true;}
   S.tab=b.dataset.go;shell();window.scrollTo({top:0,behavior:'smooth'});try{document.body.scrollTo({top:0,behavior:'smooth'})}catch{}}
 }
 function build(){
@@ -201,10 +214,11 @@ function build(){
  const p=document.createElement('section');p.id='p-calculadoras';p.className='panel';app.insertBefore(p,$('bnav'));
  p.addEventListener('click',click);
  p.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('tr[data-y]')){e.preventDefault();click(e);}});
- p.addEventListener('input',e=>{if(e.target.matches('[data-k]')){if(S.tab==='ind'&&e.target.dataset.k==='have')S.ind.linked=false;update();}});
+ p.addEventListener('input',e=>{if(e.target.matches('[data-k]')){if(S.tab==='ind'&&e.target.dataset.k==='have')S.ind.linked=false;soft();}});
+ p.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.matches('[data-k]')){e.preventDefault();e.target.blur();calc();}});
  p.addEventListener('focusout',e=>{if(e.target.matches('[data-money]'))formatMoneyInput(e.target);});
  p.addEventListener('focusin',e=>{if(e.target.matches('[data-k]'))setTimeout(()=>{try{e.target.select()}catch{}},0);});
- p.addEventListener('change',e=>{if(e.target.id==='cl-cur'){S.cur=e.target.value;store.set('forma-calc-cur',S.cur);document.querySelectorAll('#cl-in [data-money]').forEach(formatMoneyInput);document.querySelectorAll('[data-pre]').forEach(x=>x.textContent=sym());update();}});
+ p.addEventListener('change',e=>{if(e.target.id==='cl-cur'){S.cur=e.target.value;store.set('forma-calc-cur',S.cur);document.querySelectorAll('#cl-in [data-money]').forEach(formatMoneyInput);document.querySelectorAll('[data-pre]').forEach(x=>x.textContent=sym());if(S.done[S.tab])render();}});
  shell();
  if(window.ResizeObserver){let w=0;new ResizeObserver(()=>{const el=$('cl-chart');if(el&&el.clientWidth!==w){w=el.clientWidth;drawChart();}}).observe(p);}
  new MutationObserver(()=>{if(p.classList.contains('active'))drawChart();}).observe(p,{attributes:true,attributeFilter:['class']});
