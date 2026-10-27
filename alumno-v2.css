@@ -84,3 +84,6 @@
 
 /* Menú del computador en pantallas medianas: botones más compactos para que quepan los nueve accesos */
 @media (min-width:900px) and (max-width:1299px){#av-nav .av-items button{padding:0 8px;gap:6px;font-size:14px}#av-nav .av-brand{font-size:18px}#av-nav .av-tools{margin-left:2px}}
+
+/* Menú del computador: botones compactos y en una sola línea (con la nueva pestaña Calcular son nueve accesos) */
+@media (min-width:900px){#av-nav .av-items button{padding:0 10px;gap:6px;font-size:14px;white-space:nowrap}#av-nav .av-items{flex-wrap:nowrap}}
