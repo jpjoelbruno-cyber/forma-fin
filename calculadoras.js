@@ -10,7 +10,7 @@ const REGION={AR:'ARS',MX:'MXN',CO:'COP',CL:'CLP',PE:'PEN',UY:'UYU',PY:'PYG',US:
 const T={
 es:{title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instante.',t1:'Interés',t2:'Independencia',t3:'Primer millón',
  ini:'Monto inicial',ap:'Aporte mensual',rate:'Tasa de rendimiento',time:'Tiempo',year:'Año',month:'Mes',years:'Años',months:'Meses',
- eqM:'equivale a {x}% al mes',eqY:'equivale a {x}% al año',isM:'son {x} meses',isY:'son {x}',ex:'Tasa de ejemplo (al año):',exY:'al año',
+ eqM:'equivale a {x}% al mes',eqY:'equivale a {x}% al año',isM:'son {x} meses',isY:'son {x}',ex:'Ejemplos al año:',exY:'al año',
  put:'Tú pusiste',gain:'Rendimientos',will:'Tendrás en {t}',bridge:'Con este total podrías retirar {x} al mes',bridgeBtn:'Usar en Independencia →',
  want:'Quiero recibir al mes',have:'Ya tengo',haveLinked:'viene de tu simulación de interés compuesto',need:'Necesitas juntar',rule:'regla del {p}% al año',
  prog:'Hoy vas en',arrive:'Con tu aporte llegas en',cons:'Conservador',mod:'Moderado',risk:'Arriesgado',recv:'Recibirías {x}/mes con lo que tienes',
@@ -23,7 +23,7 @@ es:{title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instan
  tillGoal:'{y} y {m}',yS:'{n} año',yP:'{n} años',mS:'{n} mes',mP:'{n} meses',and:' y ',inY:'en el año {n}',inM:'en el mes {n}',already:'Ya llegaste',linkBtn:'Usar el total de mi simulación',noSim:'Tu total de la simulación'},
 pt:{title:'Calculadoras',sub:'Digite seus números e veja o resultado na hora.',t1:'Juros',t2:'Independência',t3:'Primeiro milhão',
  ini:'Valor inicial',ap:'Aporte mensal',rate:'Taxa de rendimento',time:'Tempo',year:'Ano',month:'Mês',years:'Anos',months:'Meses',
- eqM:'equivale a {x}% ao mês',eqY:'equivale a {x}% ao ano',isM:'são {x} meses',isY:'são {x}',ex:'Taxa de exemplo (ao ano):',exY:'ao ano',
+ eqM:'equivale a {x}% ao mês',eqY:'equivale a {x}% ao ano',isM:'são {x} meses',isY:'são {x}',ex:'Exemplos ao ano:',exY:'ao ano',
  put:'Você colocou',gain:'Rendimentos',will:'Você terá em {t}',bridge:'Com este total você poderia retirar {x} por mês',bridgeBtn:'Usar em Independência →',
  want:'Quero receber por mês',have:'Já tenho',haveLinked:'vem da sua simulação de juros compostos',need:'Você precisa juntar',rule:'regra dos {p}% ao ano',
  prog:'Hoje você está em',arrive:'Com seu aporte você chega em',cons:'Conservador',mod:'Moderado',risk:'Arriscado',recv:'Você receberia {x}/mês com o que tem',
