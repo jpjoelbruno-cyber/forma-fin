@@ -7,8 +7,8 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const ico=d=>'<svg class="av-i" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 const I={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',mes:'<path d="M4 20V10m8 10V4m8 16v-7"/>',plus:'<path d="M12 5v14M5 12h14"/>',goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',book:'<path d="M4 5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 5h-6"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 13h2"/>',calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',bell:'<path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/>'};
 /* clave, texto, icono, panel que se activa */
-const ITEMS=[['camino','Mi camino','home'],['mes','Mi mes','mes'],['registrar','Mi dinero','list'],['calc','Calcular','calc'],['aprender','Aprender','book'],['cursos','Mis cursos','cap'],['banco','Cuentas','wallet']];
-const MOBILE=['camino','registrar','aprender','cursos'];
+const ITEMS=[['camino','Inicio','home'],['mes','Presupuesto','mes'],['registrar','Anotar','list'],['calc','Calcular','calc'],['aprender','Aprender','book'],['cursos','Mis cursos','cap'],['banco','Cuentas','wallet']];
+const MOBILE=['camino','mes','registrar','aprender'];
 const PANEL={camino:'camino',mes:'resumo',registrar:'registrar',metas:'metas',calc:'calculadoras',historico:'historico',aprender:'aprender',cursos:'institution',banco:'banco'};
 function open(k){
   if(k==='camino'){goPanel('camino');return;}
@@ -61,7 +61,7 @@ function act(k){
   if(k==='instalar'){const b=document.querySelector('.forma-install-button');if(b)b.click();return;}
   if(k==='salir'){document.querySelector('.tb-logout')?.click();}
 }
-const TITLES={registrar:'Mi dinero',historico:'Mi dinero',metas:'Mi dinero',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mis cursos',alunos:'Mis alumnos'};
+const TITLES={registrar:'Anotar',historico:'Anotar',metas:'Anotar',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mis cursos',alunos:'Mis alumnos'};
 function sync(){
   const n=$('av-nav');const a=document.querySelector('#app-screen .panel.active');if(!n||!a)return;
   const id=a.id.replace(/^p-/,'');const ti=$('av-title');if(ti){const t=TITLES[id]||'';if(ti.textContent!==t)ti.textContent=t;if(ti.hidden===!!t)ti.hidden=!t;}
@@ -83,6 +83,41 @@ function firstName(){const g=txt('tb-greeting').replace(/!$/,'').replace(/^hola,
 function dl(iso){if(!iso)return '';const p=String(iso).slice(0,10).split('-');return p[2]+'/'+p[1];}
 function money(c){return 'R$ '+(Number(c)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function hh(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).padStart(2,'0');}
+
+/* ---------- Inicio y Presupuesto: vista tipo banco ---------- */
+const BV=()=>window.FormaBudgetView||null;
+const pc=(s,p)=>p>0?Math.round(s/p*100):0;
+const tone=p=>p>100?'r':p>=80?'y':'g';
+function bankHTML(compact){
+  const v=BV();
+  if(!v)return '<section class="bk-hero"><small>Tu mes</small><b class="bk-big">…</b></section>';
+  const f=v.fmt,hasPlan=v.plannedExpense>0,left=v.plannedExpense-v.exp,p=pc(v.exp,v.plannedExpense);
+  let hero;
+  if(hasPlan){
+    hero='<section class="bk-hero '+(left<0?'neg':'')+'"><small>'+(left<0?'Te pasaste de tu plan':'Te quedan este mes')+'</small><b class="bk-big">'+f(Math.abs(left))+'</b><span>de '+f(v.plannedExpense)+' de tu plan · gastaste '+f(v.exp)+' ('+p+' %)</span><div class="bk-bar"><i class="'+tone(p)+'" style="width:'+Math.min(p,100)+'%"></i></div><div class="bk-sum"><span>Entradas <b>'+f(v.inc)+'</b></span><span>Resultado <b>'+f(v.bal)+'</b></span></div></section>';
+  }else{
+    hero='<section class="bk-hero"><small>Resultado de tu mes</small><b class="bk-big">'+f(v.bal)+'</b><span>Entradas '+f(v.inc)+' · Gastos '+f(v.exp)+'</span><button type="button" class="bk-cta" data-bk="plan">Crear mi presupuesto en 2 minutos</button></section>';
+  }
+  const acts='<div class="bk-acts"><button type="button" data-bk="gasto"><i class="r">↓</i>Anotar gasto</button><button type="button" data-bk="entrada"><i class="g">↑</i>Anotar entrada</button><button type="button" data-bk="voz"><i class="b">🎙</i>Hablar</button><button type="button" data-bk="calc"><i class="y">🧮</i>Calcular</button></div>';
+  const gs=v.groups.filter(g=>g.spent>0||g.planned>0).sort((a,b)=>b.spent-a.spent);
+  const shown=compact?gs.slice(0,5):gs;
+  const groups='<section class="bk-card"><h2>Mis grupos <button type="button" class="cm-link" data-bk="plan">'+(hasPlan?'Editar plan':'Crear plan')+'</button></h2>'+(shown.length?shown.map(g=>{const q=pc(g.spent,g.planned);const t=g.planned>0?tone(q):'n';return '<div class="bk-g"><div><span>'+esc(g.i)+' <b>'+esc(g.l)+'</b></span><span>'+f(g.spent)+(g.planned>0?' <small>de '+f(g.planned)+'</small>':'')+'</span></div><div class="bk-bar sm"><i class="'+t+'" style="width:'+Math.min(g.planned>0?q:0,100)+'%"></i></div>'+(g.planned>0?'<small class="'+t+'">'+(g.spent<=g.planned?'Te quedan '+f(g.planned-g.spent):'Te pasaste '+f(g.spent-g.planned))+'</small>':'<small>Sin monto previsto</small>')+'</div>';}).join(''):'<p class="cm-note">Todavía no hay gastos. Toca «Anotar gasto» y aquí verás cada grupo.</p>')+'</section>';
+  const mv='<section class="bk-card"><h2>Últimos movimientos <button type="button" class="cm-link" data-bk="hist">Ver todos</button></h2>'+(v.recent.length?v.recent.map(t=>'<div class="bk-mv"><span>'+esc(t.i)+' '+esc(t.l)+'<small>'+esc(t.d)+'</small></span><b class="'+(t.type==='income'?'g':'')+'">'+(t.type==='income'?'+':'−')+' '+f(t.a)+'</b></div>').join(''):'<p class="cm-note">Aún no hay movimientos.</p>')+'</section>';
+  return hero+acts+'<div class="bk-two">'+groups+(compact?mv:'')+'</div>'+(compact?'':mv);
+}
+function bkClick(e){
+  const b=e.target.closest('[data-bk]');if(!b)return;const a=b.dataset.bk;
+  if(a==='gasto'||a==='entrada'||a==='voz'){open('registrar');setTimeout(()=>{const t=$(a==='entrada'?'tt-i':'tt-e');if(t)t.click();if(a==='voz'){const v=$('voice-start');if(v){v.scrollIntoView({block:'center'});v.click();}}},350);return;}
+  if(a==='calc'){open('calc');return;}
+  if(a==='hist'){goPanel('historico');return;}
+  if(a==='plan'){const hasPlan=BV()&&BV().plannedExpense>0;const el=hasPlan?document.querySelector('[data-forma-click="15"]'):$('guide-action');goPanel('resumo');setTimeout(()=>{(document.querySelector('[data-forma-click="15"]')&&hasPlan?document.querySelector('[data-forma-click="15"]'):$('guide-action'))?.click();},300);return;}
+}
+function paintBank(){
+  const p=$('p-resumo');if(!p)return;let box=$('av-bank');
+  if(!box){box=document.createElement('div');box.id='av-bank';p.prepend(box);box.addEventListener('click',bkClick);}
+  const d=p.querySelector('details.ia-more');if(d&&!d.open)d.open=true;
+  const html=bankHTML(false);if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html;}
+}
 let lastHTML='';
 function paintCamino(){
   const body=$('cm-body');if(!body)return;
@@ -97,10 +132,10 @@ function paintCamino(){
   let mine;
   if(s.linked&&s.enrol){const e=s.enrol,left=Math.max(0,e.total-e.paid);mine='<section class="cm-card"><h2>Mi curso <button type="button" class="cm-link" data-cm="cursos">Ver todo</button></h2><b>'+esc(e.course)+'</b><p>'+esc(e.group||'')+'</p><p>'+(s.nextClass?'Próxima clase: '+dl(s.nextClass.day)+' · '+hh(s.nextClass.start)+(s.nextClass.module?' · '+esc(s.nextClass.module):''):'Sin próxima clase confirmada')+'</p><p>'+(s.nextDue?'Próxima cuota: '+money(s.nextDue.cents)+(s.nextDue.due?' · vence '+dl(s.nextDue.due):''):(left?'Falta pagar '+money(left):'Todo pagado'))+'</p></section>';}
   else mine='<section class="cm-card cm-cta"><h2>Cuando quieras, hay un siguiente nivel</h2><p>Los cursos de FORMÁ tienen clases en vivo, acompañamiento y plan de pago. Pide información y te escribimos.</p><button type="button" class="cm-btn" data-cm="ayuda">Pedir información</button></section>';
-  const html='<div class="cm-head"><h1>Hola'+(firstName()?', '+esc(firstName()):'')+'</h1><p>Esto es lo que sigue para ti. Un paso a la vez.</p></div>'+
-   '<div class="cm-grid"><section class="cm-hero"><small>'+esc(hero.k)+'</small><h2>'+esc(hero.t)+'</h2>'+(hero.c?'<p>'+esc(hero.c)+'</p>':'')+'<button type="button" class="cm-btn cm-white" data-cm="'+hero.a+'">'+esc(hero.b)+'</button></section>'+
-   '<section class="cm-card"><h2>Tu mes <button type="button" class="cm-link" data-cm="mes">Ver mi mes</button></h2><b class="cm-big">'+esc(txt('hero-bal')||'R$ 0,00')+'</b><p>'+esc(txt('hero-sub')||'Registra tus movimientos para ver tu resultado.')+'</p><button type="button" class="cm-btn cm-sec" data-cm="registrar">+ Anotar un gasto o una entrada</button></section>'+
-   '<section class="cm-card cm-wide"><h2>Tu camino'+(path.length?' <span class="cm-pill">'+done+' de '+path.length+' cursos</span>':'')+'</h2><div class="cm-path">'+stations+'</div><p class="cm-note">Terminas un curso y se abre el siguiente. Lo que haces en tu presupuesto también cuenta para avanzar.</p></section>'+mine+'</div>';
+  const html='<div class="cm-head"><h1>Hola'+(firstName()?', '+esc(firstName()):'')+'</h1><p>Así va tu mes.</p></div>'+
+   '<div id="bk-home">'+bankHTML(true)+'</div>'+
+   '<div class="cm-grid" style="margin-top:16px"><section class="cm-hero"><small>'+esc(hero.k)+'</small><h2>'+esc(hero.t)+'</h2>'+(hero.c?'<p>'+esc(hero.c)+'</p>':'')+'<button type="button" class="cm-btn cm-white" data-cm="'+hero.a+'">'+esc(hero.b)+'</button></section>'+mine+
+   '<section class="cm-card cm-wide"><h2>Tu camino'+(path.length?' <span class="cm-pill">'+done+' de '+path.length+' cursos</span>':'')+'</h2><div class="cm-path">'+stations+'</div><p class="cm-note">Terminas un curso y se abre el siguiente. Lo que haces en tu presupuesto también cuenta para avanzar.</p></section></div>';
   if(html!==lastHTML){lastHTML=html;body.innerHTML=html;}
 }
 function camClick(e){
@@ -121,7 +156,8 @@ function schedule(){clearTimeout(t);t=setTimeout(()=>{paintCamino();sync();},60)
 function start(){
   build();panel();learnCta();
   document.addEventListener('forma:learning',schedule);document.addEventListener('forma:student',schedule);
-  const cb=$('p-camino');if(cb)cb.addEventListener('click',camClick);
+  const cb=$('p-camino');if(cb){cb.addEventListener('click',camClick);cb.addEventListener('click',bkClick);}
+  document.addEventListener('forma:budget',()=>{paintBank();schedule();});paintBank();
   const mo=new MutationObserver(()=>{sync();});document.querySelectorAll('#app-screen .panel').forEach(p=>mo.observe(p,{attributes:true,attributeFilter:['class']}));
   const mo2=new MutationObserver(schedule);['hero-bal','hero-sub','guide-title','guide-copy','guide-action','tb-greeting','student-entry-count'].forEach(id=>{const e=$(id);if(e)mo2.observe(e,{childList:true,subtree:true,characterData:true});});
   paintCamino();

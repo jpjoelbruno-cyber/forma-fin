@@ -443,6 +443,69 @@ function saveAg(){
   });
 }
 
+/* ---------- EDITAR UNA RESERVA (reprogramar o cancelar) ---------- */
+function openEditRes(b){
+  S={kind:'edb',busy:false,ask:false,b:b,msg:''};paintEd();
+}
+function paintEd(){
+  var M=X.M,b=S.b,opt=function(list,v){return list.map(function(x){return '<option'+(x===v?' selected':'')+'>'+X.esc(x)+'</option>'}).join('')};
+  var hrs=[13,14,15,16,17].map(function(h){return '<option value="'+h+'"'+(Number(b.start_hour)===h?' selected':'')+'>'+h+':00</option>'}).join('');
+  var ins=M.instructors.slice();if(ins.indexOf(b.instructor)<0&&b.instructor)ins.push(b.instructor);
+  var h='<p class="note"><b>'+X.esc(b.client)+'</b> · '+X.esc(b.activity||'')+'. Cambia lo que haga falta y guarda; el sistema avisa si el instructor ya está ocupado.</p><form id="ac-ed" class="cu-form ac-grid">'+field('Primer día','start_date','date',b.start_date,'required')+
+   '<label>Hora de inicio<select name="start_hour">'+hrs+'</select></label><label>Duración (horas)<select name="duration">'+[1,2,3,4,5].map(function(n){return '<option'+(n===Number(b.duration)?' selected':'')+'>'+n+'</option>'}).join('')+'</select></label>'+field('Cantidad de encuentros','sessions','number',b.sessions,'min="1" max="52" data-nowheel="1"')+
+   '<label>Instructor<select name="instructor">'+opt(ins,b.instructor)+'</select></label>'+field('Sala','room','text',b.room||'','maxlength="60"')+
+   '<label>Estado<select name="booking_state"><option value="reservado"'+(b.booking_state!=='por_confirmar'?' selected':'')+'>Reservado</option><option value="por_confirmar"'+(b.booking_state==='por_confirmar'?' selected':'')+'>Por confirmar</option></select></label>'+field('Motivo (obligatorio para cancelar)','reason','text',S.reason||'','maxlength="200"')+'</form>';
+  h+='<div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cerrar</button>'+(S.ask?'<button class="btn s" data-ac="edcancel2"'+(S.busy?' disabled':'')+' style="color:#B42318;border-color:#B42318">Sí, cancelar toda la serie</button>':'<button class="btn s" data-ac="edcancel"'+(S.busy?' disabled':'')+'>Cancelar la reserva</button>')+'<button class="btn p" data-ac="edgo"'+(S.busy?' disabled':'')+'>Guardar cambios</button></div>';
+  shell('Reprogramar o cancelar',h);say(S.msg);S.msg='';
+}
+function readEd(){
+  var fd=new FormData($('#ac-ed')),g=function(k){return String(fd.get(k)==null?'':fd.get(k)).trim()};
+  return {start_date:g('start_date'),start_hour:Number(g('start_hour')),duration:Number(g('duration')),sessions:Number(g('sessions')),instructor:g('instructor'),room:g('room'),booking_state:g('booking_state'),reason:g('reason')};
+}
+function saveEd(){
+  if(S.busy)return;var f=readEd(),o=S.b;S.reason=f.reason;
+  var b={client:o.client,phone:o.phone||'',activity:o.activity,area:o.area,profession:o.profession||'',room:f.room,instructor:f.instructor,start_date:f.start_date,start_hour:f.start_hour,duration:f.duration,sessions:f.sessions,instructors:f.instructor===o.instructor&&o.instructors&&o.instructors.length?o.instructors:[f.instructor],student_reference:o.student_reference||'',booking_state:f.booking_state,override_conflict:false,override_reason:''};
+  if(o.group_name)b.group_name=o.group_name;
+  try{X.M.validate(b)}catch(e){S.msg=e.message;paintEd();return}
+  S.busy=true;paintEd();
+  (X.demo?simulate('ed'):X.rpc('forma_agenda_save',{p_id:o.id,p_expected:o.version,p_data:b,p_reason:f.reason||'Reprogramación desde Gestión'})).then(function(r){
+    if(!r||!r.saved)throw Error('Sin confirmar');
+    S.busy=false;X.refresh();
+    X.dlg('Reserva actualizada','<div class="ac-ok"><b>'+X.esc(b.client)+'</b>: '+X.dl(b.start_date)+' · '+b.start_hour+':00 · '+b.sessions+' encuentro(s).</div><div class="fi-acts"><button class="btn p" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){S.busy=false;S.msg=/timeout/i.test((e&&e.message)||'')?'No se confirmó a tiempo. Mira la Agenda antes de guardar otra vez.':errText(e);paintEd()});
+}
+function cancelEd(){
+  if(S.busy)return;var f=readEd();S.reason=f.reason;
+  if(!S.ask){S.ask=true;S.msg=f.reason?'Confirma: se cancelan todas las sesiones y se libera el horario. El historial se conserva.':'Escribe el motivo de cancelación y vuelve a pulsar.';if(!f.reason)S.ask=false;paintEd();return}
+  if(!f.reason){S.ask=false;S.msg='Escribe el motivo de cancelación.';paintEd();return}
+  S.busy=true;paintEd();
+  (X.demo?Promise.resolve({cancelled:true}):X.rpc('forma_agenda_cancel',{p_id:S.b.id,p_expected:S.b.version,p_reason:f.reason})).then(function(r){
+    if(!r||!r.cancelled)throw Error('Sin confirmar');
+    S.busy=false;X.refresh();
+    X.dlg('Reserva cancelada','<div class="ac-ok">La serie de <b>'+X.esc(S.b.client)+'</b> quedó cancelada y el horario está libre. El historial se conserva.</div><div class="fi-acts"><button class="btn p" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){S.busy=false;S.ask=false;S.msg=errText(e);paintEd()});
+}
+
+/* ---------- EDITAR UNA MATRÍCULA ---------- */
+function openEditMat(person,e){S={kind:'edm',busy:false,p:person,e:e,msg:''};paintEdm()}
+function paintEdm(){
+  var e=S.e,st=[['activo','En curso'],['matriculado','Matriculado'],['pausa','En pausa'],['concluido','Concluido'],['cancelado','Cancelado']];
+  var h='<p class="note"><b>'+X.esc(S.p.name)+'</b> · '+X.esc(e.course||'')+(e.group_name?' · '+X.esc(e.group_name):'')+'</p><form id="ac-em" class="cu-form ac-grid"><label>Estado<select name="state">'+st.map(function(x){return '<option value="'+x[0]+'"'+(x[0]===e.state?' selected':'')+'>'+x[1]+'</option>'}).join('')+'</select></label>'+
+   (e.group_id?'<p class="note">Las fechas vienen del grupo; se cambian en Cursos o en la Agenda.</p>':field('Empieza','starts_on','date',e.starts_on||'')+field('Termina','ends_on','date',e.ends_on||''))+'</form><p class="note">El valor del curso y los pagos no cambian aquí: para cobrar usa «Cobrar un pago».</p>';
+  h+='<div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cerrar</button><button class="btn p" data-ac="emgo"'+(S.busy?' disabled':'')+'>Guardar</button></div>';
+  shell('Editar matrícula',h);say(S.msg);S.msg='';
+}
+function saveEdm(){
+  if(S.busy)return;var fd=new FormData($('#ac-em')),g=function(k){return String(fd.get(k)==null?'':fd.get(k)).trim()};
+  var d={person_id:S.p.id,enrolment_id:S.e.id,expected:S.e.version,state:g('state'),starts_on:g('starts_on'),ends_on:g('ends_on')};
+  if(d.starts_on&&d.ends_on&&d.ends_on<d.starts_on){S.msg='La fecha final no puede ser anterior a la inicial.';paintEdm();return}
+  S.busy=true;paintEdm();
+  (X.demo?simulate('em'):X.edu('update',d)).then(function(r){
+    S.busy=false;X.refresh();
+    X.dlg('Matrícula actualizada','<div class="ac-ok">Los cambios de <b>'+X.esc(S.p.name)+'</b> quedaron guardados.</div><div class="fi-acts"><button class="btn p" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){S.busy=false;S.msg=errText(e);paintEdm()});
+}
+
 /* ---------- eventos ---------- */
 function click(e){
   var b=e.target.closest('[data-ac]');if(!b||!S)return false;
@@ -469,6 +532,9 @@ function click(e){
   else if(k==='intnew')openInt();
   else if(k==='aggo')saveAg();
   else if(k==='agnew')openAgendar();
+  else if(k==='edgo')saveEd();
+  else if(k==='edcancel'||k==='edcancel2')cancelEd();
+  else if(k==='emgo')saveEdm();
   return true;
 }
 document.addEventListener('change',function(e){var t=e.target;if(S&&S.kind==='cls'&&t&&t.dataset&&t.dataset.acAtt!==undefined){S.rows[Number(t.dataset.acAtt)].val=t.value}});
@@ -482,6 +548,8 @@ window.GestionAcciones={
   clase:openClase,
   interesado:openInt,
   agendar:openAgendar,
+  editarReserva:openEditRes,
+  editarMatricula:openEditMat,
   click:click
 };
 })();

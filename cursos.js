@@ -102,7 +102,7 @@ function panel(){
    +'<p class="note" style="margin:0 0 10px">'+(s.from?s.days.map(function(x){return DOW[x]}).join(' y ')+' · '+hhmm(s.start)+'–'+hhmm(s.end)+' · '+esc(g.room||'')+' · '+esc(g.instructor||'')+'<br>'+dmy(s.from)+' → '+dmy(s.to)+' · '+s.n+' encuentros':'Sin fechas preparadas')+'</p>'
    +'<b>Cupos '+Number(g.students)+' de '+Number(g.capacity)+'</b><div class="cu-seats">'+seats(Number(g.capacity),Number(g.students))+'</div>'
    +'<div class="list" style="margin:8px 0 12px">'+al+'</div>'
-   +'<div class="cu-acts"><button class="btn p" data-act="matricular">+ Matricular en este grupo</button><button class="btn s" data-cu="repeat" data-id="'+g.id+'">Repetir para el mes siguiente</button><button class="btn s" data-act="viejo">Editar fechas y horarios</button></div>'
+   +'<div class="cu-acts"><button class="btn p" data-act="matricular">+ Matricular en este grupo</button><button class="btn s" data-cu="repeat" data-id="'+g.id+'">Repetir para el mes siguiente</button><button class="btn s" data-act="agenda">Ver y mover las clases en la Agenda</button></div>'
    +'<p class="note">Color del curso:</p><div class="cu-sws">'+sw+'</div><p class="note">El color se recuerda en este navegador.</p></section>';
 }
 function html(){

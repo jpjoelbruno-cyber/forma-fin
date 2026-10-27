@@ -595,6 +595,14 @@ function renderResume(){
 
   const rt=document.getElementById('recent-txs');
   rt.innerHTML=txs.slice(0,4).map(txHTML).join('')||'<div class="empty"><p>Ninguna transacción aún</p></div>';
+  /* Vista simple del presupuesto para Inicio y Presupuesto (solo lectura, mismos datos). */
+  try{
+    window.FormaBudgetView={inc,exp,bal,plannedIncome,plannedExpense,
+      groups:CAT_GROUPS.map(g=>({id:g.id,l:g.l,i:g.i,spent:g.subs.reduce((s,c)=>s+(bycat[c.id]||0),0),planned:g.subs.reduce((s,c)=>s+Number(budgets[c.id]||0),0)})),
+      recent:txs.slice(0,4).map(t=>{const c=catInfo(t.type,t.category);return{id:t.id,type:t.type,i:c.i,l:t.description||c.l,d:displayDate(t.date),a:Number(t.amount)};}),
+      fmt:n=>fmt(n)};
+    document.dispatchEvent(new Event('forma:budget'));
+  }catch(e){}
 }
 
 function txHTML(t){

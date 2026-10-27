@@ -56,5 +56,17 @@
       "includeFiles": "config.js",
       "maxDuration": 60
     }
-  }
+  },
+  "redirects": [
+    {
+      "source": "/agenda-clasica.html",
+      "destination": "/agenda.html",
+      "permanent": false
+    },
+    {
+      "source": "/clasica.html",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
 }
