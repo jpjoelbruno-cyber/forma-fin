@@ -31,7 +31,7 @@ function card(i,closed){
 }
 function html(s,head){
   var c=s.counts||{},tot=STG.reduce(function(a,x){return a+Number(c[x[0]]||0)},0),mx=Math.max.apply(null,STG.map(function(x){return Number(c[x[0]]||0)}).concat([1])),it=s.items||[],e=X.esc,mgr=X.manager();
-  return head('Interesados','Quién espera respuesta y en qué etapa está.',(mgr?'<button class="btn p" data-act="interesado">'+X.plus+'Nuevo interesado</button>':''))+
+  return head('Ventas','Embudo de ventas: quién espera respuesta y en qué etapa está.',(mgr?'<button class="btn p" data-act="interesado">'+X.plus+'Nuevo interesado</button>':''))+
    '<div id="em-msg" role="status" aria-live="polite">'+msgHtml()+'</div>'+
    '<section class="card" style="margin-bottom:16px"><h2>Embudo de ventas</h2><div class="fun">'+STG.map(function(x){var n=Number(c[x[0]]||0);return '<div class="st"><b class="num">'+n+'</b>'+x[1]+'<i style="width:'+(n/mx*100)+'%"></i></div>'}).join('')+'</div><p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon.</p></section>'+
    (mgr?'<p class="note em-help"><span class="em-pc">Arrastra una tarjeta a otra columna, o usa los botones.</span><span class="em-mob">Usa Avanzar o Mover a… en cada tarjeta.</span> «No se concretó» no borra nada: la persona queda en Cerrados y puedes reabrirla.</p>':'')+
