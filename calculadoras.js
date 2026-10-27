@@ -8,12 +8,12 @@ const BLUE='#2f6fdd',GREEN='#1f9d6b',GOAL='#c2410c';
 const CUR={BRL:['pt-BR','R$ Real'],USD:['en-US','US$ Dólar'],EUR:['es-ES','€ Euro'],ARS:['es-AR','$ Peso argentino'],MXN:['es-MX','$ Peso mexicano'],COP:['es-CO','$ Peso colombiano'],CLP:['es-CL','$ Peso chileno'],PEN:['es-PE','S/ Sol'],UYU:['es-UY','$ Peso uruguayo'],PYG:['es-PY','₲ Guaraní']};
 const REGION={AR:'ARS',MX:'MXN',CO:'COP',CL:'CLP',PE:'PEN',UY:'UYU',PY:'PYG',US:'USD',ES:'EUR',PT:'EUR',BR:'BRL'};
 const T={
-es:{calcBtn:'Calcular',stale:'Cambiaste los números. Presiona Calcular para actualizar el resultado.',emptyT:'Escribe tus números y presiona Calcular',emptyD:'El resultado y el gráfico aparecerán aquí.',title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instante.',t1:'Interés',t2:'Independencia',t3:'Primer millón',
+es:{im1:'Quiero recibir al mes → ¿cuánto necesito?',im2:'Ya tengo un patrimonio → ¿cuánto recibo?',pctL:'Retiro al año',pctH:'Lo más usado es 4%. Menos = más seguro, más = más riesgo.',recM:'Recibirías al mes',recY:'Al año',myW:'Mi patrimonio',opt:'Opcional · para saber cuándo llegarías',calcBtn:'Calcular',stale:'Cambiaste los números. Presiona Calcular para actualizar el resultado.',emptyT:'Escribe tus números y presiona Calcular',emptyD:'El resultado y el gráfico aparecerán aquí.',title:'Calculadoras',sub:'Escribe tus números y mira el resultado al instante.',t1:'Interés',t2:'Independencia',t3:'Primer millón',
  ini:'Monto inicial',ap:'Aporte mensual',rate:'Tasa de rendimiento',time:'Tiempo',year:'Año',month:'Mes',years:'Años',months:'Meses',
  eqM:'equivale a {x}% al mes',eqY:'equivale a {x}% al año',isM:'son {x} meses',isY:'son {x}',ex:'Ejemplos al año:',exY:'al año',
  put:'Tú pusiste',gain:'Rendimientos',will:'Tendrás en {t}',bridge:'Con este total podrías retirar {x} al mes',bridgeBtn:'Usar en Independencia →',
  want:'Quiero recibir al mes',have:'Ya tengo',haveLinked:'viene de tu simulación de interés compuesto',need:'Necesitas juntar',rule:'regla del {p}% al año',
- prog:'Hoy vas en',arrive:'Con tu aporte llegas en',cons:'Conservador',mod:'Moderado',risk:'Arriesgado',recv:'Recibirías {x}/mes con lo que tienes',
+ prog:'Hoy vas en',arrive:'Con tu aporte llegas en',cons:'Conservador',mod:'Moderado',risk:'Arriesgado',perMonth:'al mes',recv:'Recibirías {x}/mes con lo que tienes',
  goal:'Mi meta',gm1:'¿En cuánto tiempo llego?',gm2:'¿Cuánto aporto para llegar en…?',reach:'Llegas a tu meta en',mustAp:'Debes aportar al mes',
  hit:'Etapas del camino',grow:'Cómo va creciendo',sum:'Resumen',full:'Completo',seeAll:'Ver todo mes a mes ({n} meses) ▾',seeLess:'Ver menos ▴',
  stage:'Etapa',colPut:'Tú pusiste',colGain:'Rendimiento',colTotal:'Total',colPm:'Rinde por mes',colAp:'Aportaste',colRin:'Rinde',colAcc:'Rend. acumulado',vals:'Valores',start:'Inicio',
@@ -21,12 +21,12 @@ es:{calcBtn:'Calcular',stale:'Cambiaste los números. Presiona Calcular para act
  foot:'Ejemplo educativo. Las tasas son estimaciones que tú escribes: no son una promesa de rentabilidad ni una recomendación de inversión. Los cálculos se hacen en tu equipo y no se guardan.',
  back:'← Interés',indep:'Independencia →',chartPut:'Lo que tú pones',chartGain:'Lo que gana tu dinero',chartGoal:'Tu meta',currency:'Moneda',lang:'Idioma',
  tillGoal:'{y} y {m}',yS:'{n} año',yP:'{n} años',mS:'{n} mes',mP:'{n} meses',and:' y ',inY:'en el año {n}',inM:'en el mes {n}',already:'Ya llegaste',linkBtn:'Usar el total de mi simulación',noSim:'Tu total de la simulación'},
-pt:{calcBtn:'Calcular',stale:'Você mudou os números. Pressione Calcular para atualizar o resultado.',emptyT:'Digite seus números e pressione Calcular',emptyD:'O resultado e o gráfico aparecerão aqui.',title:'Calculadoras',sub:'Digite seus números e veja o resultado na hora.',t1:'Juros',t2:'Independência',t3:'Primeiro milhão',
+pt:{im1:'Quero receber por mês → quanto preciso?',im2:'Já tenho um patrimônio → quanto recebo?',pctL:'Retirada ao ano',pctH:'O mais usado é 4%. Menos = mais seguro, mais = mais risco.',recM:'Você receberia por mês',recY:'Por ano',myW:'Meu patrimônio',opt:'Opcional · para saber quando chegaria',calcBtn:'Calcular',stale:'Você mudou os números. Pressione Calcular para atualizar o resultado.',emptyT:'Digite seus números e pressione Calcular',emptyD:'O resultado e o gráfico aparecerão aqui.',title:'Calculadoras',sub:'Digite seus números e veja o resultado na hora.',t1:'Juros',t2:'Independência',t3:'Primeiro milhão',
  ini:'Valor inicial',ap:'Aporte mensal',rate:'Taxa de rendimento',time:'Tempo',year:'Ano',month:'Mês',years:'Anos',months:'Meses',
  eqM:'equivale a {x}% ao mês',eqY:'equivale a {x}% ao ano',isM:'são {x} meses',isY:'são {x}',ex:'Exemplos ao ano:',exY:'ao ano',
  put:'Você colocou',gain:'Rendimentos',will:'Você terá em {t}',bridge:'Com este total você poderia retirar {x} por mês',bridgeBtn:'Usar em Independência →',
  want:'Quero receber por mês',have:'Já tenho',haveLinked:'vem da sua simulação de juros compostos',need:'Você precisa juntar',rule:'regra dos {p}% ao ano',
- prog:'Hoje você está em',arrive:'Com seu aporte você chega em',cons:'Conservador',mod:'Moderado',risk:'Arriscado',recv:'Você receberia {x}/mês com o que tem',
+ prog:'Hoje você está em',arrive:'Com seu aporte você chega em',cons:'Conservador',mod:'Moderado',risk:'Arriscado',perMonth:'por mês',recv:'Você receberia {x}/mês com o que tem',
  goal:'Minha meta',gm1:'Em quanto tempo chego?',gm2:'Quanto aporto para chegar em…?',reach:'Você chega à meta em',mustAp:'Você deve aportar por mês',
  hit:'Etapas do caminho',grow:'Como vai crescendo',sum:'Resumo',full:'Completo',seeAll:'Ver tudo mês a mês ({n} meses) ▾',seeLess:'Ver menos ▴',
  stage:'Etapa',colPut:'Você colocou',colGain:'Rendimento',colTotal:'Total',colPm:'Rende por mês',colAp:'Aportou',colRin:'Rende',colAcc:'Rend. acumulado',vals:'Valores',start:'Início',
@@ -41,7 +41,7 @@ function detectCur(lang){const s=store.get('forma-calc-cur');if(s&&CUR[s])return
 const lang0=detectLang();
 const S={tab:'int',lang:lang0,cur:detectCur(lang0),
  int:{ini:1000,ap:150,rate:8,rateU:'y',time:20,timeU:'y'},
- ind:{want:2000,have:0,ap:150,rate:8,rateU:'y',pct:4,linked:false},
+ ind:{mode:'w',want:2000,have:0,ap:150,rate:8,rateU:'y',pct:4,linked:false},
  mil:{goal:1000000,have:1000,ap:500,rate:8,rateU:'y',time:20,timeU:'y',mode:'t'},
  done:{int:false,ind:false,mil:false},tbl:{int:'r',mil:'r'},open:{int:{},mil:{}},last:null};
 const t=(k,v)=>{let s=(T[S.lang][k]!=null?T[S.lang][k]:T.es[k]||k);if(v)for(const x in v)s=s.split('{'+x+'}').join(v[x]);return s;};
@@ -88,7 +88,11 @@ function fieldsHTML(){
  let h='';
  if(tab==='int')h=mfield('ini',t('ini'),d.ini)+mfield('ap',t('ap'),d.ap,{focus:true})+rate+time+
   '<div class="cl-chips">'+esc(t('ex'))+' '+[6,9,12].map(v=>'<button type="button" class="cl-chip" data-rate="'+v+'">'+v+'%</button>').join('')+'</div>';
- else if(tab==='ind')h=mfield('want',t('want'),d.want,{focus:true})+mfield('have',t('have'),d.have,{hint:d.linked?t('haveLinked'):''})+mfield('ap',t('ap'),d.ap)+rate;
+ else if(tab==='ind'){
+  const modes='<div class="cl-mode" role="group">'+['w','p'].map(m=>'<button type="button" data-imode="'+m+'" class="'+(d.mode===m?'on':'')+'" aria-pressed="'+(d.mode===m)+'">'+esc(t(m==='w'?'im1':'im2'))+'</button>').join('')+'</div>';
+  const pcts='<div class="cl-f cl-pctf"><label>'+esc(t('pctL'))+'</label><div class="cl-pcts" role="group" aria-label="'+esc(t('pctL'))+'">'+[3,4,5].map(p=>'<button type="button" data-pct="'+p+'" class="'+(d.pct===p?'on':'')+'" aria-pressed="'+(d.pct===p)+'">'+p+'%</button>').join('')+'</div><div class="cl-h">'+esc(t('pctH'))+'</div></div>';
+  h=modes+(d.mode==='w'?mfield('want',t('want'),d.want,{focus:true})+pcts+'<div class="cl-opt">'+esc(t('opt'))+'</div>'+mfield('have',t('have'),d.have,{hint:d.linked?t('haveLinked'):''})+mfield('ap',t('ap'),d.ap)+rate:mfield('have',t('myW'),d.have,{focus:true})+pcts);
+ }
  else h='<div class="cl-mode" role="group">'+['t','a'].map(m=>'<button type="button" data-mode="'+m+'" class="'+(d.mode===m?'on':'')+'" aria-pressed="'+(d.mode===m)+'">'+esc(t(m==='t'?'gm1':'gm2'))+'</button>').join('')+'</div>'+mfield('goal',t('goal'),d.goal,{focus:true})+mfield('have',t('have'),d.have)+(d.mode==='t'?mfield('ap',t('ap'),d.ap):time)+rate;
 
  h+='<button type="button" class="cl-calc" data-calc="1">'+esc(t('calcBtn'))+'</button>';
@@ -136,7 +140,7 @@ function render(){
  const d=S[S.tab];const kpi=$('cl-kpi'),ch=$('cl-chartbox'),ex=$('cl-extra'),tb=$('cl-table'),st=$('cl-sticky');
  S.last=null;
  const lim=C.validate(Object.assign({},d,{months:S.tab==='ind'?1:(S.tab==='mil'&&d.mode==='t'?1:C.toMonths(d.time,d.timeU))}));
- if(!ok||lim.length||(S.tab==='int'&&!(d.ap>0||d.ini>0))||(S.tab==='ind'&&!(d.want>0))||(S.tab==='mil'&&!(d.goal>0))){kpi.innerHTML='<p class="cl-bad">'+esc(t('bad'))+'</p>';ch.hidden=true;ex.innerHTML='';tb.hidden=true;st.hidden=true;return;}
+ if(!ok||lim.length||(S.tab==='int'&&!(d.ap>0||d.ini>0))||(S.tab==='ind'&&!(d.mode==='p'?d.have>0:d.want>0))||(S.tab==='mil'&&!(d.goal>0))){kpi.innerHTML='<p class="cl-bad">'+esc(t('bad'))+'</p>';ch.hidden=true;ex.innerHTML='';tb.hidden=true;st.hidden=true;return;}
  ch.hidden=false;tb.hidden=false;st.hidden=false;
  const i=C.monthlyRate(d.rate,d.rateU);
  if(S.tab==='int'){
@@ -145,10 +149,16 @@ function render(){
   S.last={pts:C.series(rows)};tb.innerHTML=tableHTML('int',rows);
   ex.innerHTML='<div class="cl-bridge"><span>'+esc(t('bridge',{x:money(C.monthlyIncome(l.bal,4))}))+'</span><button type="button" class="cl-link" data-go="ind" data-total="'+Math.round(l.bal)+'">'+esc(t('bridgeBtn'))+'</button></div>';
   st.innerHTML='<div><small>'+esc(t('will',{t:span(n)}))+'</small><b>'+money(l.bal)+'</b></div><button type="button" data-go="ind" data-total="'+Math.round(l.bal)+'">'+esc(t('indep'))+'</button>';
+ }else if(S.tab==='ind'&&d.mode==='p'){
+  const inc=C.monthlyIncome(d.have,d.pct);
+  kpi.innerHTML=kc('tt',esc(t('recM')),money(inc),'<small>'+esc(t('rule',{p:d.pct}))+'</small>')+kc('',esc(t('recY')),money(inc*12))+kc('',esc(t('myW')),money(d.have));
+  ex.innerHTML='<div class="cl-scen">'+[[3,'cons'],[4,'mod'],[5,'risk']].map(([p,k])=>'<button type="button" data-pct="'+p+'" class="cl-sc'+(d.pct===p?' on':'')+'" aria-pressed="'+(d.pct===p)+'"><span>'+esc(t(k))+' '+p+'%</span><b>'+money(C.monthlyIncome(d.have,p))+'</b><small>'+esc(t('perMonth'))+'</small></button>').join('')+'</div>';
+  tb.innerHTML='';tb.hidden=true;ch.hidden=true;S.last=null;
+  st.innerHTML='<div><small>'+esc(t('recM'))+'</small><b>'+money(inc)+'</b></div><button type="button" data-go="int">'+esc(t('back'))+'</button>';
  }else if(S.tab==='ind'){
   const need=C.neededWealth(d.want,d.pct);const pct=Math.min(100,d.have/need*100);const m=C.monthsToGoal(need,d.have,d.ap,i);
   kpi.innerHTML=kc('tt',esc(t('need')),money(need),'<small>'+esc(t('rule',{p:d.pct}))+'</small>')+kc('',esc(t('prog')),'<span class="pr">'+pc(pct,0)+'%</span>','<div class="cl-prog"><i style="width:'+pct.toFixed(1)+'%"></i></div>')+kc('',esc(t('arrive')),m===null?'—':(m===0?esc(t('already')):span(m)));
-  ex.innerHTML='<div class="cl-scen">'+[[3,'cons'],[4,'mod'],[5,'risk']].map(([p,k])=>'<button type="button" data-pct="'+p+'" class="cl-sc'+(d.pct===p?' on':'')+'" aria-pressed="'+(d.pct===p)+'"><span>'+esc(t(k))+' '+p+'%</span><b>'+money(C.neededWealth(d.want,p))+'</b>'+(d.have>0?'<small>'+esc(t('recv',{x:money(C.monthlyIncome(d.have,p))}))+'</small>':'')+'</button>').join('')+'</div>'+(m===null?'<p class="cl-bad">'+esc(t('never'))+'</p>':'');
+  ex.innerHTML='<div class="cl-scen">'+[[3,'cons'],[4,'mod'],[5,'risk']].map(([p,k])=>'<button type="button" data-pct="'+p+'" class="cl-sc'+(d.pct===p?' on':'')+'" aria-pressed="'+(d.pct===p)+'"><span>'+esc(t(k))+' '+p+'%</span><b>'+money(C.neededWealth(d.want,p))+'</b>'+(d.have>0?'<small>'+esc(t('recv',{x:money(C.monthlyIncome(d.have,p))}))+'</small>':'')+'</button>').join('')+'</div>'+(m===null&&d.ap>0?'<p class="cl-bad">'+esc(t('never'))+'</p>':'');
   tb.innerHTML='';tb.hidden=true;
   if(m!==null&&m>0){const rows=C.simulate(d.have,d.ap,i,Math.min(m,C.MAX_MONTHS));S.last={pts:C.series(rows),goal:need};}else S.last=null;
   ch.hidden=!S.last;
@@ -203,7 +213,8 @@ function click(e){
    d[k]=v;fieldsOnly();}return;}
  if(b.dataset.rate){const d=S[S.tab];d.rate=Number(b.dataset.rate);d.rateU='y';fieldsOnly();return;}
  if(b.dataset.mode){S.mil.mode=b.dataset.mode;fieldsOnly();return;}
- if(b.dataset.pct){S.ind.pct=Number(b.dataset.pct);render();return;}
+ if(b.dataset.imode){S.ind.mode=b.dataset.imode;S.done.ind=false;fieldsOnly();return;}
+ if(b.dataset.pct){S.ind.pct=Number(b.dataset.pct);fieldsOnly();return;}
  if(b.dataset.tbl){S.tbl[S.tab]=b.dataset.tbl;render();return;}
  if(b.dataset.y){const k=S.tab,y=b.dataset.y;S.open[k][y]=!S.open[k][y];render();return;}
  if(b.dataset.go){if(b.dataset.go==='ind'&&b.dataset.total){S.ind.have=Number(b.dataset.total);S.ind.linked=true;S.ind.ap=S.int.ap;S.ind.rate=S.int.rate;S.ind.rateU=S.int.rateU;S.done.ind=true;}
