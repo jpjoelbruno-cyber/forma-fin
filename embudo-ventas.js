@@ -12,7 +12,7 @@ var PLANS=[['sin_definir','Pago por definir'],['presencial','Pagará presencialm
 var REASONS=['No respondió','Eligió otro lugar','Sin presupuesto por ahora','Ya no le interesa'];
 var TEMPS=[['','Sin evaluar'],['frio','Frío'],['tibio','Tibio'],['caliente','Caliente'],['muy_caliente','Muy caliente']];
 var TN={'':'Sin evaluar',frio:'Frío',tibio:'Tibio',caliente:'Caliente',muy_caliente:'Muy caliente'};
-var axis='stage';try{axis=localStorage.getItem('forma-ventas-eje')==='temp'?'temp':'stage'}catch(e){}
+var axis='stage'; /* El color sale solo de la etapa: nada que marcar a mano. */
 var st={closed:null,showClosed:false,busy:false,last:null,drag:null,msg:''};
 function $(s){return document.querySelector(s)}
 function uuid(){return crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
@@ -30,9 +30,8 @@ function card(i,closed){
       if(i.stage!=='matriculado')a+='<button type="button" class="btn s sm em-no" data-em="no" data-id="'+e(i.id)+'">No se concretó</button>';
     }
   }
-  var th='';
-  if(!closed&&i.stage!=='matriculado'){th='<div class="vt" role="group" aria-label="Termómetro: '+e(TN[i.temperature||''])+'">'+TEMPS.map(function(t){return '<button type="button" class="vt-b t-'+(t[0]||'none')+((i.temperature||'')===t[0]?' on':'')+'" '+(mgr?'data-em="temp" data-id="'+e(i.id)+'" data-t="'+t[0]+'" ':'disabled ')+'title="'+t[1]+'" aria-label="'+t[1]+'" aria-pressed="'+((i.temperature||'')===t[0])+'"></button>'}).join('')+'<small>'+e(TN[i.temperature||''])+'</small></div>'}
-  return '<div class="vc c-'+tk+'" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+th+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
+  var th='<span class="vs">'+X.esc(NAME[i.stage]||i.stage)+'</span>';
+  return '<div class="vc c-'+tk+'" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+(closed?'':th)+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
 }
 function html(s,head){
   var c=s.counts||{},tot=STG.reduce(function(a,x){return a+Number(c[x[0]]||0)},0),mx=Math.max.apply(null,STG.map(function(x){return Number(c[x[0]]||0)}).concat([1])),it=s.items||[],e=X.esc,mgr=X.manager();
@@ -48,9 +47,9 @@ function topHtml(s,it,tot){
   var c=s.counts||{},tc={};it.forEach(function(i){if(i.stage!=='matriculado'&&i.stage!=='cerrado'){var k=i.temperature||'';tc[k]=(tc[k]||0)+1}});
   var rows=axis==='temp'?TEMPS.map(function(t){return [t[0]||'none',t[1],tc[t[0]]||0]}).concat([['ok','Matriculado',Number(c.matriculado||0)]]):STG.map(function(x){return [x[0],x[1],Number(c[x[0]]||0)]});
   var mx=Math.max.apply(null,rows.map(function(r){return r[2]}).concat([1]));
-  return '<section class="card em-th"><div class="em-thh"><h2>Embudo de ventas</h2><div class="seg" role="group" aria-label="Ver por"><button type="button" data-em="axis" data-a="stage" aria-pressed="'+(axis==='stage')+'">Por etapa</button><button type="button" data-em="axis" data-a="temp" aria-pressed="'+(axis==='temp')+'">Termómetro</button></div></div>'+
+  return '<section class="card em-th"><div class="em-thh"><h2>Embudo de ventas</h2></div>'+
    '<div class="em-ks">'+rows.map(function(r){return '<div class="em-k c-'+r[0]+'"><b>'+r[2]+'</b><span>'+r[1]+'</span><i style="width:'+Math.round(r[2]/mx*100)+'%"></i></div>'}).join('')+'</div>'+
-   '<p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon. <span class="note">'+(axis==='temp'?'Del frío al matriculado: marca con los puntos de cada tarjeta qué tan listo está cada cliente.':'Los colores van del gris (nuevo) al verde (matriculado) y se repiten en cada columna.')+'</span></p></section>';
+   '<p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon. <span class="note">'+'El color se pone solo según la etapa: gris (nuevo) → azul → amarillo → naranja → verde (matriculado).'+'</span></p></section>';
 }
 function lanesHtml(it,c){
   if(axis==='temp'){
@@ -74,8 +73,8 @@ function errText(e){
   if(m&&m.length<200&&!/^(fetch|Failed|Network)/i.test(m))return m;
   return 'No se pudo guardar. No se cambió nada.';
 }
-function apply(i,r,stage,reason){
-  var s=X.data(),c=s.counts||(s.counts={}),from=i.stage;
+function apply(i,r,stage,reason,from){
+  var s=X.data(),c=s.counts||(s.counts={});from=from||i.stage;
   var upd={stage:r.stage||stage,version:r.version||(Number(i.version||1)+1)};
   if(stage==='cerrado')upd.close_reason=reason;
   Object.keys(upd).forEach(function(k){i[k]=upd[k]});
@@ -95,7 +94,7 @@ function doMove(id,stage,extra){
   var before=i.stage;
   return X.crm('interest_move',data).then(function(r){
     if(!r||r.saved!==true)throw Error('unconfirmed');
-    apply(i,r,stage,data.close_reason);
+    apply(i,r,stage,data.close_reason,before);
     st.last={rid:rid,person_id:i.person_id,expected:r.version||i.version,name:i.name};
     st.busy=false;st.msg=i.name+' pasó a «'+NAME[stage]+'».';
     X.close();X.render();

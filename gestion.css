@@ -318,3 +318,5 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 .lane[data-lane]{border-top:5px solid var(--kc,transparent)!important}
 .lane[data-lane] h3 span{color:var(--ink);font-weight:800}
 .lane.em-ok h3{color:var(--ink)}
+
+.vs{display:inline-block;justify-self:start;margin-top:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;color:var(--ink);background:color-mix(in srgb,var(--kc,#94A3B8) 22%,var(--card));border:1px solid var(--kc,#94A3B8)}
