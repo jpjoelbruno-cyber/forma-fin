@@ -1,0 +1,18 @@
+/* Mi dinero: Anotar + Movimientos juntos; Metas como pestaña. */
+#md-wrap:not(:has(.panel.active)){display:none}
+#md-wrap{display:block;width:100%;box-sizing:border-box;max-width:1320px;margin-inline:auto;padding:20px 16px 110px}
+#md-wrap>.panel{display:block!important;max-width:none!important;margin:0!important;padding:0!important;opacity:1;animation:none}
+#md-wrap>#p-historico{margin-top:22px!important}
+#p-metas .md-tabs{margin:0 0 16px}
+.md-tabs{display:flex;gap:4px;background:#ECE7FB;padding:4px;border-radius:12px;width:fit-content;max-width:100%;margin:0 0 16px}
+.md-tabs button{border:0;background:transparent;color:#6B6490;font:600 14px 'DM Sans',sans-serif;padding:9px 16px;border-radius:9px;cursor:pointer;min-height:40px;white-space:nowrap}
+.md-tabs button[aria-selected=true]{background:#fff;color:#4A12D6;box-shadow:0 1px 3px rgba(40,20,120,.15)}
+.md-h{font:700 18px/1.3 Sora,'DM Sans',sans-serif;margin:0 0 10px;color:#1B1240}
+#md-wrap>#p-registrar{background:#fff;border:1px solid #E3DDF5;border-radius:16px;padding:16px!important}
+@media(min-width:1000px){
+ #md-wrap:has(.panel.active){display:grid;grid-template-columns:minmax(340px,400px) minmax(0,1fr);gap:0 20px;align-items:start;padding:28px 40px 70px}
+ #md-wrap>.md-tabs{grid-column:1/-1}
+ #md-wrap>#p-historico{margin-top:0!important}
+ #md-wrap>#p-registrar{position:sticky;top:84px}
+}
+@media(max-width:999px){#md-wrap{padding:18px 16px 110px}}
