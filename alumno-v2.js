@@ -7,7 +7,7 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const ico=d=>'<svg class="av-i" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 const I={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',mes:'<path d="M4 20V10m8 10V4m8 16v-7"/>',plus:'<path d="M12 5v14M5 12h14"/>',goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',book:'<path d="M4 5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 5h-6"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 13h2"/>',calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',bell:'<path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/>'};
 /* clave, texto, icono, panel que se activa */
-const ITEMS=[['camino','Mi camino','home'],['mes','Mi mes','mes'],['registrar','Anotar','plus'],['metas','Metas','goal'],['calc','Calcular','calc'],['historico','Movimientos','list'],['aprender','Aprender','book'],['cursos','Mis cursos','cap'],['banco','Cuentas','wallet']];
+const ITEMS=[['camino','Mi camino','home'],['mes','Mi mes','mes'],['registrar','Mi dinero','list'],['calc','Calcular','calc'],['aprender','Aprender','book'],['cursos','Mis cursos','cap'],['banco','Cuentas','wallet']];
 const MOBILE=['camino','registrar','aprender','cursos'];
 const PANEL={camino:'camino',mes:'resumo',registrar:'registrar',metas:'metas',calc:'calculadoras',historico:'historico',aprender:'aprender',cursos:'institution',banco:'banco'};
 function open(k){
@@ -61,11 +61,11 @@ function act(k){
   if(k==='instalar'){const b=document.querySelector('.forma-install-button');if(b)b.click();return;}
   if(k==='salir'){document.querySelector('.tb-logout')?.click();}
 }
-const TITLES={registrar:'Anotar',historico:'Mis movimientos',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mis cursos',alunos:'Mis alumnos'};
+const TITLES={registrar:'Mi dinero',historico:'Mi dinero',metas:'Mi dinero',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mis cursos',alunos:'Mis alumnos'};
 function sync(){
   const n=$('av-nav');const a=document.querySelector('#app-screen .panel.active');if(!n||!a)return;
   const id=a.id.replace(/^p-/,'');const ti=$('av-title');if(ti){const t=TITLES[id]||'';if(ti.textContent!==t)ti.textContent=t;if(ti.hidden===!!t)ti.hidden=!t;}
-  const key=Object.keys(PANEL).find(k=>PANEL[k]===id)||'';
+  const key=({historico:'registrar',metas:'registrar'})[id]||Object.keys(PANEL).find(k=>PANEL[k]===id)||'';
   n.querySelectorAll('.av-items button').forEach(b=>{const on=b.dataset.k===key||(b.dataset.k==='mas'&&!key||b.dataset.k==='mas'&&!MOBILE.includes(key)&&!!key);if(on)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
   const c=$('student-entry-count'),d=$('av-dot');if(d){const t=(c?.textContent||'').replace(/\D/g,'');const show=!!t&&t!=='0';if(d.hidden===show){d.hidden=!show;}if(show&&d.textContent!==t)d.textContent=t;}
 }
