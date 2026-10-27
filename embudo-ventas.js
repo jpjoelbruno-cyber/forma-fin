@@ -21,7 +21,7 @@ function nextOf(stage){for(var i=0;i<STG.length-1;i++)if(STG[i][0]===stage)retur
 function sub(i){return [i.area,i.next_action,i.due_on?X.dl(i.due_on):''].filter(Boolean).map(X.esc).join(' · ')}
 
 function card(i,closed){
-  var e=X.esc,mgr=X.manager(),nx=nextOf(i.stage),a='',tk=i.stage==='matriculado'?'ok':(i.temperature||'none');
+  var e=X.esc,mgr=X.manager(),nx=nextOf(i.stage),a='',tk=axis==='temp'?(i.stage==='matriculado'?'ok':(i.temperature||'none')):i.stage;
   if(mgr){
     if(closed)a='<button type="button" class="btn s sm" data-em="reopen" data-id="'+e(i.id)+'">Reabrir</button>';
     else{
@@ -32,33 +32,32 @@ function card(i,closed){
   }
   var th='';
   if(!closed&&i.stage!=='matriculado'){th='<div class="vt" role="group" aria-label="Termómetro: '+e(TN[i.temperature||''])+'">'+TEMPS.map(function(t){return '<button type="button" class="vt-b t-'+(t[0]||'none')+((i.temperature||'')===t[0]?' on':'')+'" '+(mgr?'data-em="temp" data-id="'+e(i.id)+'" data-t="'+t[0]+'" ':'disabled ')+'title="'+t[1]+'" aria-label="'+t[1]+'" aria-pressed="'+((i.temperature||'')===t[0])+'"></button>'}).join('')+'<small>'+e(TN[i.temperature||''])+'</small></div>'}
-  return '<div class="vc vk-'+tk+'" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+th+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
+  return '<div class="vc c-'+tk+'" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+th+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
 }
 function html(s,head){
   var c=s.counts||{},tot=STG.reduce(function(a,x){return a+Number(c[x[0]]||0)},0),mx=Math.max.apply(null,STG.map(function(x){return Number(c[x[0]]||0)}).concat([1])),it=s.items||[],e=X.esc,mgr=X.manager();
   return head('Ventas','Embudo de ventas: quién espera respuesta y en qué etapa está.',(mgr?'<button class="btn p" data-act="interesado">'+X.plus+'Nuevo interesado</button>':''))+
    '<div id="em-msg" role="status" aria-live="polite">'+msgHtml()+'</div>'+
-   '<section class="card" style="margin-bottom:16px"><h2>Embudo de ventas</h2><div class="fun">'+STG.map(function(x){var n=Number(c[x[0]]||0);return '<div class="st"><b class="num">'+n+'</b>'+x[1]+'<i style="width:'+(n/mx*100)+'%"></i></div>'}).join('')+'</div><p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon.</p></section>'+
+   topHtml(s,it,tot)+
    (mgr?'<p class="note em-help"><span class="em-pc">Arrastra una tarjeta a otra columna, o usa los botones.</span><span class="em-mob">Usa Avanzar o Mover a… en cada tarjeta.</span> «No se concretó» no borra nada: la persona queda en Cerrados y puedes reabrirla.</p>':'')+
-   thermo(s,it)+
    '<div class="lanes em-lanes'+(axis==='temp'?' em-temp':'')+'">'+lanesHtml(it,c)+'</div>'+
    (it.length>=50?'<p class="note">Se muestran las primeras 50 tarjetas; los contadores incluyen todas.</p>':'')+
    '<section class="card em-closed"><h2>No se concretaron <span class="note">('+Number(c.cerrado||0)+')</span> <button type="button" class="link" data-em="closed">'+(st.showClosed?'Ocultar':'Ver')+'</button></h2>'+(st.showClosed?(st.closed?'<div class="em-closed-grid">'+(st.closed.map(function(i){return card(i,true)}).join('')||'<p class="note" style="margin:0">Nadie en esta lista.</p>')+'</div>':'<p class="skel" role="status">Cargando…</p>'):'<p class="note" style="margin:0">Aquí quedan guardadas las personas que no avanzaron, con su motivo. Nada se elimina.</p>')+'</section>';
 }
-function thermo(s,it){
-  var tc={};it.forEach(function(i){if(i.stage!=='matriculado'&&i.stage!=='cerrado'){var k=i.temperature||'';tc[k]=(tc[k]||0)+1}});
-  var c=s.counts||{},tot=TEMPS.reduce(function(a,t){return a+(tc[t[0]]||0)},0);
-  return '<section class="card em-th"><div class="em-thh"><h2>Termómetro</h2><div class="seg" role="group" aria-label="Ver por"><button type="button" data-em="axis" data-a="stage" aria-pressed="'+(axis==='stage')+'">Por etapa</button><button type="button" data-em="axis" data-a="temp" aria-pressed="'+(axis==='temp')+'">Por temperatura</button></div></div>'+
-   '<div class="em-bar-t" role="img" aria-label="Distribución por temperatura">'+TEMPS.map(function(t){var n=tc[t[0]]||0;return n?'<i class="t-'+(t[0]||'none')+'" style="flex:'+n+'" title="'+t[1]+': '+n+'"></i>':''}).join('')+(Number(c.matriculado||0)?'<i class="t-ok" style="flex:'+Number(c.matriculado)+'" title="Matriculado: '+Number(c.matriculado)+'"></i>':'')+'</div>'+
-   '<div class="em-leg">'+TEMPS.map(function(t){return '<span><i class="t-'+(t[0]||'none')+'"></i>'+t[1]+' <b>'+(tc[t[0]]||0)+'</b></span>'}).join('')+'<span><i class="t-ok"></i>Matriculado <b>'+Number(c.matriculado||0)+'</b></span></div>'+
-   '<p class="note" style="margin:8px 0 0">Del frío al matriculado: marca con los puntos de cada tarjeta qué tan listo está cada cliente. Los números cuentan las tarjetas cargadas.</p></section>';
+function topHtml(s,it,tot){
+  var c=s.counts||{},tc={};it.forEach(function(i){if(i.stage!=='matriculado'&&i.stage!=='cerrado'){var k=i.temperature||'';tc[k]=(tc[k]||0)+1}});
+  var rows=axis==='temp'?TEMPS.map(function(t){return [t[0]||'none',t[1],tc[t[0]]||0]}).concat([['ok','Matriculado',Number(c.matriculado||0)]]):STG.map(function(x){return [x[0],x[1],Number(c[x[0]]||0)]});
+  var mx=Math.max.apply(null,rows.map(function(r){return r[2]}).concat([1]));
+  return '<section class="card em-th"><div class="em-thh"><h2>Embudo de ventas</h2><div class="seg" role="group" aria-label="Ver por"><button type="button" data-em="axis" data-a="stage" aria-pressed="'+(axis==='stage')+'">Por etapa</button><button type="button" data-em="axis" data-a="temp" aria-pressed="'+(axis==='temp')+'">Termómetro</button></div></div>'+
+   '<div class="em-ks">'+rows.map(function(r){return '<div class="em-k c-'+r[0]+'"><b>'+r[2]+'</b><span>'+r[1]+'</span><i style="width:'+Math.round(r[2]/mx*100)+'%"></i></div>'}).join('')+'</div>'+
+   '<p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon. <span class="note">'+(axis==='temp'?'Del frío al matriculado: marca con los puntos de cada tarjeta qué tan listo está cada cliente.':'Los colores van del gris (nuevo) al verde (matriculado) y se repiten en cada columna.')+'</span></p></section>';
 }
 function lanesHtml(it,c){
   if(axis==='temp'){
-    return TEMPS.map(function(t){var l=it.filter(function(i){return i.stage!=='matriculado'&&(i.temperature||'')===t[0]});return '<div class="lane lt t-'+(t[0]||'none')+'" data-lane="'+t[0]+'" data-axis="temp"><h3>'+t[1]+'<span>'+l.length+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('')+
-     '<div class="lane em-ok" data-lane="matriculado" data-axis="stage"><h3>Matriculado<span>'+Number(c.matriculado||0)+'</span></h3>'+(it.filter(function(i){return i.stage==='matriculado'}).map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>';
+    return TEMPS.map(function(t){var l=it.filter(function(i){return i.stage!=='matriculado'&&(i.temperature||'')===t[0]});return '<div class="lane lt c-'+(t[0]||'none')+'" data-lane="'+t[0]+'" data-axis="temp"><h3>'+t[1]+'<span>'+l.length+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('')+
+     '<div class="lane em-ok c-ok" data-lane="matriculado" data-axis="stage"><h3>Matriculado<span>'+Number(c.matriculado||0)+'</span></h3>'+(it.filter(function(i){return i.stage==='matriculado'}).map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>';
   }
-  return STG.map(function(x){var l=it.filter(function(i){return i.stage===x[0]});return '<div class="lane'+(x[0]==='matriculado'?' em-ok':'')+'" data-lane="'+x[0]+'" data-axis="stage"><h3>'+x[1]+'<span>'+Number(c[x[0]]||0)+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('');
+  return STG.map(function(x){var l=it.filter(function(i){return i.stage===x[0]});return '<div class="lane c-'+x[0]+(x[0]==='matriculado'?' em-ok':'')+'" data-lane="'+x[0]+'" data-axis="stage"><h3>'+x[1]+'<span>'+Number(c[x[0]]||0)+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('');
 }
 function msgHtml(){
   if(!st.msg)return '';
