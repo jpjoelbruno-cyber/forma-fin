@@ -114,7 +114,7 @@ function hbars(rows,methods){
 
 /* ---------- vistas ---------- */
 var view='inicio',cobTab='resumen',cobPer='Mes',alF='Todos',agFilter='Todo';
-var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cursos','Cursos','cap'],['cobros','Cobros','cash'],['alumnos','Alumnos','users'],['interesados','Interesados','chat']];
+var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cursos','Cursos','cap'],['cobros','Cobros','cash'],['alumnos','Alumnos','users'],['interesados','Ventas','chat']];
 function navFor(){return manager()?NAV:NAV.slice(0,2)}
 function kpi(l,v,cls,d,dc){return '<div class="card kpi c3"><small>'+l+'</small><b class="num '+(cls||'')+'">'+v+'</b>'+(d?'<span class="d '+(dc||'flat')+'">'+d+'</span>':'')+'</div>'}
 function head(t,sub,right){return '<div class="head"><div><h1>'+t+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div><div style="display:flex;gap:10px;flex-wrap:wrap">'+(right||'')+'</div></div>'}
@@ -136,7 +136,7 @@ V.inicio=function(){
     k+=kpi('Por cobrar',p?R0(Number(p.total_cents)):'—','out',p?(Number(p.total_count)+' con saldo'+(ov.length?' · '+ov.length+' vencidos':'')):'',ov.length?'down':'flat');
   }
   k+=kpi('Clases hoy',String(mine.length),'',mine.length?'Próxima '+hourLabel(nextHour(mine)):'Día libre','flat');
-  if(manager())k+=kpi('Interesados esperando',String((D.crmAlerts&&D.crmAlerts.total_count)||0),'',((D.crmAlerts&&D.crmAlerts.total_count)?'Piden una respuesta':'Todo respondido'),(D.crmAlerts&&D.crmAlerts.total_count)?'down':'up');
+  if(manager())k+=kpi('Clientes esperando',String((D.crmAlerts&&D.crmAlerts.total_count)||0),'',((D.crmAlerts&&D.crmAlerts.total_count)?'Piden una respuesta':'Todo respondido'),(D.crmAlerts&&D.crmAlerts.total_count)?'down':'up');
   var hoy=mine.map(function(e){var a=attendanceOf(e.b,T);return '<div class="row"><span class="hour">'+hourLabel(e.b.start_hour)+'</span><div class="t"><b>'+esc(e.b.client)+'</b><span>'+esc(e.b.activity)+(e.b.sessions>1?' · Encuentro '+(e.n+1)+' de '+e.b.sessions:'')+(a&&a.status==='realizada'?' · registrada':'')+'</span></div><button class="btn s sm" data-act="asist">Abrir</button></div>'}).join('')||'<p class="note" style="margin:0">No hay clases agendadas hoy.</p>';
   var aten=av.slice(0,4).map(function(a){return '<div class="row"><div class="t"><b>'+esc(a.t)+'</b><span>'+esc(a.s)+'</span></div><button class="btn p sm" data-act="'+a.act+'">'+({cobrar:'Cobrar',asist:'Registrar',interesados:'Responder'})[a.act]+'</button></div>'}).join('')||'<p class="note" style="margin:0">Nada pendiente. Todo al día.</p>';
   var chart=manager()?'<section class="card c4"><h2>Entradas del mes <button class="link" data-v="cobros">Ver cobros</button></h2>'+(cur?bars(cur,'day'):'<p class="note">No se pudo cargar.</p>')+'</section>':'';
@@ -240,7 +240,7 @@ V.alumnos=function(){
 };
 var STG=[['nuevo','Nuevo'],['conversacion','En conversación'],['seguimiento','Seguimiento'],['preparar_matricula','Preparando matrícula'],['matriculado','Matriculado']];
 V.interesados=function(){
-  var s=D.crmSales;if(!s)return head('Interesados','Quién espera respuesta y en qué etapa está.','')+'<p class="skel" role="status">'+(errors.indexOf('interesados')>-1?'No se pudo cargar.':'Cargando…')+'</p>';
+  var s=D.crmSales;if(!s)return head('Ventas','Embudo de ventas: quién espera respuesta y en qué etapa está.','')+'<p class="skel" role="status">'+(errors.indexOf('interesados')>-1?'No se pudo cargar.':'Cargando…')+'</p>';
   return window.GestionEmbudo.html(s,head);
 };
 V.avisos=function(){
@@ -292,7 +292,7 @@ function buildNav(){
 }
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Interesados</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
 function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
@@ -446,7 +446,7 @@ function demoRpc(name,a){
   return null;
 }
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
-window.GestionEmbudo=window.GestionEmbudo||{init:function(){},click:function(){},html:function(s,h){return h('Interesados','','')+'<p class="skel">Recarga la página para ver el embudo.</p>'}};
+window.GestionEmbudo=window.GestionEmbudo||{init:function(){},click:function(){},html:function(s,h){return h('Ventas','','')+'<p class="skel">Recarga la página para ver el embudo.</p>'}};
 window.GestionEmbudo.init({crm:crm,esc:esc,dl:dl,dlg:dlg,plus:ico('plus'),data:function(){return D.crmSales},manager:manager,close:function(){var d=$('#dlg');if(d&&d.open)d.close()},render:function(){if(view==='interesados')render()},reload:function(){crm('sales',{stage:'',offset:0}).then(function(d){D.crmSales=d;D.crmAlerts=null;if(view==='interesados')render()},function(){toast('No se pudo actualizar la lista.')})}});
 window.GestionCursos.init({dlg:dlg,rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
 document.addEventListener('click',function(e){window.GestionCursos.click(e);window.GestionEmbudo.click(e)});
