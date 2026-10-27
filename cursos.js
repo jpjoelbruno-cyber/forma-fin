@@ -147,6 +147,7 @@ function startWiz(courseId,fromGroupId){
   var w={mode:c?'group':'course',courseId:courseId||'',tpl:tpl||null,courseName:'',color:PAL[cat.courses.length%PAL.length],start:'',days:[],time:'15:00',hours:2,count:c&&c.encounter_count?Number(c.encounter_count):12,instructor:'Joel',room:'Sala 3',capacity:10,price:'',groupName:'',include:{},rid:{},msg:'',saved:null};
   if(tpl){var s=span(tpl);w.days=s.days.slice();w.time=s.n?hhmm(s.start):'15:00';w.hours=s.n?(s.end-s.start)/60:2;w.count=s.n||w.count;w.instructor=tpl.instructor||w.instructor;w.room=tpl.room||w.room;w.capacity=Number(tpl.capacity)||10;w.price=String(Math.round((Number(tpl.fee_cents)+Number(tpl.installments)*Number(tpl.monthly_cents))/100));w.priceBase=w.price;
     if(s.to){var d=X.M.date(s.to);w.start=X.M.iso(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,1)));}}
+  if(w.start&&w.start<X.T)w.start='';
   if(!w.start){var t=X.M.date(X.T);w.start=X.M.iso(new Date(Date.UTC(t.getUTCFullYear(),t.getUTCMonth()+1,1)))}
   if(!w.days.length)w.days=[4];
   var sd=X.M.date(w.start),mn=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -220,7 +221,8 @@ function wizard(){
   var sk=p.skipped.map(function(s){return '<span class="cu-skip">'+dm(s.day)+' · '+esc(s.why)+' <button type="button" class="link" data-cu="inc" data-d="'+s.day+'">dar clase igual</button></span>'}).join('');
   var weeks=p.list.length?Math.round((X.M.date(p.end)-X.M.date(w.start))/86400000/7):0;
   var multi=(function(){var set={};p.list.forEach(function(x){set[rowOf(w,x).instructor]=1});return Object.keys(set)})();var prev0=multi.length>1?'<div class="cu-ok" style="background:var(--soft);color:var(--brand2)">Instructores de este grupo: <b>'+multi.map(esc).join(', ')+'</b> · se mantienen como en el grupo anterior. Si eliges otro instructor arriba, se aplica a todos los encuentros.</div>':'';var prev=p.list.length?'<div class="cu-prev">'+p.list.map(function(x){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'" title="'+esc(x.why)+'"><b>'+x.n+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+(multi.length>1?' · '+esc(rowOf(w,x).instructor):'')+'</span>'}).join('')+'</div>':'<p class="note">Elige la fecha de inicio y los días.</p>';
-  var cfh=cf.length?'<div class="err"><b>Choca con otro grupo — corrige antes de guardar</b><ul style="margin:6px 0 0;padding-left:18px">'+cf.slice(0,6).map(function(k){return '<li>'+dm(k.day)+' '+k.time+' · '+esc(k.who)+' ('+k.why+')</li>'}).join('')+'</ul><span class="note">Cambia la sala, el instructor o la hora.</span></div>':(p.list.length?'<div class="cu-ok">Sin cruces con otros grupos ✓</div>':'');
+  var past=(w.start&&w.start<X.T)?'<div class="err" role="alert"><b>La fecha de inicio ya pasó</b> ('+dmy(w.start)+'). Elige una fecha de hoy en adelante.</div>':'';
+  var cfh=past+(cf.length?'<div class="err"><b>Choca con otro grupo — corrige antes de guardar</b><ul style="margin:6px 0 0;padding-left:18px">'+cf.slice(0,6).map(function(k){return '<li>'+dm(k.day)+' '+k.time+' · '+esc(k.who)+' ('+k.why+')</li>'}).join('')+'</ul><span class="note">Cambia la sala, el instructor o la hora.</span></div>':(p.list.length?'<div class="cu-ok">Sin cruces con otros grupos ✓</div>':''));
   var edt=editor(w,p,cf);
   return X.head(isC?'Nuevo curso':'Nuevo grupo · '+esc(c?c.name:''),isC?'Crea el curso y su primer grupo en un solo paso.':(w.tpl?'Repetido desde “'+esc(w.tpl.name)+'”: mismos días, hora, sala e instructor. Cambia solo lo que haga falta.':'Define días, hora y cupos.'),'<button class="btn s" data-cu="cancel">Cancelar</button>')
   +(w.msg?'<div class="err" id="cuErr" role="alert">'+esc(w.msg)+'</div>':'')
@@ -245,6 +247,9 @@ function readForm(){
 function money(s){var n=Number(String(s||'').replace(/\./g,'').replace(',','.'));return isFinite(n)&&n>=0?Math.round(n*100):NaN}
 function friendly(e){
   var m=(e&&e.message)||'';
+  var oc=/Ocupado el (\d{4}-\d{2}-\d{2}) de (\d{2}:\d{2}) a (\d{2}:\d{2})(?:\s*·\s*([^·]+))?(?:\s*·\s*([^·]+))?(?:\s*·\s*([^·]+))?/.exec(m);
+  if(oc){var sv=(oc[4]||'').replace(/^Servicio:\s*/,'').trim(),who=(oc[5]||'').trim(),rm=(oc[6]||'').trim();
+    return (who||'Ese instructor')+' ya tiene '+(sv?'«'+sv+'» ':'una clase ')+'el '+DOW[dow(oc[1])]+' '+dm(oc[1])+' de '+oc[2]+' a '+oc[3]+(rm?' ('+rm.toLowerCase()+')':'')+'. Esa clase ya está en la agenda, así que no se puede repetir el mismo horario. Prueba otro horario, otro día o otro instructor; si es el mismo grupo que ya existe, no hace falta crearlo otra vez.';}
   if(/Ocupado el/.test(m))return 'Choca con otro grupo: '+m+'. Cambia la sala, el instructor o la hora.';
   if(/superan el total/.test(m))return 'Los encuentros de los módulos superan el total previsto del curso.';
   if(/instructor registrado/.test(m))return 'Ese instructor no está registrado.';
@@ -263,6 +268,7 @@ function save(){
   if(!p.list.length)return bad('Elige la fecha de inicio, los días y la cantidad de encuentros.');
   if(!Number.isInteger(cap)||cap<1||cap>500)return bad('Revisa los cupos (de 1 a 500).');
   if(isNaN(total))return bad('Revisa el precio de referencia.');
+  if(w.start<X.T)return bad('La fecha de inicio ya pasó. Elige una fecha de hoy en adelante.');
   if(cf.length)return bad('Hay '+cf.length+' cruce(s) de horario con otros grupos. Corrígelos antes de guardar.');
   var a0=parseInt(w.time.slice(0,2),10)*60+parseInt(w.time.slice(3,5),10),a1=a0+Math.round(w.hours*60);
   if(a1>1440||a0<0)return bad('Revisa la hora de inicio y la duración.');
