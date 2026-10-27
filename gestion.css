@@ -265,3 +265,22 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
 .week>.ag-wrap{padding:0;min-height:0;border:1px solid var(--line);font-size:inherit}
 .agw{display:none}
 @media(min-width:900px){.agw{display:block}}
+
+/* Embudo con movimiento (embudo-ventas.js) */
+.em-lanes{align-items:start}
+.vc{background:var(--card);border-radius:12px;padding:10px 12px;margin-bottom:8px;font-size:14px;border:1px solid var(--line,#E3DDF5);display:grid;gap:2px}
+.vc[draggable="true"]{cursor:grab}
+.vc b{display:block}.vc>span{color:var(--ink2);font-size:13px}
+.vc .em-why{color:var(--ink);font-size:13px}
+.vc .va{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.vc .va .btn{flex:1 1 auto;min-height:36px}
+.em-no{color:var(--ink2)}
+.em-drag{opacity:.45}
+.lane.em-over{outline:2px dashed #7A10DC;outline-offset:-2px;background:#F1E9FF}
+.lane.em-ok h3{color:#0A7A4F}
+.em-bar{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#EDE7FB;border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:14px}
+.em-closed{margin-top:16px}.em-closed-grid{display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
+.em-pick{display:grid;gap:8px}.em-pick .btn{min-height:44px;justify-content:center}
+.em-help{margin:0 0 12px}.em-mob{display:none}
+@media(max-width:759px){.em-pc{display:none}.em-mob{display:inline}}
+@media(min-width:1100px){.em-lanes{grid-template-columns:repeat(5,1fr)}}
