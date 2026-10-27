@@ -241,10 +241,7 @@ V.alumnos=function(){
 var STG=[['nuevo','Nuevo'],['conversacion','En conversación'],['seguimiento','Seguimiento'],['preparar_matricula','Preparando matrícula'],['matriculado','Matriculado']];
 V.interesados=function(){
   var s=D.crmSales;if(!s)return head('Interesados','Quién espera respuesta y en qué etapa está.','')+'<p class="skel" role="status">'+(errors.indexOf('interesados')>-1?'No se pudo cargar.':'Cargando…')+'</p>';
-  var c=s.counts||{},tot=STG.reduce(function(a,x){return a+Number(c[x[0]]||0)},0),mx=Math.max.apply(null,STG.map(function(x){return Number(c[x[0]]||0)}).concat([1])),it=s.items||[];
-  return head('Interesados','Quién espera respuesta y en qué etapa está.','<button class="btn p" data-act="interesado">'+ico('plus')+'Nuevo interesado</button>')+
-   '<section class="card" style="margin-bottom:16px"><h2>Embudo de ventas</h2><div class="fun">'+STG.map(function(e){var n=Number(c[e[0]]||0);return '<div class="st"><b class="num">'+n+'</b>'+e[1]+'<i style="width:'+(n/mx*100)+'%"></i></div>'}).join('')+'</div><p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon.</p></section>'+
-   '<div class="lanes">'+STG.map(function(e){var l=it.filter(function(i){return i.stage===e[0]});return '<div class="lane"><h3>'+e[1]+'<span>'+Number(c[e[0]]||0)+'</span></h3>'+(l.map(function(i){return '<div class="pc"><b>'+esc(i.name)+'</b><span>'+esc([i.area,i.next_action,i.due_on?dl(i.due_on):''].filter(Boolean).join(' · '))+'</span></div>'}).join('')||'<span class="note">Sin tarjetas cargadas</span>')+'</div>'}).join('')+'</div>'+(it.length>=50?'<p class="note">Se muestran las primeras 50 tarjetas; los contadores incluyen todas.</p>':'');
+  return window.GestionEmbudo.html(s,head);
 };
 V.avisos=function(){
   var a=avisos();
@@ -417,6 +414,9 @@ function start(h){
 }
 
 /* ---------- datos de ejemplo (mismas formas que el servidor) ---------- */
+var _dc=null;
+function demoCount(){var c={};_dc.items.forEach(function(i){c[i.stage]=(c[i.stage]||0)+1});['nuevo','conversacion','seguimiento','preparar_matricula','matriculado','cerrado'].forEach(function(k){c[k]=(c[k]||0)});return c}
+function demoCrm(){if(!_dc){_dc={items:[{id:'i1',person_id:'p1',version:1,stage:'nuevo',name:'Rita Campos',area:'Educación financiera',next_action:'Responder precios',due_on:T},{id:'i2',person_id:'p2',version:1,stage:'nuevo',name:'Pablo Vera',area:'Informática'},{id:'i3',person_id:'p3',version:1,stage:'conversacion',name:'Hugo Ríos',area:'Educación financiera',next_action:'Enviar programa',due_on:M.plus(T,-2)},{id:'i4',person_id:'p4',version:1,stage:'seguimiento',name:'Marta Díaz',area:'Mentoría',next_action:'Clase de prueba'},{id:'i5',person_id:'p5',version:1,stage:'preparar_matricula',name:'Elena Soto',area:'Inversiones básicas',next_action:'Confirmar pago'},{id:'i6',person_id:'p6',version:1,stage:'matriculado',name:'Iván Cruz',area:'Educación financiera'},{id:'i7',person_id:'p7',version:1,stage:'cerrado',name:'Tomás Gil',area:'Informática',close_reason:'Eligió otro lugar'}]};_dc.counts=demoCount()}return _dc}
 function demoRpc(name,a){
   var d=a.p_data||{},act=a.p_action;
   if(name==='forma_agenda_access')return{role:'manager'};
@@ -437,14 +437,17 @@ function demoRpc(name,a){
   }
   if(name==='forma_crm'){
     if(act==='alerts')return{version:1,total_count:2,items:[{id:'i1',name:'Rita Campos',next_action:'Responder precios',due_on:T},{id:'i2',name:'Hugo Ríos',next_action:'Enviar programa',due_on:M.plus(T,-2)}]};
-    if(act==='sales')return{counts:{nuevo:9,conversacion:6,seguimiento:4,preparar_matricula:2,matriculado:3,cerrado:5},items:[{id:'i1',stage:'nuevo',name:'Rita Campos',area:'Educación financiera',next_action:'Responder precios',due_on:T},{id:'i2',stage:'nuevo',name:'Pablo Vera',area:'Informática'},{id:'i3',stage:'conversacion',name:'Hugo Ríos',area:'Educación financiera',next_action:'Enviar programa',due_on:M.plus(T,-2)},{id:'i4',stage:'seguimiento',name:'Marta Díaz',area:'Mentoría',next_action:'Clase de prueba'},{id:'i5',stage:'matriculado',name:'Iván Cruz',area:'Educación financiera'}]};
+    if(act==='sales'){var dm=demoCrm();var cl=d&&d.stage==='cerrado';return{counts:dm.counts,items:dm.items.filter(function(i){return cl?i.stage==='cerrado':i.stage!=='cerrado'})}}
+    if(act==='interest_move'){var it=demoCrm().items.filter(function(i){return i.id===d.id})[0];if(it){it.stage=d.stage;it.version=(it.version||1)+1;if(d.stage==='cerrado')it.close_reason=d.close_reason;demoCrm().counts=demoCount()}return{saved:true,stage:d.stage,version:it?it.version:2,before_stage:'nuevo'}}
+    if(act==='interest_undo')return{saved:true}
   }
   if(name==='forma_education'&&act==='detail')return{person:{id:d.person_id,name:'Ana Pérez',phone:'+55 11 90000-0001',email:'ana@ejemplo.com'},enrolments:[{id:'e1',course:'Educación financiera',state:'activo',group_name:'Grupo octubre',starts_on:M.plus(T,-20),ends_on:M.plus(T,60),total_cents:120000,paid_cents:80000,planned_encounters:8}],sessions:[0,1,2,3].map(function(i){return{enrolment_id:'e1',day:M.plus(T,-14+i*7),start_min:780,end_min:900,module:'Módulo '+(i+1),instructor:'René',room:'Sala 1',attendance:i<2?'asistio':'pendiente'}}),receipts:[{id:'r1',enrolment_id:'e1',paid_on:M.plus(T,-18),method:'efectivo',amount_cents:20000,note:'Reserva de inscripción'},{id:'r2',enrolment_id:'e1',paid_on:M.plus(T,-5),method:'pix',amount_cents:60000,note:''}],debts:[{enrolment_id:'e1',area:'Cuota 1',due_on:M.plus(T,-5),total_cents:60000,paid_cents:60000},{enrolment_id:'e1',area:'Cuota 2',due_on:M.plus(T,25),total_cents:40000,paid_cents:0}],payment_notices:[]};
   if(name==='forma_education'&&act==='list')return{version:1,count:3,has_more:false,items:[{id:'s1',name:'Ana Pérez',phone:'+55 11 90000-0001',courses:[{course:'Educación financiera',state:'activo',total_cents:120000,paid_cents:80000}]},{id:'s2',name:'Luis Gómez',phone:'+55 11 90000-0002',courses:[{course:'Inversiones básicas',state:'activo',total_cents:90000,paid_cents:90000}]},{id:'s3',name:'Carlos Rojas',phone:'',courses:[{course:'Mentoría particular',state:'activo',total_cents:240000,paid_cents:120000}]}]};
   return null;
 }
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
+window.GestionEmbudo.init({crm:crm,esc:esc,dl:dl,dlg:dlg,plus:ico('plus'),data:function(){return D.crmSales},manager:manager,close:function(){var d=$('#dlg');if(d&&d.open)d.close()},render:function(){if(view==='interesados')render()},reload:function(){crm('sales',{stage:'',offset:0}).then(function(d){D.crmSales=d;D.crmAlerts=null;if(view==='interesados')render()},function(){toast('No se pudo actualizar la lista.')})}});
 window.GestionCursos.init({dlg:dlg,rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
-document.addEventListener('click',function(e){window.GestionCursos.click(e)});
+document.addEventListener('click',function(e){window.GestionCursos.click(e);window.GestionEmbudo.click(e)});
 boot();
 })();
