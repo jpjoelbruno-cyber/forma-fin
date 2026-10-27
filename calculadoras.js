@@ -191,7 +191,7 @@ function refresh(){read();hints();if(S.done[S.tab])render();else empty();}
 function soft(){read();hints();if(S.done[S.tab])stale(true);}
 function calc(){S.done[S.tab]=true;render();}
 function shell(){
- const p=$('p-calculadoras');if(!p)return;
+ const p=$('p-calculadoras');if(!p)return;p.dataset.tab=S.tab;
  p.innerHTML='<div id="cl-root"><div class="cl-top"><div><h1>'+esc(t('title'))+'</h1><p>'+esc(t('sub'))+'</p></div><div class="cl-tools"><label>'+esc(t('currency'))+'<select id="cl-cur" aria-label="'+esc(t('currency'))+'">'+Object.keys(CUR).map(c=>'<option value="'+c+'"'+(c===S.cur?' selected':'')+'>'+esc(CUR[c][1])+'</option>').join('')+'</select></label><span class="cl-sg2" role="group" aria-label="'+esc(t('lang'))+'"><button type="button" data-lang="es" class="'+(S.lang==='es'?'on':'')+'">ES</button><button type="button" data-lang="pt" class="'+(S.lang==='pt'?'on':'')+'">PT</button></span></div></div>'+
  '<div class="cl-tabs" role="tablist">'+[['int','t1'],['ind','t2'],['mil','t3']].map(([k,l])=>'<button type="button" role="tab" data-tab="'+k+'" aria-selected="'+(S.tab===k)+'" class="'+(S.tab===k?'on':'')+'">'+esc(t(l))+'</button>').join('')+'</div>'+
  '<div class="cl-grid"><section class="cl-card cl-in" id="cl-in"></section><div class="cl-out" id="cl-out"><div class="cl-stale" id="cl-stale" hidden>'+esc(t('stale'))+'</div><div class="cl-k3" id="cl-kpi"></div><div class="cl-card cl-chartbox" id="cl-chartbox"><div class="cl-legend"><span>'+dot(BLUE)+esc(t('chartPut'))+'</span><span>'+dot(GREEN)+esc(t('chartGain'))+'</span>'+(S.tab!=='int'?'<span class="cl-gl">- - '+esc(t('chartGoal'))+'</span>':'')+'</div><div id="cl-chart"></div></div><div id="cl-extra"></div><section class="cl-card cl-tbl" id="cl-table"></section></div></div>'+

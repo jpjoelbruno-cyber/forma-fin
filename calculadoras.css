@@ -107,3 +107,19 @@
 .cl-pcts button{border:2px solid #DDD6F0;background:#fff;border-radius:12px;min-height:44px;font:700 16px Sora,'DM Sans',sans-serif;color:#54497A;cursor:pointer}
 .cl-pcts button.on{border-color:#1f9d6b;background:#f2fbf7;color:#0A7A4F}
 .cl-opt{grid-column:1/-1;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:#8A83A8;margin-top:4px;border-top:1px solid #ECE7FB;padding-top:10px}
+
+/* Cada calculadora tiene su color: Interés = índigo, Independencia = verde, Primer millón = ámbar. Se repite en pestaña, botón y resultados. */
+#p-calculadoras{--tc:#4338CA;--tcs:#EEF0FF;--tcd:#26217A}
+#p-calculadoras[data-tab=ind]{--tc:#0F766E;--tcs:#E3F4F0;--tcd:#0B4F49}
+#p-calculadoras[data-tab=mil]{--tc:#B45309;--tcs:#FDF0D8;--tcd:#733508}
+.cl-tabs{background:#F1EEFA;gap:8px}
+.cl-tabs button{border:2px solid transparent;font-weight:700}
+.cl-tabs button[data-tab=int]{--c:#4338CA;--cs:#EEF0FF}.cl-tabs button[data-tab=ind]{--c:#0F766E;--cs:#E3F4F0}.cl-tabs button[data-tab=mil]{--c:#B45309;--cs:#FDF0D8}
+.cl-tabs button:not(.on){background:var(--cs);color:var(--c);border-color:transparent;opacity:.85}
+.cl-tabs button.on{background:var(--c);color:#fff;border-color:var(--c);box-shadow:0 2px 8px rgba(27,18,64,.25)}
+.cl-calc{background:var(--tc)!important}
+.cl-kc.tt{border-color:var(--tc)!important;background:var(--tcs)}
+.cl-kc.tt b{color:var(--tcd)}
+.cl-mode button.on,.cl-pcts button.on,.cl-sc.on{border-color:var(--tc)!important;background:var(--tcs)!important;color:var(--tcd)!important}
+.cl-inp:focus-within,.cl-inp.f:focus-within{border-color:var(--tc)!important}
+.cl-sg button.on{color:var(--tcd)}
