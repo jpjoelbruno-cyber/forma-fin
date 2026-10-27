@@ -10,6 +10,9 @@ var STG=[['nuevo','Nuevo'],['conversacion','En conversación'],['seguimiento','S
 var NAME={nuevo:'Nuevo',conversacion:'En conversación',seguimiento:'Seguimiento',preparar_matricula:'Preparando matrícula',matriculado:'Matriculado',cerrado:'No se concretó'};
 var PLANS=[['sin_definir','Pago por definir'],['presencial','Pagará presencialmente'],['acuerdo','Según acuerdo existente']];
 var REASONS=['No respondió','Eligió otro lugar','Sin presupuesto por ahora','Ya no le interesa'];
+var TEMPS=[['','Sin evaluar'],['frio','Frío'],['tibio','Tibio'],['caliente','Caliente'],['muy_caliente','Muy caliente']];
+var TN={'':'Sin evaluar',frio:'Frío',tibio:'Tibio',caliente:'Caliente',muy_caliente:'Muy caliente'};
+var axis='stage';try{axis=localStorage.getItem('forma-ventas-eje')==='temp'?'temp':'stage'}catch(e){}
 var st={closed:null,showClosed:false,busy:false,last:null,drag:null,msg:''};
 function $(s){return document.querySelector(s)}
 function uuid(){return crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
@@ -18,7 +21,7 @@ function nextOf(stage){for(var i=0;i<STG.length-1;i++)if(STG[i][0]===stage)retur
 function sub(i){return [i.area,i.next_action,i.due_on?X.dl(i.due_on):''].filter(Boolean).map(X.esc).join(' · ')}
 
 function card(i,closed){
-  var e=X.esc,mgr=X.manager(),nx=nextOf(i.stage),a='';
+  var e=X.esc,mgr=X.manager(),nx=nextOf(i.stage),a='',tk=i.stage==='matriculado'?'ok':(i.temperature||'none');
   if(mgr){
     if(closed)a='<button type="button" class="btn s sm" data-em="reopen" data-id="'+e(i.id)+'">Reabrir</button>';
     else{
@@ -27,7 +30,9 @@ function card(i,closed){
       if(i.stage!=='matriculado')a+='<button type="button" class="btn s sm em-no" data-em="no" data-id="'+e(i.id)+'">No se concretó</button>';
     }
   }
-  return '<div class="vc" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
+  var th='';
+  if(!closed&&i.stage!=='matriculado'){th='<div class="vt" role="group" aria-label="Termómetro: '+e(TN[i.temperature||''])+'">'+TEMPS.map(function(t){return '<button type="button" class="vt-b t-'+(t[0]||'none')+((i.temperature||'')===t[0]?' on':'')+'" '+(mgr?'data-em="temp" data-id="'+e(i.id)+'" data-t="'+t[0]+'" ':'disabled ')+'title="'+t[1]+'" aria-label="'+t[1]+'" aria-pressed="'+((i.temperature||'')===t[0])+'"></button>'}).join('')+'<small>'+e(TN[i.temperature||''])+'</small></div>'}
+  return '<div class="vc vk-'+tk+'" data-iid="'+e(i.id)+'"'+(mgr&&!closed?' draggable="true"':'')+'><b>'+e(i.name)+'</b><span>'+sub(i)+'</span>'+th+(closed&&i.close_reason?'<span class="em-why">Motivo: '+e(i.close_reason)+'</span>':'')+(a?'<div class="va">'+a+'</div>':'')+'</div>';
 }
 function html(s,head){
   var c=s.counts||{},tot=STG.reduce(function(a,x){return a+Number(c[x[0]]||0)},0),mx=Math.max.apply(null,STG.map(function(x){return Number(c[x[0]]||0)}).concat([1])),it=s.items||[],e=X.esc,mgr=X.manager();
@@ -35,9 +40,25 @@ function html(s,head){
    '<div id="em-msg" role="status" aria-live="polite">'+msgHtml()+'</div>'+
    '<section class="card" style="margin-bottom:16px"><h2>Embudo de ventas</h2><div class="fun">'+STG.map(function(x){var n=Number(c[x[0]]||0);return '<div class="st"><b class="num">'+n+'</b>'+x[1]+'<i style="width:'+(n/mx*100)+'%"></i></div>'}).join('')+'</div><p style="margin:12px 0 0;color:var(--ink2)">Conversión: <b class="in">'+(tot?Math.round(Number(c.matriculado||0)/tot*100):0)+'%</b> de las personas del tablero ya se matricularon.</p></section>'+
    (mgr?'<p class="note em-help"><span class="em-pc">Arrastra una tarjeta a otra columna, o usa los botones.</span><span class="em-mob">Usa Avanzar o Mover a… en cada tarjeta.</span> «No se concretó» no borra nada: la persona queda en Cerrados y puedes reabrirla.</p>':'')+
-   '<div class="lanes em-lanes">'+STG.map(function(x){var l=it.filter(function(i){return i.stage===x[0]});return '<div class="lane'+(x[0]==='matriculado'?' em-ok':'')+'" data-lane="'+x[0]+'"><h3>'+x[1]+'<span>'+Number(c[x[0]]||0)+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('')+'</div>'+
+   thermo(s,it)+
+   '<div class="lanes em-lanes'+(axis==='temp'?' em-temp':'')+'">'+lanesHtml(it,c)+'</div>'+
    (it.length>=50?'<p class="note">Se muestran las primeras 50 tarjetas; los contadores incluyen todas.</p>':'')+
    '<section class="card em-closed"><h2>No se concretaron <span class="note">('+Number(c.cerrado||0)+')</span> <button type="button" class="link" data-em="closed">'+(st.showClosed?'Ocultar':'Ver')+'</button></h2>'+(st.showClosed?(st.closed?'<div class="em-closed-grid">'+(st.closed.map(function(i){return card(i,true)}).join('')||'<p class="note" style="margin:0">Nadie en esta lista.</p>')+'</div>':'<p class="skel" role="status">Cargando…</p>'):'<p class="note" style="margin:0">Aquí quedan guardadas las personas que no avanzaron, con su motivo. Nada se elimina.</p>')+'</section>';
+}
+function thermo(s,it){
+  var tc={};it.forEach(function(i){if(i.stage!=='matriculado'&&i.stage!=='cerrado'){var k=i.temperature||'';tc[k]=(tc[k]||0)+1}});
+  var c=s.counts||{},tot=TEMPS.reduce(function(a,t){return a+(tc[t[0]]||0)},0);
+  return '<section class="card em-th"><div class="em-thh"><h2>Termómetro</h2><div class="seg" role="group" aria-label="Ver por"><button type="button" data-em="axis" data-a="stage" aria-pressed="'+(axis==='stage')+'">Por etapa</button><button type="button" data-em="axis" data-a="temp" aria-pressed="'+(axis==='temp')+'">Por temperatura</button></div></div>'+
+   '<div class="em-bar-t" role="img" aria-label="Distribución por temperatura">'+TEMPS.map(function(t){var n=tc[t[0]]||0;return n?'<i class="t-'+(t[0]||'none')+'" style="flex:'+n+'" title="'+t[1]+': '+n+'"></i>':''}).join('')+(Number(c.matriculado||0)?'<i class="t-ok" style="flex:'+Number(c.matriculado)+'" title="Matriculado: '+Number(c.matriculado)+'"></i>':'')+'</div>'+
+   '<div class="em-leg">'+TEMPS.map(function(t){return '<span><i class="t-'+(t[0]||'none')+'"></i>'+t[1]+' <b>'+(tc[t[0]]||0)+'</b></span>'}).join('')+'<span><i class="t-ok"></i>Matriculado <b>'+Number(c.matriculado||0)+'</b></span></div>'+
+   '<p class="note" style="margin:8px 0 0">Del frío al matriculado: marca con los puntos de cada tarjeta qué tan listo está cada cliente. Los números cuentan las tarjetas cargadas.</p></section>';
+}
+function lanesHtml(it,c){
+  if(axis==='temp'){
+    return TEMPS.map(function(t){var l=it.filter(function(i){return i.stage!=='matriculado'&&(i.temperature||'')===t[0]});return '<div class="lane lt t-'+(t[0]||'none')+'" data-lane="'+t[0]+'" data-axis="temp"><h3>'+t[1]+'<span>'+l.length+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('')+
+     '<div class="lane em-ok" data-lane="matriculado" data-axis="stage"><h3>Matriculado<span>'+Number(c.matriculado||0)+'</span></h3>'+(it.filter(function(i){return i.stage==='matriculado'}).map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>';
+  }
+  return STG.map(function(x){var l=it.filter(function(i){return i.stage===x[0]});return '<div class="lane'+(x[0]==='matriculado'?' em-ok':'')+'" data-lane="'+x[0]+'" data-axis="stage"><h3>'+x[1]+'<span>'+Number(c[x[0]]||0)+'</span></h3>'+(l.map(function(i){return card(i,false)}).join('')||'<span class="note">Sin tarjetas aquí</span>')+'</div>'}).join('');
 }
 function msgHtml(){
   if(!st.msg)return '';
@@ -83,6 +104,15 @@ function doMove(id,stage,extra){
     st.busy=false;st.last=null;st.msg=errText(e);X.close();
     if(e&&e.code==='40001')X.reload();else X.render();
   });
+}
+function setTemp(id,temp){
+  var i=stageOf(id);if(!i||st.busy||!X.manager()||i.stage==='matriculado'||i.stage==='cerrado'||(i.temperature||'')===temp)return;
+  st.busy=true;say('Guardando…');var rid=uuid();
+  X.crm('interest_move',{request_id:rid,id:i.id,person_id:i.person_id,expected:i.version,stage:i.stage,temperature:temp}).then(function(r){
+    if(!r||r.saved!==true)throw Error('unconfirmed');
+    i.temperature=temp;i.version=r.version||(Number(i.version||1)+1);
+    st.last={rid:rid,person_id:i.person_id,expected:i.version,name:i.name};st.busy=false;st.msg=i.name+': '+TN[temp]+'.';X.render();
+  },function(e){st.busy=false;st.last=null;st.msg=errText(e);if(e&&e.code==='40001')X.reload();else X.render()});
 }
 function undo(){
   var l=st.last;if(!l||st.busy)return;st.busy=true;say('Deshaciendo…');
@@ -133,6 +163,8 @@ function click(e){
   else if(k==='mv')openMove(id);
   else if(k==='no')openClose(id);
   else if(k==='to')route(id,b.dataset.to);
+  else if(k==='temp')setTemp(id,b.dataset.t);
+  else if(k==='axis'){axis=b.dataset.a==='temp'?'temp':'stage';try{localStorage.setItem('forma-ventas-eje',axis)}catch(x){}X.render()}
   else if(k==='reopen')doMove(id,'conversacion',{});
   else if(k==='undo')undo();
   else if(k==='closed'){st.showClosed=!st.showClosed;if(st.showClosed)loadClosed();else X.render()}
@@ -144,7 +176,7 @@ function click(e){
 function dragstart(e){var c=e.target.closest&&e.target.closest('.vc[draggable="true"]');if(!c)return;st.drag=c.dataset.iid;c.classList.add('em-drag');try{e.dataTransfer.setData('text/plain',st.drag);e.dataTransfer.effectAllowed='move'}catch(x){}}
 function dragover(e){if(!st.drag)return;var l=e.target.closest('.lane[data-lane]');if(!l)return;e.preventDefault();document.querySelectorAll('.lane.em-over').forEach(function(x){if(x!==l)x.classList.remove('em-over')});l.classList.add('em-over')}
 function dragend(){st.drag=null;document.querySelectorAll('.em-drag,.em-over').forEach(function(x){x.classList.remove('em-drag','em-over')})}
-function drop(e){var l=e.target.closest('.lane[data-lane]');if(!l||!st.drag)return;e.preventDefault();var id=st.drag;dragend();var i=stageOf(id);if(i&&i.stage!==l.dataset.lane)route(id,l.dataset.lane)}
+function drop(e){var l=e.target.closest('.lane[data-lane]');if(!l||!st.drag)return;e.preventDefault();var id=st.drag;dragend();var i=stageOf(id);if(!i)return;if(l.dataset.axis==='temp'){setTemp(id,l.dataset.lane);return}if(i.stage!==l.dataset.lane)route(id,l.dataset.lane)}
 document.addEventListener('dragstart',dragstart);document.addEventListener('dragover',dragover);document.addEventListener('drop',drop);document.addEventListener('dragend',dragend);
 
 window.GestionEmbudo={init:function(ctx){X=ctx},html:html,click:click,reset:function(){st.closed=null;st.showClosed=false;st.last=null;st.msg=''}};
