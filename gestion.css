@@ -307,3 +307,14 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 @media(min-width:1100px){.em-temp{grid-template-columns:repeat(6,1fr)}}
 .vc .ia{margin-top:8px}
 .em-temp .vt small{display:none}
+
+/* Paleta única del embudo: gris → azul → amarillo → naranja → (rojo) → verde. Se repite arriba, en columnas y en tarjetas. */
+.c-nuevo,.c-none{--kc:#94A3B8}.c-conversacion,.c-frio{--kc:#3B82F6}.c-seguimiento,.c-tibio{--kc:#F5B301}.c-preparar_matricula,.c-caliente{--kc:#F97316}.c-muy_caliente{--kc:#DC2626}.c-matriculado,.c-ok{--kc:#16A34A}
+.em-ks{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.em-k{background:var(--soft);border-radius:14px;padding:12px 14px;border-top:5px solid var(--kc,#94A3B8);display:grid;gap:2px}
+.em-k b{font:800 26px var(--f1);color:var(--ink)}.em-k span{font-size:13px;font-weight:700;color:var(--ink)}
+.em-k i{display:block;height:6px;border-radius:3px;background:var(--kc);margin-top:8px}
+.vc{border-left:5px solid var(--kc,#94A3B8)!important}
+.lane[data-lane]{border-top:5px solid var(--kc,transparent)!important}
+.lane[data-lane] h3 span{color:var(--ink);font-weight:800}
+.lane.em-ok h3{color:var(--ink)}
