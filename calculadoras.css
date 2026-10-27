@@ -1,6 +1,6 @@
 /* Calculadoras · presentación. Celular: una columna. Computador: campos a la izquierda y resultados a pantalla completa. */
 #p-calculadoras{padding:16px 16px 8px;font-family:'DM Sans',system-ui,sans-serif;color:#1B1240}
-#app-screen #p-calculadoras{max-width:1320px!important}
+#app-screen #p-calculadoras{max-width:1200px!important}
 #p-calculadoras [hidden]{display:none!important}
 .cl-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px}
 .cl-top h1{font:700 22px Sora,'DM Sans',sans-serif;margin:0}.cl-top p{margin:2px 0 0;color:#54497A;font-size:15px}

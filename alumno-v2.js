@@ -88,23 +88,25 @@ function hh(n){return String(Math.floor(n/60)).padStart(2,'0')+':'+String(n%60).
 const BV=()=>window.FormaBudgetView||null;
 const pc=(s,p)=>p>0?Math.round(s/p*100):0;
 const tone=p=>p>100?'r':p>=80?'y':'g';
-function bankHTML(compact){
+function bankParts(compact){
   const v=BV();
-  if(!v)return '<section class="bk-hero"><small>Tu mes</small><b class="bk-big">…</b></section>';
+  if(!v)return {hero:'<section class="bk-hero"><div class="bk-l"><small>Tu mes</small><b class="bk-big">…</b></div></section>',acts:'',groups:'',mv:''};
   const f=v.fmt,hasPlan=v.plannedExpense>0,left=v.plannedExpense-v.exp,p=pc(v.exp,v.plannedExpense);
   let hero;
   if(hasPlan){
-    hero='<section class="bk-hero '+(left<0?'neg':'')+'"><small>'+(left<0?'Te pasaste de tu plan':'Te quedan este mes')+'</small><b class="bk-big">'+f(Math.abs(left))+'</b><span>de '+f(v.plannedExpense)+' de tu plan · gastaste '+f(v.exp)+' ('+p+' %)</span><div class="bk-bar"><i class="'+tone(p)+'" style="width:'+Math.min(p,100)+'%"></i></div><div class="bk-sum"><span>Entradas <b>'+f(v.inc)+'</b></span><span>Resultado <b>'+f(v.bal)+'</b></span></div></section>';
+    hero='<section class="bk-hero '+(left<0?'neg':'')+'"><div class="bk-l"><small>'+(left<0?'Te pasaste de tu plan':'Te quedan este mes')+'</small><b class="bk-big">'+f(Math.abs(left))+'</b><span>de '+f(v.plannedExpense)+' previstos · usaste el '+p+' %</span></div><dl class="bk-r"><div><dt>Entradas</dt><dd>'+f(v.inc)+'</dd></div><div><dt>Gastos</dt><dd>'+f(v.exp)+'</dd></div><div><dt>Resultado</dt><dd>'+f(v.bal)+'</dd></div></dl><div class="bk-bar"><i class="'+tone(p)+'" style="width:'+Math.min(p,100)+'%"></i></div></section>';
   }else{
-    hero='<section class="bk-hero"><small>Resultado de tu mes</small><b class="bk-big">'+f(v.bal)+'</b><span>Entradas '+f(v.inc)+' · Gastos '+f(v.exp)+'</span><button type="button" class="bk-cta" data-bk="plan">Crear mi presupuesto en 2 minutos</button></section>';
+    hero='<section class="bk-hero"><div class="bk-l"><small>Resultado de tu mes</small><b class="bk-big">'+f(v.bal)+'</b><span>Entradas '+f(v.inc)+' · Gastos '+f(v.exp)+'</span></div><button type="button" class="bk-cta" data-bk="plan">Crear mi presupuesto</button></section>';
   }
   const acts='<div class="bk-acts"><button type="button" data-bk="gasto"><i class="r">↓</i>Anotar gasto</button><button type="button" data-bk="entrada"><i class="g">↑</i>Anotar entrada</button><button type="button" data-bk="voz"><i class="b">🎙</i>Hablar</button><button type="button" data-bk="calc"><i class="y">🧮</i>Calcular</button></div>';
   const gs=v.groups.filter(g=>g.spent>0||g.planned>0).sort((a,b)=>b.spent-a.spent);
-  const shown=compact?gs.slice(0,5):gs;
-  const groups='<section class="bk-card"><h2>Mis grupos <button type="button" class="cm-link" data-bk="plan">'+(hasPlan?'Editar plan':'Crear plan')+'</button></h2>'+(shown.length?shown.map(g=>{const q=pc(g.spent,g.planned);const t=g.planned>0?tone(q):'n';return '<div class="bk-g"><div><span>'+esc(g.i)+' <b>'+esc(g.l)+'</b></span><span>'+f(g.spent)+(g.planned>0?' <small>de '+f(g.planned)+'</small>':'')+'</span></div><div class="bk-bar sm"><i class="'+t+'" style="width:'+Math.min(g.planned>0?q:0,100)+'%"></i></div>'+(g.planned>0?'<small class="'+t+'">'+(g.spent<=g.planned?'Te quedan '+f(g.planned-g.spent):'Te pasaste '+f(g.spent-g.planned))+'</small>':'<small>Sin monto previsto</small>')+'</div>';}).join(''):'<p class="cm-note">Todavía no hay gastos. Toca «Anotar gasto» y aquí verás cada grupo.</p>')+'</section>';
-  const mv='<section class="bk-card"><h2>Últimos movimientos <button type="button" class="cm-link" data-bk="hist">Ver todos</button></h2>'+(v.recent.length?v.recent.map(t=>'<div class="bk-mv"><span>'+esc(t.i)+' '+esc(t.l)+'<small>'+esc(t.d)+'</small></span><b class="'+(t.type==='income'?'g':'')+'">'+(t.type==='income'?'+':'−')+' '+f(t.a)+'</b></div>').join(''):'<p class="cm-note">Aún no hay movimientos.</p>')+'</section>';
-  return hero+acts+'<div class="bk-two">'+groups+(compact?mv:'')+'</div>'+(compact?'':mv);
+  const shown=compact?gs.slice(0,6):gs;
+  const tile=g=>{const q=pc(g.spent,g.planned);const t=g.planned>0?tone(q):'n';return '<div class="bk-g"><div class="bk-gh"><span class="bk-gi">'+esc(g.i)+'</span><b>'+esc(g.l)+'</b><span class="bk-ga">'+f(g.spent)+'</span></div><div class="bk-bar sm"><i class="'+t+'" style="width:'+Math.min(g.planned>0?q:0,100)+'%"></i></div><div class="bk-gf '+t+'"><span>'+(g.planned>0?(g.spent<=g.planned?'Te quedan '+f(g.planned-g.spent):'Te pasaste '+f(g.spent-g.planned)):'Sin monto previsto')+'</span><span>'+(g.planned>0?'de '+f(g.planned):'')+'</span></div></div>';};
+  const groups='<section class="bk-card"><div class="bk-ch"><h2>Mis grupos</h2><button type="button" class="bk-link" data-bk="plan">'+(hasPlan?'Editar plan':'Crear plan')+'</button></div>'+(shown.length?'<div class="bk-gg">'+shown.map(tile).join('')+'</div>':'<p class="bk-empty">Todavía no hay gastos. Toca «Anotar gasto» y aquí verás cada grupo.</p>')+'</section>';
+  const mv='<section class="bk-card"><div class="bk-ch"><h2>Últimos movimientos</h2><button type="button" class="bk-link" data-bk="hist">Ver todos</button></div>'+(v.recent.length?v.recent.map(t=>'<div class="bk-mv"><span class="bk-mi">'+esc(t.i)+'</span><span class="bk-mt">'+esc(t.l)+'<small>'+esc(t.d)+'</small></span><b class="'+(t.type==='income'?'g':'')+'">'+(t.type==='income'?'+':'−')+' '+f(t.a)+'</b></div>').join(''):'<p class="bk-empty">Aún no hay movimientos.</p>')+'</section>';
+  return {hero,acts,groups,mv};
 }
+function bankHTML(compact){const x=bankParts(true);return x.hero+x.acts+'<div class="bk-two">'+x.groups+x.mv+'</div>';}
 function bkClick(e){
   const b=e.target.closest('[data-bk]');if(!b)return;const a=b.dataset.bk;
   if(a==='gasto'||a==='entrada'||a==='voz'){open('registrar');setTimeout(()=>{const t=$(a==='entrada'?'tt-i':'tt-e');if(t)t.click();if(a==='voz'){const v=$('voice-start');if(v){v.scrollIntoView({block:'center'});v.click();}}},350);return;}
@@ -114,9 +116,16 @@ function bkClick(e){
 }
 function paintBank(){
   const p=$('p-resumo');if(!p)return;let box=$('av-bank');
-  if(!box){box=document.createElement('div');box.id='av-bank';p.prepend(box);box.addEventListener('click',bkClick);}
-  const d=p.querySelector('details.ia-more');if(d&&!d.open)d.open=true;
-  const html=bankHTML(false);if(box.dataset.h!==html){box.dataset.h=html;box.innerHTML=html;}
+  if(!box){
+    box=document.createElement('div');box.id='av-bank';
+    box.innerHTML='<div class="bk-top"><h1>Presupuesto</h1><div id="bk-month"></div></div><div class="bk-layout"><div id="bk-main"></div><aside id="bk-side"><div id="bk-mv"></div></aside></div>';
+    p.prepend(box);box.addEventListener('click',bkClick);
+    const mn=p.querySelector('.mnav');if(mn)$('bk-month').append(mn);
+    const side=$('bk-side');['.savings-card','#chart-card'].forEach(q=>{const e=p.querySelector(q);if(e){e.hidden=false;side.append(e);}});
+  }
+  const x=bankParts(false);const m=x.hero+x.acts+x.groups;
+  if($('bk-main').dataset.h!==m){$('bk-main').dataset.h=m;$('bk-main').innerHTML=m;}
+  if($('bk-mv').dataset.h!==x.mv){$('bk-mv').dataset.h=x.mv;$('bk-mv').innerHTML=x.mv;}
 }
 let lastHTML='';
 function paintCamino(){
