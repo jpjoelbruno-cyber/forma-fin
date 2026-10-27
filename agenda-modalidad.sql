@@ -37,3 +37,4 @@ begin
 end $$;
 revoke all on function public.forma_agenda_modality(text,jsonb) from public, anon;
 grant execute on function public.forma_agenda_modality(text,jsonb) to authenticated;
+notify pgrst,'reload schema';
