@@ -81,3 +81,6 @@
 #av-title{max-width:1320px;margin:18px auto 0;padding:0 16px;font:800 clamp(24px,3vw,30px) Sora,'DM Sans',sans-serif;color:#1B1240}
 #av-title[hidden]{display:none}
 @media (min-width:900px){#av-title{padding:0 24px}}
+
+/* Menú del computador en pantallas medianas: botones más compactos para que quepan los nueve accesos */
+@media (min-width:900px) and (max-width:1299px){#av-nav .av-items button{padding:0 8px;gap:6px;font-size:14px}#av-nav .av-brand{font-size:18px}#av-nav .av-tools{margin-left:2px}}
