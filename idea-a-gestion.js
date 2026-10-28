@@ -9,7 +9,7 @@ function nav(v){return document.querySelector('.forma-work-header nav [data-view
 function after(v,rx){const n=nav(v);if(!n)return;n.click();if(!rx)return;let t=0;const id=setInterval(()=>{t+=250;const b=[...document.querySelectorAll('#workspace button')].find(x=>rx.test(x.textContent.trim())&&x.offsetParent);if(b){clearInterval(id);b.click()}else if(t>2500)clearInterval(id)},250)}
 function build(){const W=$('workspace');if(!W||$('ia-rhome'))return;
  const h=document.createElement('section');h.id='ia-rhome';
- h.innerHTML='<div><h2>Buenos días</h2><p>¿Qué querés hacer ahora?</p></div><div class="ia-rgrid"></div><div class="ia-rpend"></div>';
+ h.innerHTML='<div><h2>Buenos días</h2><p>¿Qué quieres hacer ahora?</p></div><div class="ia-rgrid"></div><div class="ia-rpend"></div>';
  const g=h.querySelector('.ia-rgrid');
  BTNS.forEach(([v,t,s,i,c,rx])=>{if(!nav(v))return;const b=document.createElement('button');b.type='button';b.className='ia-rbig '+c;b.innerHTML=ico(I[i])+'<span>'+t+'<small>'+s+'</small></span>';b.dataset.iaView=v;b.addEventListener('click',()=>after(v,rx?new RegExp(rx,'i'):null));g.append(b)});
  function vis(){h.querySelectorAll('.ia-rbig').forEach(b=>{const n=nav(b.dataset.iaView);setH(b,!(n&&!n.hidden))})}vis();const nv=document.querySelector('.forma-work-header nav');if(nv)new MutationObserver(vis).observe(nv,{attributes:true,subtree:true,childList:true});let k=0;const iv=setInterval(()=>{vis();if(++k>20)clearInterval(iv)},500);

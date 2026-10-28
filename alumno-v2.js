@@ -7,8 +7,8 @@ const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const ico=d=>'<svg class="av-i" viewBox="0 0 24 24" aria-hidden="true">'+d+'</svg>';
 const I={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',mes:'<path d="M4 20V10m8 10V4m8 16v-7"/>',plus:'<path d="M12 5v14M5 12h14"/>',goal:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',book:'<path d="M4 5h6a3 3 0 0 1 3 3v12a3 3 0 0 0-3-3H4zM20 5h-6"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',wallet:'<rect x="3" y="6" width="18" height="13" rx="2"/><path d="M16 13h2"/>',calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/>',more:'<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/>',bell:'<path d="M6 17V11a6 6 0 0 1 12 0v6l2 2H4zM10 21h4"/>'};
 /* clave, texto, icono, panel que se activa */
-const ITEMS=[['camino','Inicio','home'],['mes','Presupuesto','mes'],['registrar','Anotar','list'],['calc','Calcular','calc'],['aprender','Aprender','book'],['cursos','Mis cursos','cap'],['banco','Cuentas','wallet']];
-const MOBILE=['camino','mes','registrar','aprender'];
+const ITEMS=[['camino','Inicio','home'],['cursos','Mi curso','cap'],['mes','Presupuesto','mes'],['registrar','Anotar','list'],['calc','Calcular','calc'],['aprender','Aprender','book'],['banco','Cuentas','wallet']];
+const MOBILE=['camino','cursos','mes','registrar'];
 const PANEL={camino:'camino',mes:'resumo',registrar:'registrar',metas:'metas',calc:'calculadoras',historico:'historico',aprender:'aprender',cursos:'institution',banco:'banco'};
 function open(k){
   if(k==='camino'){goPanel('camino');return;}
@@ -42,7 +42,7 @@ function extra(){
   if(visible('#nb-alunos'))out.push(['alumnos','Mis alumnos','cap']);
   if(visible('#forma-admin-button'))out.push(['admin','Administración','mes']);
   const g=document.querySelector('.forma-tools a[href="/agenda.html"]');if(g&&!g.hidden)out.push(['gestion','Gestión','cal']);
-  out.push(['ayuda','Ayuda','chat'],['instalar','Instalar la app','plus'],['salir','Cerrar sesión','user']);
+  out.push(['pasos','Primeros pasos','goal'],['ayuda','Ayuda','chat'],['instalar','Instalar la app','plus'],['salir','Cerrar sesión','user']);
   return out;
 }
 function fillMenu(){$('av-menu').innerHTML=extra().map(([k,t])=>'<button type="button" data-do="'+k+'"'+(k==='salir'?' class="av-out"':'')+'>'+esc(t)+'</button>').join('');}
@@ -57,11 +57,12 @@ function act(k){
   if(k==='alumnos'){$('nb-alunos')?.click();return;}
   if(k==='admin'){location.href='/agenda.html#admin';return;}
   if(k==='gestion'){location.href='/agenda.html';return;}
+  if(k==='pasos'){fpSet('off','');fpSet('open','1');goPanel('camino');schedule();window.scrollTo(0,0);return;}
   if(k==='ayuda'){$('forma-help-button')?.click();return;}
   if(k==='instalar'){const b=document.querySelector('.forma-install-button');if(b)b.click();return;}
   if(k==='salir'){document.querySelector('.tb-logout')?.click();}
 }
-const TITLES={registrar:'Anotar',historico:'Anotar',metas:'Anotar',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mis cursos',alunos:'Mis alumnos'};
+const TITLES={registrar:'Anotar',historico:'Anotar',metas:'Anotar',aprender:'Aprender',anual:'Mi año',banco:'Mis cuentas',institution:'Mi curso',alunos:'Mis alumnos'};
 function sync(){
   const n=$('av-nav');const a=document.querySelector('#app-screen .panel.active');if(!n||!a)return;
   const id=a.id.replace(/^p-/,'');const ti=$('av-title');if(ti){const t=TITLES[id]||'';if(ti.textContent!==t)ti.textContent=t;if(ti.hidden===!!t)ti.hidden=!t;}
@@ -127,28 +128,68 @@ function paintBank(){
   if($('bk-main').dataset.h!==m){$('bk-main').dataset.h=m;$('bk-main').innerHTML=m;}
   if($('bk-mv').dataset.h!==x.mv){$('bk-mv').dataset.h=x.mv;$('bk-mv').innerHTML=x.mv;}
 }
+/* ---------- Primeros pasos: 4 pasos claros, un solo contador ---------- */
+const fpGet=k=>{try{return localStorage.getItem('forma-fp-'+k)||''}catch(e){return ''}};
+const fpSet=(k,v)=>{try{if(v)localStorage.setItem('forma-fp-'+k,v);else localStorage.removeItem('forma-fp-'+k)}catch(e){}};
+function fpSteps(){
+  const s=S(),l=L(),v=BV(),hasPlan=!!v&&v.plannedExpense>0,spent=!!v&&(v.exp>0||(v.recent||[]).length>0);
+  if(s.linked&&s.enrol){
+    const e=s.enrol,left=Math.max(0,e.total-e.paid);
+    return [
+      {id:'curso',t:'Mira tu curso y tus horarios',d:s.nextClass?'Próxima clase: '+dl(s.nextClass.day)+' · '+hh(s.nextClass.start):'Aquí ves tu grupo, días y hora.',b:'Ver mi curso',a:'fp-curso'},
+      {id:'deuda',t:'Mira cuánto debes y cuándo pagar',d:left?('Falta pagar '+money(left)+(s.nextDue&&s.nextDue.due?' · próxima cuota vence '+dl(s.nextDue.due):'')):'Todo pagado ✓',b:'Ver mis pagos',a:'fp-curso'},
+      {id:'aviso',t:'Si ya pagaste, avísalo',d:'Toca «Avisar un pago realizado». Administración lo confirma y recibes tu comprobante.',b:'Avisar un pago',a:'fp-aviso'},
+      {id:'presu',t:'Arma tu presupuesto del mes',d:hasPlan?'Ya tienes un plan. Anota tus gastos para ver cómo vas.':'Define cuánto planeas gastar en cada grupo.',b:hasPlan?'Anotar un gasto':'Crear mi presupuesto',a:hasPlan?'fp-gasto':'fp-plan',done:hasPlan&&spent}
+    ];
+  }
+  const path=l.path||[];
+  return [
+    {id:'plan',t:'Crea tu presupuesto del mes',d:'Define cuánto planeas gastar en cada grupo. Toma 2 minutos.',b:'Crear mi presupuesto',a:'fp-plan',done:hasPlan},
+    {id:'gasto',t:'Anota tu primer gasto',d:'Escríbelo o dilo con la voz. La fecha y la categoría se completan solas.',b:'Anotar un gasto',a:'fp-gasto',done:spent},
+    {id:'mes',t:'Mira cómo vas este mes',d:'Cuánto te queda en cada grupo, en un vistazo.',b:'Ver mi presupuesto',a:'fp-mes'},
+    {id:'clase',t:'Mira tu primera clase gratis',d:path.length?'Curso: '+(path[0].title||''):'Aprende a tu ritmo, en videos cortos.',b:'Ver la clase',a:'fp-aprender',done:path.some(c=>c.done)}
+  ];
+}
+function fpHTML(){
+  if(fpGet('off'))return '';
+  const st=fpSteps();st.forEach(x=>{if(!x.done&&fpGet('seen-'+x.id))x.done=true;});
+  const n=st.filter(x=>x.done).length;if(n===st.length)return '';
+  const cur=st.findIndex(x=>!x.done);
+  const rows=st.map((x,i)=>{const on=i===cur;return '<div class="fp-st'+(x.done?' done':on?' now':'')+'"><b class="fp-n">'+(x.done?'✓':(i+1))+'</b><div class="fp-t"><span>'+esc(x.t)+'</span>'+(x.done?'':'<small>'+esc(x.d)+'</small>')+'</div>'+(x.done?'<em>Hecho</em>':'<button type="button" class="'+(on?'cm-btn':'cm-link')+'" data-cm="'+x.a+'" data-fp="'+x.id+'">'+esc(on?x.b:'Abrir')+'</button>')+'</div>';}).join('');
+  return '<section class="cm-card fp"><div class="fp-h"><h2>Empieza aquí</h2><span class="cm-pill">'+n+' de '+st.length+' pasos</span></div><p class="fp-sub">Cuatro pasos y ya sabes usar FORMÁ. Sigue el que está resaltado.</p>'+rows+'<button type="button" class="fp-off" data-cm="fp-off">Ya lo entendí, ocultar esta guía</button></section>';
+}
 let lastHTML='';
 function paintCamino(){
   const body=$('cm-body');if(!body)return;
   const l=L(),s=S(),path=l.path||[],done=path.filter(c=>c.done).length;
   const gt=txt('guide-title'),gc=txt('guide-copy'),ga=txt('guide-action');
   let hero;
-  if(l.next){const idx=Math.max(1,path.findIndex(c=>l.active&&c.id===l.active.id)+1);hero={k:'TU SIGUIENTE PASO'+(path.length?' · Estación '+idx+' de '+path.length:''),t:'Clase: '+l.next.title,c:l.active?l.active.title:'',b:'Continuar la clase →',a:'clase'};}
-  else if(l.active){hero={k:'TU SIGUIENTE PASO',t:'Sigue con '+l.active.title,c:'Tu curso gratuito te espera.',b:'Continuar →',a:'clase'};}
+  if(l.next){const idx=Math.max(1,path.findIndex(c=>l.active&&c.id===l.active.id)+1);hero={k:'SIGUE APRENDIENDO'+(path.length?' · Curso gratis '+idx+' de '+path.length:''),t:'Clase: '+l.next.title,c:l.active?l.active.title:'',b:'Continuar la clase →',a:'clase'};}
+  else if(l.active){hero={k:'SIGUE APRENDIENDO',t:'Sigue con '+l.active.title,c:'Tu curso gratuito te espera.',b:'Continuar →',a:'clase'};}
   else if(path.length&&done===path.length){hero={k:'¡LO LOGRASTE!',t:'Terminaste todos los cursos gratuitos',c:'El siguiente nivel es un curso con acompañamiento de FORMÁ.',b:'Pedir información',a:'ayuda'};}
-  else{hero={k:'TU SIGUIENTE PASO',t:gt||'Arma tu presupuesto',c:gc||'Un paso a la vez.',b:ga||'Empezar',a:'guia'};}
+  else{hero={k:'TU PRESUPUESTO',t:gt||'Arma tu presupuesto',c:gc||'Un paso a la vez.',b:ga||'Empezar',a:'guia'};}
   const stations=path.map((c,i)=>'<div class="cm-st '+(c.done?'done':c.open?'now':'lock')+'"><b>'+(c.done?'✓':c.open?(i+1):'🔒')+'</b><span>'+esc(c.title)+'</span><small>'+(c.done?'Concluido':c.open?'En curso':'Se abre al terminar el anterior')+'</small></div>').join('')+'<div class="cm-st star"><b>★</b><span>Tu curso con FORMÁ</span><small>Clase de prueba y matrícula</small></div>';
   let mine;
   if(s.linked&&s.enrol){const e=s.enrol,left=Math.max(0,e.total-e.paid);mine='<section class="cm-card"><h2>Mi curso <button type="button" class="cm-link" data-cm="cursos">Ver todo</button></h2><b>'+esc(e.course)+'</b><p>'+esc(e.group||'')+'</p><p>'+(s.nextClass?'Próxima clase: '+dl(s.nextClass.day)+' · '+hh(s.nextClass.start)+(s.nextClass.module?' · '+esc(s.nextClass.module):''):'Sin próxima clase confirmada')+'</p><p>'+(s.nextDue?'Próxima cuota: '+money(s.nextDue.cents)+(s.nextDue.due?' · vence '+dl(s.nextDue.due):''):(left?'Falta pagar '+money(left):'Todo pagado'))+'</p></section>';}
   else mine='<section class="cm-card cm-cta"><h2>Cuando quieras, hay un siguiente nivel</h2><p>Los cursos de FORMÁ tienen clases en vivo, acompañamiento y plan de pago. Pide información y te escribimos.</p><button type="button" class="cm-btn" data-cm="ayuda">Pedir información</button></section>';
-  const html='<div class="cm-head"><h1>Hola'+(firstName()?', '+esc(firstName()):'')+'</h1><p>Así va tu mes.</p></div>'+
+  const linked=!!(s.linked&&s.enrol),fp=fpHTML();
+  const html='<div class="cm-head"><h1>Hola'+(firstName()?', '+esc(firstName()):'')+'</h1><p>'+(linked?'Tu curso, tus pagos y tu presupuesto.':'Tu presupuesto del mes.')+'</p></div>'+fp+(linked?'<div style="margin-bottom:16px">'+mine+'</div>':'')+
    '<div id="bk-home">'+bankHTML(true)+'</div>'+
-   '<div class="cm-grid" style="margin-top:16px"><section class="cm-hero"><small>'+esc(hero.k)+'</small><h2>'+esc(hero.t)+'</h2>'+(hero.c?'<p>'+esc(hero.c)+'</p>':'')+'<button type="button" class="cm-btn cm-white" data-cm="'+hero.a+'">'+esc(hero.b)+'</button></section>'+mine+
+   '<div class="cm-grid" style="margin-top:16px"><section class="cm-hero"><small>'+esc(hero.k)+'</small><h2>'+esc(hero.t)+'</h2>'+(hero.c?'<p>'+esc(hero.c)+'</p>':'')+'<button type="button" class="cm-btn cm-white" data-cm="'+hero.a+'">'+esc(hero.b)+'</button></section>'+(linked?'':mine)+
    '<section class="cm-card cm-wide"><h2>Tu camino'+(path.length?' <span class="cm-pill">'+done+' de '+path.length+' cursos</span>':'')+'</h2><div class="cm-path">'+stations+'</div><p class="cm-note">Terminas un curso y se abre el siguiente. Lo que haces en tu presupuesto también cuenta para avanzar.</p></section></div>';
   if(html!==lastHTML){lastHTML=html;body.innerHTML=html;}
 }
+function a2(){const l=L();goPanel('aprender');const id=l.active&&l.active.id;let tries=0;const t=setInterval(()=>{const btn=id&&document.querySelector('#forma-video-courses [data-course="'+id+'"]');if(btn||++tries>20){clearInterval(t);if(btn)btn.click();}},250);}
 function camClick(e){
   const b=e.target.closest('[data-cm]');if(!b)return;const a=b.dataset.cm;
+  if(a==='fp-off'){fpSet('off','1');schedule();return;}
+  if(b.dataset.fp){fpSet('seen-'+b.dataset.fp,'1');}
+  if(a==='fp-curso'){open('cursos');schedule();return;}
+  if(a==='fp-aviso'){open('cursos');let n=0;const t2=setInterval(()=>{const r=document.querySelector('[data-edu-report]');if(r||++n>20){clearInterval(t2);if(r)r.click();}},250);schedule();return;}
+  if(a==='fp-plan'){bkClick({target:{closest:()=>({dataset:{bk:'plan'}})}});schedule();return;}
+  if(a==='fp-gasto'){bkClick({target:{closest:()=>({dataset:{bk:'gasto'}})}});schedule();return;}
+  if(a==='fp-mes'){open('mes');schedule();return;}
+  if(a==='fp-aprender'){a2();schedule();return;}
   if(a==='clase'){goPanel('aprender');const id=L().active&&L().active.id;let tries=0;const t=setInterval(()=>{const btn=id&&document.querySelector('#forma-video-courses [data-course="'+id+'"]');if(btn||++tries>20){clearInterval(t);if(btn)btn.click();}},250);return;}
   if(a==='guia'){goPanel('resumo');setTimeout(()=>$('guide-action')?.click(),300);return;}
   if(a==='ayuda'){$('forma-help-button')?.click();return;}
