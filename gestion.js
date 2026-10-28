@@ -338,7 +338,7 @@ function buildNav(){
 }
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Ir a mi espacio de alumno</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
 function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}

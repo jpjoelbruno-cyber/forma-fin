@@ -2,8 +2,8 @@
    No da ni quita permisos: cada acción sigue validándose en el servidor (owner / manager / instructor).
    Sin sesión o ante cualquier error, no muestra nada y la página funciona como siempre. */
 (function(){'use strict';
-var SP=[{k:'alumno',t:'Alumno',d:'Mi presupuesto y cursos',u:'/',need:null},{k:'gestion',t:'Gestión',d:'Agenda, cobros, alumnos, ventas',u:'/agenda.html#inicio',need:['owner','manager','instructor']},{k:'admin',t:'Administración',d:'Personas, accesos y cursos online',u:'/agenda.html#admin',need:['owner']}];
-function here(){var p=location.pathname;if(/agenda|gestion|administracion/.test(p))return(/administracion/.test(p)||location.hash==='#admin')?'admin':'gestion';return 'alumno'}
+var SP=[{k:'alumno',t:'Mi espacio de alumno',d:'Mi curso, mis pagos y mi presupuesto',u:'/?alumno=1',need:null},{k:'gestion',t:'Gestión',d:'Agenda, cobros, alumnos, ventas y administración',u:'/agenda.html#inicio',need:['owner','manager','instructor']}];
+function here(){var p=location.pathname;if(/agenda|gestion|administracion/.test(p))return 'gestion';return 'alumno'}
 function token(){try{var s=JSON.parse(localStorage.getItem('forma-independent-auth-v1')||'null');return s&&s.access_token||null}catch(e){return null}}
 function role(){var cfg=window.FORMA_CONFIG,t=token();if(!cfg||!t)return Promise.resolve(null);
   var c=new AbortController(),to=setTimeout(function(){c.abort()},8000);
@@ -29,6 +29,8 @@ function start(){
   role().then(function(r){
     if(!r)return;
     var list=SP.filter(function(s){return !s.need||s.need.indexOf(r)>=0});
+    /* una sola puerta: el personal que abre la app de alumno al empezar su sesión entra directo a Gestión (una vez por sesión del navegador) */
+    try{if(here()==='alumno'&&list.length>1&&!/[?&](alumno|personal)=1/.test(location.search)&&!sessionStorage.getItem('forma-landed')){sessionStorage.setItem('forma-landed','1');location.replace('/agenda.html#inicio');return}sessionStorage.setItem('forma-landed','1')}catch(e){}
     if(list.length<2)return;
     var tries=0;(function wait(){var h=hostEl();if(h)mount(h,list);else if(++tries<40)setTimeout(wait,250)})();
   });

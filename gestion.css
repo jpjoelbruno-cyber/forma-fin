@@ -131,7 +131,7 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
 @media(max-width:759px){.rt th:nth-child(2),.rt td:nth-child(2),.rt th:nth-child(3),.rt td:nth-child(3){display:none}.rt td,.rt th{padding-inline:6px}.kpi b{font-size:22px}}
 @media(min-width:760px){.c3{grid-column:span 3}.c4{grid-column:span 4}.c6{grid-column:span 6}.c8{grid-column:span 8}.lanes{grid-template-columns:repeat(4,1fr)}.acts{grid-template-columns:repeat(4,1fr)}}
 @media(min-width:900px){
- .tabs{display:flex}.bnav{display:none}body{padding-block:0 32px}.week{display:grid}.days{display:none}
+ .tabs{display:flex}#mAdmin{display:none!important}.bnav{display:none}body{padding-block:0 32px}.week{display:grid}.days{display:none}
  .top-in{min-height:72px}
 }
 @media(min-width:900px) and (max-width:1200px){.brand small{display:none}.tabs button{padding:0 9px;font-size:14px}.tabs svg.i{display:none}}
