@@ -54,7 +54,7 @@ function hOf(g){var s=span(g);if(!s.n)return '';return s.start<720?'m':s.start<1
 function passes(g){
   var f=C.flt,s=span(g);
   if(f.c&&g.course_id!==f.c)return false;
-  if(f.st&&stOf(g)!==f.st)return false;
+  if(f.st==='all'){}else if(f.st){if(stOf(g)!==f.st)return false}else if(g.active===false)return false;
   if(f.h&&hOf(g)!==f.h)return false;
   if(f.m){if(!s.from)return false;var a=f.m+'-01',b=f.m+'-31';if(!(s.from<=b&&s.to>=a))return false}
   return true;
@@ -67,7 +67,7 @@ function fltBar(){
   return '<div class="cu-flt"><label>Curso<select data-cuflt="c">'+o('','Todos',f.c)+cat.courses.slice().sort(function(a,b){return a.name.localeCompare(b.name)}).map(function(c){return o(c.id,c.name,f.c)}).join('')+'</select></label>'
    +'<label>Mes<select data-cuflt="m">'+o('','Todos',f.m)+mk.map(function(k){var p=k.split('-');return o(k,MES[Number(p[1])-1]+' '+p[0],f.m)}).join('')+'</select></label>'
    +'<label>Horario<select data-cuflt="h">'+o('','Todos',f.h)+o('m','Mañana (antes de 12:00)',f.h)+o('t','Tarde (12:00–18:00)',f.h)+o('n','Noche (desde 18:00)',f.h)+'</select></label>'
-   +'<label>Estado<select data-cuflt="st">'+o('','Todos',f.st)+Object.keys(ST).map(function(k){return o(k,ST[k][0],f.st)}).join('')+'</select></label>'
+   +'<label>Estado<select data-cuflt="st">'+o('','Vigentes (sin cancelados)',f.st)+o('all','Todos, con cancelados y archivados',f.st)+Object.keys(ST).map(function(k){return o(k,ST[k][0],f.st)}).join('')+'</select></label>'
    +(fltOn()?'<button type="button" class="btn s sm" data-cu="fclear">Quitar filtros</button>':'')+'</div>';
 }
 function seats(cap,n){
@@ -113,6 +113,7 @@ function pct(day,w){var a=X.M.date(w.from).getTime(),b=X.M.date(w.to).getTime(),
 function board(){
   var cat=C.cat,w=monthWin(),rows=[],tl='',lst='';
   cat.courses.slice().sort(function(a,b){return a.name.localeCompare(b.name)}).forEach(function(c){
+    if(c.active===false&&C.flt.st!=='all'&&C.flt.st!=='cancel')return;
     var gs=cat.groups.filter(function(g){return g.course_id===c.id&&passes(g)}).map(function(g){return{g:g,s:span(g)}}).sort(function(a,b){return(a.s.from||'9')<(b.s.from||'9')?-1:1});
     var col=colorOf(c);
     if(!gs.length){if(!fltOn())rows.push({c:c,col:col,empty:true});return}
@@ -121,7 +122,7 @@ function board(){
   var head='<div class="cu-h"></div><div class="cu-hm">'+w.ms.map(function(m){return '<span>'+MES[m.getUTCMonth()]+(m.getUTCMonth()===0?' '+m.getUTCFullYear():'')+'</span>'}).join('')+'</div>';
   rows.forEach(function(r){
     var name='<div class="cu-n"><i class="cu-dot" style="background:'+r.col+'"></i><span>'+esc(r.c.name)+(r.c.active===false?' <small>(inactivo)</small>':'')+'</span></div>';
-    if(r.empty){tl+=name+'<div class="cu-t"><button class="cu-ghost" data-cu="newg" data-id="'+r.c.id+'">+ Primer grupo de '+esc(r.c.name)+'</button></div>';return}
+    if(r.empty){tl+=name+'<div class="cu-t">'+(r.c.active===false?'<button class="cu-ghost" data-cu="unarch" data-id="'+r.c.id+'">Restaurar curso archivado</button>':'<button class="cu-ghost" data-cu="newg" data-id="'+r.c.id+'">+ Primer grupo de '+esc(r.c.name)+'</button> <button class="cu-ghost" data-cu="arch" data-id="'+r.c.id+'">Archivar este curso</button>')+'</div>';return}
     var inwin=r.s.from&&r.s.to>=w.from&&r.s.from<w.to,sel=C.selG===r.g.id;
     var bar=inwin?'<button class="cu-bar'+(sel?' sel':'')+(r.g.active===false?' off':'')+'" data-cu="pick" data-id="'+r.g.id+'" style="left:'+pct(r.s.from,w)+'%;width:'+Math.max(2.5,pct(r.s.to,w)-pct(r.s.from,w))+'%;background:'+r.col+'" title="'+esc(r.g.name)+'"><b>'+esc(r.g.name)+' · '+Number(r.g.students)+'/'+Number(r.g.capacity)+'</b><small>'+r.s.days.map(function(d){return DOW[d]}).join('-')+' '+hhmm(r.s.start)+'–'+hhmm(r.s.end)+'</small></button>':'<span class="cu-out">'+esc(r.g.name)+' · fuera de este período ('+(r.s.from?dm(r.s.from)+' → '+dm(r.s.to):'sin fechas')+')</span>';
     tl+=(r.first?name:'<div class="cu-n sub"><span></span></div>')+'<div class="cu-t">'+bar+'</div>';
@@ -172,14 +173,14 @@ function panel(){
    +'<b>Cupos '+Number(g.students)+' de '+Number(g.capacity)+'</b><div class="cu-seats">'+seats(Number(g.capacity),Number(g.students))+'</div>'
    +tot+'<div class="list" style="margin:8px 0 12px">'+al+'</div>'
    +'<div class="cu-acts">'+(off?'':'<button class="btn p" data-act="matricular">+ Matricular en este grupo</button>')+'<button class="btn s" data-cu="editg" data-id="'+g.id+'">Editar grupo (horario, cupos, sala…)</button><button class="btn s" data-cu="repeat" data-id="'+g.id+'">Repetir para el mes siguiente</button><button class="btn s" data-act="agenda">Ver y mover las clases en la Agenda</button><button class="btn s cu-danger" data-cu="'+(off?'react':'cancelg')+'" data-id="'+g.id+'">'+lbl+'</button></div>'
-   +'<p class="note">Color del curso:</p><div class="cu-sws">'+sw+'</div><p class="note">Cada curso tiene su propio color; los ya usados aparecen atenuados.</p></section>';
+   +(c.active===false?'<div class="cu-acts"><button class="btn p" data-cu="unarch" data-id="'+c.id+'">Restaurar el curso archivado «'+esc(c.name)+'»</button></div>':'')+(c.active===false||C.cat.groups.some(function(x){return x.course_id===c.id&&x.active!==false})?'':'<div class="cu-acts"><button class="btn s" data-cu="arch" data-id="'+c.id+'">Archivar el curso «'+esc(c.name)+'» (no tiene grupos vigentes)</button></div>')+'<p class="note">Color del curso:</p><div class="cu-sws">'+sw+'</div><p class="note">Cada curso tiene su propio color; los ya usados aparecen atenuados.</p></section>';
 }
 function html(){
   if(!C.cat)return X.head('Cursos','Grupos por mes, con cupos y horarios.','')+(C.err?'<div class="err">'+esc(C.err)+'</div>':'<p class="skel" role="status">Cargando cursos…</p>');
   if(C.wiz)return wizard();
   if(C.ed)return edView();
   var right='<button class="btn s" data-cu="insman">Instructores</button> <button class="btn p" data-cu="newc">+ Nuevo curso</button>';
-  var leg=C.cat.courses.map(function(c){return '<span><i class="cu-dot" style="background:'+colorOf(c)+'"></i>'+esc(c.name)+'</span>'}).join('');
+  var leg=C.cat.courses.filter(function(c){return c.active!==false}).map(function(c){return '<span><i class="cu-dot" style="background:'+colorOf(c)+'"></i>'+esc(c.name)+'</span>'}).join('');
   return X.head('Cursos','Cada barra es un grupo, con el color de su curso.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+'<div class="cu-vw"><button class="btn s sm" data-cu="vw" data-cv="t" aria-pressed="'+(C.vw==='t')+'">Tablero</button><button class="btn s sm" data-cu="vw" data-cv="c" aria-pressed="'+(C.vw==='c')+'">Calendario del mes</button></div>'+fltBar()+(C.vw==='c'?calendar():board())+courseTotals()+'</section>'+panel()+'</div>';
 }
 /* ---------- asistente ---------- */
@@ -456,7 +457,7 @@ function setActive(gid,on){
     if(!r||!r.saved)throw Error('El servidor no confirmó el cambio.');
     if(X.demo)demoEdit(gid,payload);
     return(X.demo?Promise.resolve():load(true))
-  }).then(function(){if(d&&d.open)d.close();C.detail={};C.msg=on?'Grupo reactivado.':'Grupo cancelado. Sus alumnos, pagos e historial se conservan.';X.render()},function(er){X.dlg(on?'No se pudo reactivar':'No se pudo cancelar','<div class="err">'+esc(friendly(er))+' No se cambió nada.</div><p class="note">Detalle técnico: '+esc((er&&er.code)||'sin código')+' · '+esc(String((er&&er.message)||'').slice(0,200))+'</p>')});
+  }).then(function(){if(d&&d.open)d.close();C.detail={};if(!on)C.selG=null;C.msg=on?'Grupo reactivado.':'Grupo cancelado y oculto del tablero. Sus alumnos, pagos e historial se conservan (Estado › Todos, con cancelados, para verlo).';X.render()},function(er){X.dlg(on?'No se pudo reactivar':'No se pudo cancelar','<div class="err">'+esc(friendly(er))+' No se cambió nada.</div><p class="note">Detalle técnico: '+esc((er&&er.code)||'sin código')+' · '+esc(String((er&&er.message)||'').slice(0,200))+'</p>')});
 }
 function cancelDlg(gid){
   var g=C.cat.groups.filter(function(x){return x.id===gid})[0];if(!g)return;
@@ -465,6 +466,23 @@ function cancelDlg(gid){
    +(n?'<div class="err"><b>Tiene '+n+' alumno(s) matriculado(s)'+(paid?' y '+X.R(paid)+' ya recibidos':'')+'.</b> Antes de cancelar, avisa a esos alumnos y decide qué pasa con ellos.</div>':'<p class="note">No tiene alumnos matriculados.</p>')
    +'<p class="note">Cancelar <b>no borra</b> alumnos, pagos ni historial: el grupo queda marcado como «Cancelado» y sus clases dejan de ocupar la agenda. Puedes reactivarlo cuando quieras.</p>'
    +'<div class="cu-acts"><button class="btn p cu-danger" data-cu="cancelok" data-id="'+gid+'">Sí, cancelar el grupo</button><button class="btn s" data-act="cerrar">No, volver</button></div>',false);
+}
+function archDlg(cid){
+  var c=C.cat.courses.filter(function(x){return x.id===cid})[0];if(!c)return;
+  var act=C.cat.groups.filter(function(g){return g.course_id===cid&&g.active!==false});
+  if(act.length){X.dlg('No se puede archivar','<div class="err">«'+esc(c.name)+'» tiene '+act.length+' grupo(s) vigente(s). Cancela primero esos grupos y vuelve a intentarlo.</div>',false);return}
+  var ns=C.cat.groups.filter(function(g){return g.course_id===cid}).reduce(function(a,g){return a+(Number(g.students)||0)},0);
+  X.dlg('Archivar curso','<p><b>'+esc(c.name)+'</b></p>'+(ns?'<div class="err">Sus grupos cancelados tienen '+ns+' matrícula(s). No se pierden: siguen en el historial del alumno.</div>':'')+'<p class="note">Archivar <b>no borra</b> nada: el curso deja de verse en el tablero y no se puede usar para grupos nuevos. Se restaura desde Estado › «Todos, con cancelados y archivados».</p><div class="cu-acts"><button class="btn p cu-danger" data-cu="archok" data-id="'+cid+'">Sí, archivar el curso</button><button class="btn s" data-act="cerrar">No, volver</button></div>',false);
+}
+function setCourseActive(cid,on){
+  var c=C.cat.courses.filter(function(x){return x.id===cid})[0];if(!c)return;
+  var d=document.getElementById('dlg'),btn=d&&d.querySelector('.cu-danger');if(btn){btn.disabled=true;btn.textContent='Archivando…'}
+  var payload={id:cid,name:c.name,modules:c.modules||[],active:on,expected:c.version,encounter_count:c.encounter_count,module_counts:c.module_counts,request_id:uuid()};
+  ac('course_save',payload).then(function(r){
+    if(!r||!r.saved)throw Error('El servidor no confirmó el cambio.');
+    if(X.demo){c.active=on;c.version=(c.version||1)+1}
+    return X.demo?Promise.resolve():load(true);
+  }).then(function(){if(d&&d.open)d.close();C.selG=null;C.detail={};C.msg=on?'Curso restaurado.':'Curso archivado. Ya no se ve en el tablero; no se borró nada.';X.render()},function(er){X.dlg(on?'No se pudo restaurar':'No se pudo archivar','<div class="err">'+esc(friendly(er))+' No se cambió nada.</div><p class="note">Detalle técnico: '+esc((er&&er.code)||'sin código')+' · '+esc(String((er&&er.message)||'').slice(0,200))+'</p>',false)});
 }
 function demoEdit(gid,pl){
   var g=C.demoCat.groups.filter(function(x){return x.id===gid})[0];if(!g)return;
@@ -489,6 +507,9 @@ function click(e){
   if(k==='editg'){startEdit(b.dataset.id);return true}
   if(k==='cancelg'){cancelDlg(b.dataset.id);return true}
   if(k==='cancelok'){setActive(b.dataset.id,false);return true}
+  if(k==='arch'){archDlg(b.dataset.id);return true}
+  if(k==='archok'){setCourseActive(b.dataset.id,false);return true}
+  if(k==='unarch'){setCourseActive(b.dataset.id,true);return true}
   if(k==='react'){setActive(b.dataset.id,true);return true}
   if(k==='gopen'){var gd=document.getElementById('dlg');if(gd&&gd.open)gd.close();C.wiz=null;C.ed=null;C.selG=b.dataset.id;C.msg='';X.render();window.scrollTo(0,0);return true}
   if(k==='fclear'){C.flt={c:'',st:'',m:'',h:''};X.render();return true}
