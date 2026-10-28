@@ -263,13 +263,13 @@ function clash(list,gid,courseId){
 }
 function conflicts(w,p){
   var a0=Math.round(parseInt(w.time.slice(0,2),10)*60+parseInt(w.time.slice(3,5),10)),a1=a0+Math.round(Number(w.hours)*60);
-  return clash(p.list.map(function(x){var rw=rowOf(w,x);return{day:x.day,start_min:a0,end_min:a1,instructor:rw.instructor,room:rw.room}}),w.gid||null,w.courseId);
+  return clash(p.list.filter(function(x){return x.day>=X.T}).map(function(x){var rw=rowOf(w,x);return{day:x.day,start_min:a0,end_min:a1,instructor:rw.instructor,room:rw.room}}),w.gid||null,w.courseId);
 }
 function cfHTML(cf){
   if(!cf.length)return '';
   var same=cf.filter(function(k){return k.same})[0];
   return '<div class="err"><b>'+(same?'Este grupo parece ya existir':'Choca con otro grupo — corrige antes de guardar')+'</b>'
-   +(same?'<p style="margin:6px 0 0">«'+esc(same.who)+'» ya tiene clase el '+dm(same.day)+' a las '+same.time+' con el mismo instructor o sala. No lo crees otra vez: <button type="button" class="link" data-cu="gopen" data-id="'+same.gid+'">abre ese grupo</button> y usa «Editar grupo».</p>':'')
+   +(same?'<p style="margin:6px 0 0">«'+esc(same.who)+'» ya tiene clase el '+dm(same.day)+' a las '+same.time+' con el mismo instructor o sala. No lo crees otra vez: <button type="button" class="link" data-cu="gopen" data-id="'+same.gid+'">abre ese grupo</button> y usa «Editar grupo». Si lo creaste por error, <button type="button" class="link" data-cu="cancelg" data-id="'+same.gid+'">cancela ese grupo duplicado</button> (no borra nada) y vuelve a guardar.</p>':'')
    +'<ul style="margin:6px 0 0;padding-left:18px">'+cf.slice(0,6).map(function(k){return '<li>'+dm(k.day)+' '+k.time+' · '+esc(k.who)+' ('+k.why+') <button type="button" class="link" data-cu="gopen" data-id="'+k.gid+'">ver grupo</button></li>'}).join('')+'</ul><span class="note">Cambia la sala, el instructor o la hora.</span></div>';
 }
 
@@ -448,11 +448,15 @@ function setActive(gid,on){
   var d=document.getElementById('dlg');
   var payload={id:gid,expected:g.version,course_id:g.course_id,name:g.name,instructor:g.instructor,room:g.room,capacity:Number(g.capacity),fee_cents:Number(g.fee_cents),installments:Number(g.installments),monthly_cents:Number(g.monthly_cents),active:on,module_plan:g.module_plan||[],sessions:(g.sessions||[]).map(function(x){return sessOut(x)}),request_id:uuid()};
   if(!payload.sessions.length){C.msg='';X.dlg('No se puede','<div class="err">Este grupo no tiene encuentros, así que no se puede cambiar su estado desde aquí.</div>');return}
-  ac('group_save',payload).then(function(r){
+  var btn=d&&d.querySelector('.cu-danger');if(btn){btn.disabled=true;btn.textContent=on?'Reactivando…':'Cancelando…'}
+  function viaSave(){return ac('group_save',payload)}
+  var step=X.demo?viaSave():X.rpc('forma_enrolment_admin',{p_action:'group_set_active',p_data:{group_id:gid,expected:g.version,active:on,request_id:uuid()}}).catch(function(er){
+    if(er&&(er.code==='PGRST202'||er.code==='42883'||/Acción no admitida|Falta identificador/.test(er.message||'')))return viaSave();throw er});
+  step.then(function(r){
     if(!r||!r.saved)throw Error('El servidor no confirmó el cambio.');
     if(X.demo)demoEdit(gid,payload);
     return(X.demo?Promise.resolve():load(true))
-  }).then(function(){if(d&&d.open)d.close();C.detail={};C.msg=on?'Grupo reactivado.':'Grupo cancelado. Sus alumnos, pagos e historial se conservan.';X.render()},function(er){X.dlg(on?'No se pudo reactivar':'No se pudo cancelar','<div class="err">'+esc(friendly(er))+' No se cambió nada.</div>')});
+  }).then(function(){if(d&&d.open)d.close();C.detail={};C.msg=on?'Grupo reactivado.':'Grupo cancelado. Sus alumnos, pagos e historial se conservan.';X.render()},function(er){X.dlg(on?'No se pudo reactivar':'No se pudo cancelar','<div class="err">'+esc(friendly(er))+' No se cambió nada.</div><p class="note">Detalle técnico: '+esc((er&&er.code)||'sin código')+' · '+esc(String((er&&er.message)||'').slice(0,200))+'</p>')});
 }
 function cancelDlg(gid){
   var g=C.cat.groups.filter(function(x){return x.id===gid})[0];if(!g)return;

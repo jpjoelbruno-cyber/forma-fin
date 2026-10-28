@@ -20,15 +20,20 @@ function cents(v){
   if(!isFinite(n)||n<0)throw Error('Revisa el importe: usa solo números, por ejemplo 150,00.');
   return Math.round(n*100);
 }
+function cpfDigits(v){return String(v||'').replace(/\D/g,'')}
+function cpfOk(v){var d=cpfDigits(v);if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;for(var t=9;t<11;t++){var s=0;for(var i=0;i<t;i++)s+=+d[i]*(t+1-i);var r=(s*10)%11;if(r===10)r=0;if(r!==+d[t])return false}return true}
+function cpfMask(v){var d=cpfDigits(v);return d.length===11?'***.***.'+d.slice(6,9)+'-'+d.slice(9):''}
+function tech(e){return ' Detalle técnico: '+((e&&e.code)||'sin código')+' · '+String((e&&e.message)||'').slice(0,180)+'.'}
 function eur(c){return(c/100).toFixed(2).replace('.',',')}
 function say(msg){var e=$('#ac-err');if(e){e.textContent=msg||'';e.hidden=!msg}}
 function errText(e){
   var m=(e&&e.message)||'';
   if(/timeout/i.test(m))return 'No se confirmó a tiempo. Si pulsas de nuevo se reintenta el mismo registro, sin duplicar.';
   if(e&&e.code==='40001')return 'El grupo cambió mientras lo preparabas. Cierra y vuelve a abrir Matricular.';
+  if(/Acción no admitida|Falta identificador de operación/.test(m))return 'Esta función todavía no está activada en el servidor (falta ejecutar forma-matricula-fixes.sql). No se cambió nada.';
   if(e&&e.code==='42501')return 'No tienes permiso para esta acción.';
-  if(e&&(e.code==='PGRST202'||e.code==='42883'))return 'Esta función todavía no está activada en el servidor (falta ejecutar forma-enrolment-admin.sql). No se cambió nada.';
-  if(e&&e.code==='23505')return 'Esa persona ya está matriculada en este grupo. Para cobrar usa «Cobrar un pago».';
+  if(e&&(e.code==='PGRST202'||e.code==='42883'))return 'Esta función todavía no está activada en el servidor (falta ejecutar forma-matricula-fixes.sql). No se cambió nada.';
+  if(e&&e.code==='23505')return 'El servidor detectó un registro duplicado.'+tech(e);
   if(m&&m.length<220&&!/^(fetch|Failed|Network)/i.test(m))return m;
   return 'No se pudo guardar. No se cambió nada. Intenta de nuevo.';
 }
@@ -185,7 +190,7 @@ function loadPerson(id){
 
 /* ---------- MATRICULAR ---------- */
 function openMat(pre){
-  S={kind:'mat',step:1,person:null,detail:null,isNew:false,np:{name:'',phone:'',email:''},cat:null,gid:null,pay:null,pending:null,busy:false,done:false};
+  S={kind:'mat',step:1,person:null,detail:null,isNew:false,np:{name:'',phone:'',email:'',cpf:''},cpfEx:'',warn:'',cat:null,gid:null,pay:null,pending:null,busy:false,done:false};
   shell('Matricular un alumno','<p class="skel" role="status">Cargando grupos…</p>');
   X.cursos.load(true).then(function(){
     S.cat=X.cursos.cat();
@@ -216,9 +221,9 @@ function paintMat(){
   if(S.step===1){
     h+='<h3>¿Quién se matricula?</h3>';
     if(S.person){
-      h+='<div class="ac-chosen"><b>'+X.esc(S.person.name)+'</b><span>'+X.esc(S.person.phone||'Sin teléfono')+' · '+X.esc(S.person.email||'Sin correo')+'</span><button type="button" class="btn s sm" data-ac="chg">Cambiar</button></div>';
+      h+='<div class="ac-chosen"><b>'+X.esc(S.person.name)+'</b><span>'+X.esc(S.person.phone||'Sin teléfono')+' · '+X.esc(S.person.email||'Sin correo')+'</span><button type="button" class="btn s sm" data-ac="chg">Cambiar</button></div><label>CPF (completa o corrige si falta)<input id="ac-cpf" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00" value="'+X.esc(S.cpfEx||'')+'"></label><p class="note" id="ac-cpfnote">Si ya tiene CPF guardado, déjalo vacío: no se muestra completo.</p>';
     }else if(S.isNew){
-      h+='<form id="ac-np" class="cu-form">'+field('Nombre completo','name','text',S.np.name,'required maxlength="160" autocomplete="off"')+field('Teléfono (WhatsApp)','phone','tel',S.np.phone,'maxlength="40"')+field('Correo (para el acceso del alumno)','email','email',S.np.email,'maxlength="160"')+'<button type="button" class="btn s sm" data-ac="chg">Mejor buscar una existente</button></form>';
+      h+='<form id="ac-np" class="cu-form">'+field('Nombre completo','name','text',S.np.name,'required maxlength="160" autocomplete="off"')+field('Teléfono (WhatsApp)','phone','tel',S.np.phone,'maxlength="40"')+field('Correo (para el acceso del alumno)','email','email',S.np.email,'maxlength="160"')+field('CPF','cpf','text',S.np.cpf||'','inputmode="numeric" maxlength="14" autocomplete="off" placeholder="000.000.000-00"')+'<p class="note">El CPF se guarda protegido y solo se muestra enmascarado. Puedes completarlo después desde la ficha.</p><button type="button" class="btn s sm" data-ac="chg">Mejor buscar una existente</button></form>';
     }else h+=personBox(true);
     h+='<div class="cu-foot"><span></span><button class="btn p" data-ac="next">Siguiente</button></div>';
   }
@@ -249,7 +254,7 @@ function paintMat(){
   }
   if(S.step===4){
     var d=S.payload,tot=d.total,c=d.plan,Q4=S.Q;
-    h+='<h3>Revisa y confirma</h3><div class="ac-rev"><p><small>Alumno</small><b>'+X.esc(S.person?S.person.name:S.np.name)+(S.isNew?' (persona nueva)':'')+'</b></p><p><small>Grupo</small><b>'+X.esc(g.course+' · '+g.name)+'</b></p><p><small>Días y horario</small><b>'+grpWhen(g)+'</b></p>';
+    h+='<h3>Revisa y confirma</h3><div class="ac-rev"><p><small>Alumno</small><b>'+X.esc(S.person?S.person.name:S.np.name)+(S.isNew?' (persona nueva)':'')+'</b></p>'+(function(){var cv=S.isNew?S.np.cpf:S.cpfEx;return cv?'<p><small>CPF</small><b>'+X.esc(cpfMask(cv))+'</b></p>':''})()+'<p><small>Grupo</small><b>'+X.esc(g.course+' · '+g.name)+'</b></p><p><small>Días y horario</small><b>'+grpWhen(g)+'</b></p>';
     if(c){
       var disc=Q4.listC>0?Q4.listC-c.total:0;
       h+='<p><small>Valor acordado</small><b>'+X.R(c.total)+'</b></p>'+(disc>0?'<p><small>Lista '+X.R(Q4.listC)+' · descuento</small><b>'+X.R(disc)+(Q4.disc?' · '+X.esc(Q4.disc):'')+'</b></p>':'')+(c.ent>0?'<p><small>Entrada</small><b>'+X.R(c.ent)+' · '+pmLabel(Q4.pm)+' · '+(d.adv>0?'recibida el '+dmy(Q4.entDue):'pendiente, vence el '+dmy(Q4.entDue))+'</b></p>':'')+'</div>';
@@ -319,10 +324,12 @@ function stepNext(){
   try{
     if(S.step===1){
       if(S.isNew){
-        var f=$('#ac-np'),v=new FormData(f);S.np={name:String(v.get('name')||'').trim(),phone:String(v.get('phone')||'').trim(),email:String(v.get('email')||'').trim()};
+        var f=$('#ac-np'),v=new FormData(f);S.np={name:String(v.get('name')||'').trim(),phone:String(v.get('phone')||'').trim(),email:String(v.get('email')||'').trim(),cpf:String(v.get('cpf')||'').trim()};
         if(S.np.name.length<3)throw Error('Escribe el nombre completo.');
         if(S.np.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.np.email))throw Error('Revisa el correo.');
+        if(S.np.cpf&&!cpfOk(S.np.cpf))throw Error('El CPF no es válido: revisa los 11 dígitos (o déjalo vacío y complétalo después).');
       }else if(!S.person)throw Error('Busca y elige a la persona, o marca que es nueva.');
+      else{var ce=$('#ac-cpf');S.cpfEx=ce?ce.value.trim():(S.cpfEx||'');if(S.cpfEx&&!cpfOk(S.cpfEx))throw Error('El CPF no es válido: revisa los 11 dígitos (o déjalo vacío).')}
     }
     if(S.step===2){if(!S.gid)throw Error('Elige un grupo.');if(S.qGid!==S.gid){S.pay=null;S.Q=null;S.qGid=S.gid}}
     if(S.step===3){var ex0=existingEnrol(curG());if(!ex0)PQ=S.Q;S.payload=buildPayload()}
@@ -343,29 +350,42 @@ function confirmMat(){
       en={group_id:g.id,expected:g.version,existing_enrolment_id:null,fee_due:c.ent>0?Q.entDue:Q.first,first_due:c.n>0?Q.first:Q.entDue,advance_cents:pl.adv,paid_on:pl.adv>0?Q.entDue:X.T,method:pm.method,card_type:pm.card,confirmed:pl.adv>0,portal:!!Q.portal,request_id:uuid(),fee_cents:c.fee,monthly_cents:c.monthly,installments:c.n,payment_schedule:withTerms(c,Q)};
     }
     steps.push({api:'aca',a:'enrol_group',d:en});
+    var cpfV=S.isNew?S.np.cpf:S.cpfEx;
+    if(cpfV)steps.push({api:'adm',a:'cpf_set',d:{cpf:cpfV},soft:true});
     S.pending={steps:steps,i:0};
   }
   S.busy=true;paintMat();
   (function run(){
     var st=S.pending.steps[S.pending.i];
     if(!st){S.busy=false;S.done=true;return finishMat()}
-    var d=st.d;if(st.a==='enrol_group')d.person_id=S.personId||(S.person&&S.person.id);
-    (st.api==='edu'?eduCall(st.a,d):acaCall(st.a,d)).then(function(r){
+    var d=st.d;if(st.a==='enrol_group'||st.a==='cpf_set')d.person_id=S.personId||(S.person&&S.person.id);
+    (st.api==='edu'?eduCall(st.a,d):st.api==='adm'?admCall(st.a,d):acaCall(st.a,d)).then(function(r){
       if(!r||!r.saved)throw Error('Sin confirmar');
       if(st.a==='person'){S.personId=r.person_id}
       S.pending.i++;run();
     },function(e){
+      if(st.soft){S.warn='La matrícula quedó guardada, pero el CPF no se guardó: '+errText(e)+' Complétalo desde la ficha del alumno.';S.pending.i++;return run()}
       S.busy=false;
       if(e&&FATAL.indexOf(e.code)>-1){S.pending=null}
+      if(e&&e.code==='23505'){S.msg='Comprobando si la persona ya está en el grupo…';paintMat();dupCheck(e).then(function(t){S.msg=t;paintMat()});return}
       S.msg=errText(e);paintMat();
     });
   })();
+}
+function dupCheck(e){
+  var g=curG(),pid=S.personId||(S.person&&S.person.id);
+  if(!g||!pid)return Promise.resolve(errText(e));
+  return acaCall('group_detail',{group_id:g.id}).then(function(d){
+    var m=((d&&d.students)||[]).filter(function(x){return x.person_id===pid&&x.state!=='cancelado'})[0];
+    if(m)return 'Esta persona ya figura matriculada en este grupo. Abre su ficha para cobrar o corregir: no hace falta matricularla otra vez.';
+    return 'No se guardó la matrícula. El servidor devolvió un duplicado, pero la persona NO está matriculada en este grupo, así que no es un caso de matrícula repetida.'+tech(e)+' Envía una captura de este mensaje para corregirlo.';
+  },function(){return errText(e)});
 }
 function finishMat(){
   var nm=S.person?S.person.name:S.np.name;
   X.cursos.load(true).then(function(){},function(){});
   X.refresh();
-  X.dlg('Matrícula guardada','<div class="ac-ok"><b>'+X.esc(nm)+'</b> quedó matriculado en <b>'+X.esc(curG().course+' · '+curG().name)+'</b>.</div><p class="note">Ya aparece en Alumnos y en el cupo del grupo.</p><div class="fi-acts">'+(S.payload.total-S.payload.adv-S.payload.paidBefore>0?'<button class="btn p" data-ac="cobrar-after">Cobrar un pago</button>':'')+'<button class="btn s" data-act="cerrar">Cerrar</button></div>',false);
+  X.dlg('Matrícula guardada','<div class="ac-ok"><b>'+X.esc(nm)+'</b> quedó matriculado en <b>'+X.esc(curG().course+' · '+curG().name)+'</b>.</div><p class="note">Ya aparece en Alumnos y en el cupo del grupo.</p>'+(S.warn?'<div class="err">'+X.esc(S.warn)+'</div>':'')+'<div class="fi-acts">'+(S.payload.total-S.payload.adv-S.payload.paidBefore>0?'<button class="btn p" data-ac="cobrar-after">Cobrar un pago</button>':'')+'<button class="btn s" data-act="cerrar">Cerrar</button></div>',false);
   S.after={person_id:S.personId||(S.person&&S.person.id)};
 }
 
@@ -746,10 +766,11 @@ function voidPay(){
 }
 
 /* Corregir los datos de contacto del alumno (misma ficha, sin crear otra) */
-function openEditPerson(person){S={kind:'epr',busy:false,pending:null,p:person,msg:''};paintEp()}
+function openEditPerson(person){S={kind:'epr',busy:false,pending:null,p:person,msg:'',cpfMasked:''};paintEp();
+  if(!X.demo)admCall('cpf_get',{person_id:person.id}).then(function(r){if(S&&S.kind==='epr'&&r&&r.has_cpf){S.cpfMasked=r.masked;var i=document.querySelector('#ac-ep [name=cpf]');if(i)i.placeholder=r.masked+' · escribe uno nuevo solo para corregirlo'}},function(){})}
 function paintEp(){
   var p=S.p;
-  var h='<form id="ac-ep" class="cu-form ac-grid">'+field('Nombre completo','name','text',p.name,'required minlength="2" maxlength="160"')+field('Teléfono (WhatsApp)','phone','tel',p.phone||'','maxlength="40"')+field('Correo del alumno','email','email',p.email||'','maxlength="254"')+'<label>Idioma<select name="language"><option value="es"'+(p.language!=='pt'?' selected':'')+'>Español</option><option value="pt"'+(p.language==='pt'?' selected':'')+'>Português</option></select></label></form>'
+  var h='<form id="ac-ep" class="cu-form ac-grid">'+field('Nombre completo','name','text',p.name,'required minlength="2" maxlength="160"')+field('Teléfono (WhatsApp)','phone','tel',p.phone||'','maxlength="40"')+field('Correo del alumno','email','email',p.email||'','maxlength="254"')+'<label>CPF<input name="cpf" type="text" inputmode="numeric" maxlength="14" autocomplete="off" placeholder="'+X.esc(S.cpfMasked||'000.000.000-00')+'"></label>'+'<label>Idioma<select name="language"><option value="es"'+(p.language!=='pt'?' selected':'')+'>Español</option><option value="pt"'+(p.language==='pt'?' selected':'')+'>Português</option></select></label></form>'
    +'<p class="note">Corrige esta misma ficha. Los comprobantes ya emitidos conservan el nombre original. Si cambias el correo de un alumno con acceso, revisa su vínculo.</p>'
    +'<div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cerrar</button><button class="btn p" data-ac="epgo"'+(S.busy?' disabled':'')+'>Guardar</button></div>';
   shell('Corregir datos del alumno',h);say(S.msg);S.msg='';
@@ -759,9 +780,12 @@ function saveEp(){
   var name=g('name'),email=g('email');
   if(name.length<2){say('Escribe el nombre.');return}
   if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){say('Revisa el correo.');return}
+  var cpf=g('cpf');if(cpf&&!cpfOk(cpf)){say('El CPF no es válido: revisa los 11 dígitos.');return}
   if(!S.pending)S.pending={person_id:S.p.id,expected:S.p.version,name:name,phone:g('phone'),email:email,language:g('language'),request_id:uuid()};
   S.busy=true;paintEp();
-  eduCall('person_edit',S.pending).then(function(x){
+  (cpf?admCall('cpf_set',{person_id:S.p.id,cpf:cpf}):Promise.resolve({saved:true})).then(function(c){
+    if(!c||!c.saved)throw Error('Sin confirmar el CPF');
+    return eduCall('person_edit',S.pending)}).then(function(x){
     if(!x||!x.saved)throw Error('Sin confirmar');S.busy=false;S.pending=null;X.refresh();reopenFicha(S.p.id);
   },function(er){S.busy=false;if(er&&FATAL.indexOf(er.code)>-1)S.pending=null;S.msg=errText(er);paintEp()});
 }
