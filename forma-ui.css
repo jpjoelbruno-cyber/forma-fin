@@ -1,0 +1,23 @@
+/* FORMÁ · diseño compartido (una sola app, tres espacios). Solo presentación: no cambia lógica ni datos.
+   Paleta, cabecera y sello únicos para Alumno, Gestión y Administración. Para volver atrás: quitar este archivo de las páginas. */
+:root{--forma-grad:linear-gradient(120deg,#B104D6 0%,#7403E7 48%,#2A06D9 100%);--forma-brand:#5314D4;--forma-brand-dark:#3A0DB5;--forma-ink:#1B1240;--forma-line:#DDD6F0;--forma-soft:#EFE9FD}
+/* Cabecera de Gestión y Administración = misma paleta que Alumno */
+.top{background:var(--forma-grad)!important}
+.brand img{width:34px;height:34px;flex:none;display:block}
+.brand{gap:10px}
+/* Selector de espacios (Alumno · Gestión · Administración) */
+#fs-sw{position:relative;display:none;align-items:center;margin-left:4px}
+#fs-sw.on{display:flex}
+#fs-sw>button{display:flex;align-items:center;gap:8px;min-height:40px;padding:0 14px;border:0;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;font:700 14px 'DM Sans',system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+#fs-sw>button:hover{background:rgba(255,255,255,.26)}
+#fs-sw>button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+#fs-sw .fs-c{font-size:10px;opacity:.85}
+#fs-menu{position:absolute;left:0;top:48px;z-index:90;min-width:230px;background:#fff;color:var(--forma-ink);border:1px solid var(--forma-line);border-radius:16px;box-shadow:0 18px 40px rgba(42,6,217,.2);padding:8px;display:grid;gap:2px}
+#fs-menu[hidden]{display:none}
+#fs-menu a{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:10px;color:var(--forma-ink);text-decoration:none;font:600 15px 'DM Sans',system-ui,sans-serif;min-height:44px}
+#fs-menu a:hover{background:var(--forma-soft)}
+#fs-menu a[aria-current=true]{background:var(--forma-soft);color:var(--forma-brand)}
+#fs-menu a small{font:500 12px 'DM Sans',sans-serif;color:#5B5180}
+@media (max-width:420px){#fs-sw>button span.fs-t{display:none}}
+@media (max-width:899px){#av-nav #fs-sw{display:none!important}}
+@media (min-width:900px){#av-nav .av-brand{margin-right:0}#av-nav #fs-sw{margin-right:auto;margin-left:14px}}

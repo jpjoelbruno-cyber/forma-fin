@@ -1,4 +1,4 @@
-/* FORMA Administración nueva (solo lectura, solo propietario): Resumen · Personas · Cursos · Ajustes.
+/* FORMÁ Administración nueva (solo lectura, solo propietario): Resumen · Personas · Cursos · Ajustes.
    Lee los mismos datos reales por las mismas funciones del servidor. No escribe nada: validar accesos y editar cursos se hace en la Validar accesos y editar cursos. */
 (function(){'use strict';
 var $=function(s){return document.querySelector(s)};
@@ -115,7 +115,7 @@ $('#bUser').onclick=function(){var m=$('#menu');m.hidden=!m.hidden;this.setAttri
 window.addEventListener('hashchange',function(){var h=location.hash.slice(1);if(V[h]&&h!==view)go(h)});
 try{var th=localStorage.getItem('forma-gestion-theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
 function gate(msg,login){
-  $('#app').innerHTML='<section class="gate card"><h1>FORMA Administración</h1><p>'+esc(msg)+'</p>'+(login?'<a class="btn p" href="/">Entrar con mi cuenta de FORMÁ</a>':'')+'</section>';
+  $('#app').innerHTML='<section class="gate card"><h1>FORMÁ Administración</h1><p>'+esc(msg)+'</p>'+(login?'<a class="btn p" href="/">Entrar con mi cuenta de FORMÁ</a>':'')+'</section>';
   $('#tabs').innerHTML='';$('#bnav').hidden=true;
 }
 function start(){nav();var h=location.hash.slice(1);view=V[h]?h:'resumen';render();load().then(render)}

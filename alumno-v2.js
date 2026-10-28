@@ -41,7 +41,7 @@ function extra(){
   const out=[['anio','Mi año','cal']];
   if(visible('#nb-alunos'))out.push(['alumnos','Mis alumnos','cap']);
   if(visible('#forma-admin-button'))out.push(['admin','Administración','mes']);
-  const g=document.querySelector('.forma-tools a[href="/agenda.html"]');if(g&&!g.hidden)out.push(['gestion','Gestión (René)','cal']);
+  const g=document.querySelector('.forma-tools a[href="/agenda.html"]');if(g&&!g.hidden)out.push(['gestion','Gestión','cal']);
   out.push(['ayuda','Ayuda','chat'],['instalar','Instalar la app','plus'],['salir','Cerrar sesión','user']);
   return out;
 }
