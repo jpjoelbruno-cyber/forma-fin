@@ -359,3 +359,19 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 :root[data-theme="dark"] .ag-b.o,:root[data-theme="dark"] .ag-row.o,:root[data-theme="dark"] .mo-c.o{background:#43290F;border-color:#B45309;color:#FFE3B8}
 /* Leyenda de colores */
 .ag-leg{display:flex;gap:16px;flex-wrap:wrap;margin:0 0 12px;font-size:13px;color:var(--ink2)}.ag-leg span{display:inline-flex;align-items:center;gap:6px}.ag-leg i{width:12px;height:12px;border-radius:4px;display:inline-block}
+
+/* Plan de pago (valor acordado → entrada + cuotas) */
+.ac-pl{display:grid;gap:4px;margin:10px 0 14px}
+.ac-pl .chips{align-items:center}
+.ac-pl .chip[aria-pressed=true]{background:var(--brand);border-color:var(--brand);color:#fff}
+.ac-n{width:84px;min-height:40px;border:2px solid var(--line);border-radius:12px;padding:0 10px;font:inherit;font-weight:700;background:var(--card);color:var(--ink)}
+.ac-tb{width:100%;border-collapse:collapse;margin-top:10px}
+.ac-tb th{font-size:11px;text-align:left;color:var(--ink2);text-transform:uppercase;letter-spacing:.05em;padding:6px 8px}
+.ac-tb td{padding:8px;border-top:1px solid var(--line);font-weight:600}
+.ac-tb .r{text-align:right}
+.ac-tb input[type=date]{min-height:38px;border:2px solid var(--line);border-radius:10px;padding:0 8px;font:inherit;background:var(--card);color:var(--ink)}
+.ac-sum{background:var(--soft);border-radius:12px;padding:12px 14px;margin-top:10px;font-weight:600;line-height:1.5}
+.ac-sum b{color:var(--brand2)}
+.ac-note{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:10px 14px;margin-top:10px;font-weight:600}
+.ac-pr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
+@media (max-width:560px){.ac-pr{grid-template-columns:1fr}}
