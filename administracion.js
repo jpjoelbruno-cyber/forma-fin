@@ -1,8 +1,10 @@
-/* FORMÁ Administración nueva (solo lectura, solo propietario): Resumen · Personas · Cursos · Ajustes.
-   Lee los mismos datos reales por las mismas funciones del servidor. No escribe nada: validar accesos y editar cursos se hace en la Validar accesos y editar cursos. */
+/* FORMÁ Administración (solo lectura, solo propietario): Resumen · Personas · Cursos online · Ajustes.
+   Modo incrustado: si el script lleva data-embed, vive dentro de Gestión (una sola app) y no toca la cabecera ni la navegación de la página.
+   Lee los mismos datos reales por las mismas funciones del servidor. No escribe nada. */
 (function(){'use strict';
 var $=function(s){return document.querySelector(s)};
 var demo=new URLSearchParams(location.search).get('vista')==='ejemplo';
+var CS=document.currentScript,EMBED=!!(CS&&CS.hasAttribute('data-embed'));
 var client=null,view='resumen',errors=[];
 var D={report:null,access:null,pending:null,period:null,crm:null,edu:null,courses:null,lessons:null,phone:null,days:30,q:''};
 var IC={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',users:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a3 3 0 0 0 0-6M21 20c0-2.5-1.5-4.6-4-5.5"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'};
@@ -38,7 +40,7 @@ function load(){
   ]);
 }
 function kpi(label,val,sub,cls){return '<section class="card kpi c3"><small>'+esc(label)+'</small><b class="num">'+esc(val)+'</b>'+(sub?'<span class="d '+(cls||'flat')+'">'+esc(sub)+'</span>':'')+'</section>'}
-function head(t,p){return '<div class="head"><div><h1>'+esc(t)+'</h1>'+(p?'<p>'+esc(p)+'</p>':'')+'</div></div>'}
+function head(t,p){if(EMBED)return '';return '<div class="head"><div><h1>'+esc(t)+'</h1>'+(p?'<p>'+esc(p)+'</p>':'')+'</div></div>'}
 function bars(rows,max,color){return rows.map(function(r){return '<div class="bar"><span>'+esc(r[0])+'</span><div class="tr"><i style="width:'+Math.round(100*Number(r[1])/Math.max(1,max))+'%"'+(color?';background:'+color:'')+'></i></div><b class="num">'+Number(r[1])+'</b></div>'}).join('')}
 var SEC={resumo:'Inicio',registrar:'Registrar',historico:'Historial',metas:'Metas',aprender:'Aprender',anual:'Año',camino:'Mi camino',banco:'Cuentas',institution:'Mis cursos'};
 var V={};
@@ -67,30 +69,32 @@ V.personas=function(){
   var r=D.report,a=D.access,q=D.q.toLowerCase();
   var pend=((a&&a.pending)||[]).filter(function(x){return !q||(x.name||'').toLowerCase().indexOf(q)>-1||(x.email||'').toLowerCase().indexOf(q)>-1});
   var users=((r&&r.users)||[]).filter(function(u){return !q||(u.name||'').toLowerCase().indexOf(q)>-1}).slice(0,300);
-  var pv=pend.length?'<div class="list">'+pend.slice(0,50).map(function(x){return '<div class="row"><div class="t"><b>'+esc(x.name||'Sin nombre')+'</b><span>'+esc(x.email||'')+' · pidió acceso '+dt(x.requested_at)+'</span></div><span class="pill warn" style="background:var(--warnbg);color:var(--warn)">Pendiente</span></div>'}).join('')+'</div><p class="note">Para validar a una persona usa la <a class="link" href="/" data-act="clasica">Validar accesos y editar cursos</a> (Accesos). Aquí solo se consulta.</p>':'<p class="note">No hay cuentas pendientes de validar.</p>';
+  var pv=pend.length?'<div class="list">'+pend.slice(0,50).map(function(x){return '<div class="row"><div class="t"><b>'+esc(x.name||'Sin nombre')+'</b><span>'+esc(x.email||'')+' · pidió acceso '+dt(x.requested_at)+'</span></div><span class="pill warn" style="background:var(--warnbg);color:var(--warn)">Pendiente</span></div>'}).join('')+'</div><p class="note">Para dar acceso a una persona, <a class="link" href="/?abrir=accesos" data-aact="clasica">abre Validar accesos</a>. Aquí solo se consulta.</p>':'<p class="note">No hay cuentas pendientes de validar.</p>';
   var uv=users.length?'<div class="tw"><table><thead><tr><th>Persona</th><th>Primera entrada</th><th>Última actividad</th><th>Presup.</th><th>Mov.</th><th>Metas</th><th>Guías</th></tr></thead><tbody>'+users.map(function(u){return '<tr><td><b>'+esc(u.name||'Sin nombre')+'</b></td><td>'+dt(u.first_entry)+'</td><td>'+dt(u.last_seen)+'</td>'+['budget','movements','goals','learning'].map(function(k){return '<td>'+(u[k]?'●':'·')+'</td>'}).join('')+'</tr>'}).join('')+'</tbody></table></div>':'<p class="note">Sin resultados.</p>';
-  return head('Personas','Quién entró, cuánto usa y quién espera acceso.')+'<input class="search" id="pq" placeholder="Buscar por nombre o correo" value="'+esc(D.q)+'" maxlength="100" style="margin-bottom:16px">'
+  return head('Personas','Quién entró, cuánto usa y quién espera acceso.')+'<input class="search" id="apq" placeholder="Buscar por nombre o correo" value="'+esc(D.q)+'" maxlength="100" style="margin-bottom:16px">'
    +'<div class="grid"><section class="card c4"><h2>Esperan acceso <span class="pill" style="background:var(--warnbg);color:var(--warn)">'+(a?Number(a.pending_count||0):'—')+'</span></h2>'+pv+'</section><section class="card c8"><h2>Con actividad</h2>'+uv+'<p class="note">● tiene datos guardados · Los montos y descripciones siguen privados.</p></section></div>';
 };
 V.cursos=function(){
   var cs=D.courses||[],ls=D.lessons||[];
   function box(title,list,hint){return '<section class="card c6"><h2>'+title+' <span class="pill" style="background:var(--soft);color:var(--brand2)">'+list.length+'</span></h2>'+(list.length?'<div class="list">'+list.map(function(c){var n=ls.filter(function(l){return l.course_id===c.id}).length;return '<div class="row"><div class="t"><b>'+esc(c.title)+'</b><span>'+n+' lección'+(n===1?'':'es')+' · '+(c.status==='published'?'Publicado':'Borrador')+'</span></div></div>'}).join('')+'</div>':'<p class="note">'+hint+'</p>')+'</section>'}
   var free=cs.filter(function(c){return c.access_level==='free'}),sub=cs.filter(function(c){return c.access_level!=='free'});
-  return head('Cursos','Gratis para seguidores y solo para matriculados.')+'<div class="grid">'+box('Gratis (para seguidores)',free,'Aún no hay cursos gratis.')+box('Solo matriculados',sub,'Aún no hay cursos de suscripción.')+'</div><p class="note">Para crear o editar cursos y lecciones (duración, pregunta) usa la <a class="link" href="/" data-act="clasica">Validar accesos y editar cursos</a> → Cursos. Cada lección necesita duración y pregunta para guardar el progreso.</p>';
+  return head('Cursos','Gratis para seguidores y solo para matriculados.')+'<div class="grid">'+box('Gratis (para seguidores)',free,'Aún no hay cursos gratis.')+box('Solo matriculados',sub,'Aún no hay cursos de suscripción.')+'</div><p class="note">Para crear o editar cursos y lecciones (duración, pregunta), <a class="link" href="/?abrir=accesos" data-aact="clasica">abre el editor de cursos</a>. Cada lección necesita duración y pregunta para guardar el progreso.</p>';
 };
 V.ajustes=function(){
-  return head('Ajustes')+'<div class="grid"><section class="card c6"><h2>WhatsApp de ayuda</h2><p style="margin:0 0 6px"><b class="num">'+(D.phone?'+'+esc(D.phone):'Sin configurar')+'</b></p><p class="note">Es el número que abre el botón «Me interesa» y la ayuda. Para cambiarlo usa la Validar accesos y editar cursos.</p></section>'
-   +'<section class="card c6"><h2>Otras pantallas</h2><div class="list"><div class="row"><div class="t"><b>Validar accesos y editar cursos</b><span>Herramientas de administración dentro de la app</span></div><button class="btn s sm" data-act="clasica">Abrir</button></div><div class="row"><div class="t"><b>Gestión (René)</b><span>Agenda, cobros, alumnos, interesados</span></div><button class="btn s sm" data-act="gestion">Abrir</button></div><div class="row"><div class="t"><b>Mi presupuesto y cursos</b><span>Vista del alumno</span></div><button class="btn s sm" data-act="presupuesto">Abrir</button></div></div></section></div>';
+  return head('Ajustes')+'<div class="grid"><section class="card c6"><h2>WhatsApp de ayuda</h2><p style="margin:0 0 6px"><b class="num">'+(D.phone?'+'+esc(D.phone):'Sin configurar')+'</b></p><p class="note">Es el número que abre el botón «Me interesa» y la ayuda. Para cambiarlo, abre «Validar accesos y editar cursos» aquí abajo.</p></section>'
+   +'<section class="card c6"><h2>Otras pantallas</h2><div class="list"><div class="row"><div class="t"><b>Validar accesos y editar cursos</b><span>Herramientas de administración dentro de la app</span></div><button class="btn s sm" data-aact="clasica">Abrir</button></div><div class="row"><div class="t"><b>Gestión (René)</b><span>Agenda, cobros, alumnos, interesados</span></div><button class="btn s sm" data-aact="gestion">Abrir</button></div><div class="row"><div class="t"><b>Mi presupuesto y cursos</b><span>Vista del alumno</span></div><button class="btn s sm" data-aact="presupuesto">Abrir</button></div></div></section></div>';
 };
 function render(){
-  var banner=demo?'<div class="demo">Vista de ejemplo · datos ficticios.</div>':'';
+  var banner=demo&&!EMBED?'<div class="demo">Vista de ejemplo · datos ficticios.</div>':'';
   if(errors.length)banner+='<div class="err">No se pudo cargar: '+esc(errors.filter(function(x,i,a){return a.indexOf(x)===i}).join(', '))+'. Puede estar incompleto; no se cambió nada.</div>';
-  var keep=document.activeElement&&document.activeElement.id==='pq';
-  $('#app').innerHTML=banner+V[view]();
-  document.querySelectorAll('[data-v]').forEach(function(b){b.toggleAttribute('aria-current',b.dataset.v===view);if(b.dataset.v===view)b.setAttribute('aria-current','page')});
-  if(keep){var el=$('#pq');el.focus();el.setSelectionRange(el.value.length,el.value.length)}
+  var keep=document.activeElement&&document.activeElement.id==='apq';
+  var tgt=EMBED?$('#adm-body'):$('#app');if(!tgt)return;
+  tgt.innerHTML=banner+V[view]();
+  document.querySelectorAll('[data-v],[data-av]').forEach(function(b){var k=b.dataset.v||b.dataset.av;b.toggleAttribute('aria-current',k===view);if(k===view)b.setAttribute('aria-current','page')});
+  if(EMBED)document.querySelectorAll('[data-av]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.av===view))});
+  if(keep){var el=$('#apq');el.focus();el.setSelectionRange(el.value.length,el.value.length)}
 }
-function go(v){if(!V[v])v='resumen';view=v;try{history.replaceState(null,'','#'+v)}catch(e){}render();window.scrollTo(0,0)}
+function go(v){if(!V[v])v='resumen';view=v;if(!EMBED){try{history.replaceState(null,'','#'+v)}catch(e){}}render();if(!EMBED)window.scrollTo(0,0)}
 function nav(){
   $('#tabs').innerHTML=NAV.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
   $('#bnav').style.gridTemplateColumns='repeat(4,1fr)';
@@ -101,19 +105,23 @@ function act(k){
   if(k==='theme'){var r=document.documentElement,nt=r.getAttribute('data-theme')==='dark'?'light':'dark';r.setAttribute('data-theme',nt);try{localStorage.setItem('forma-gestion-theme',nt)}catch(e){}return}
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión.')});return}
   if(k==='presupuesto'){location.href='/?personal=1';return}
-  if(k==='gestion'){location.href='/agenda.html';return}
-  if(k==='clasica'){location.href='/';return}
+  if(k==='gestion'){if(EMBED&&window.FormaAdmin&&window.FormaAdmin.onHome){window.FormaAdmin.onHome();return}location.href='/agenda.html';return}
+  if(k==='clasica'){location.href='/?abrir=accesos';return}
 }
-document.addEventListener('click',function(e){
-  var b=e.target.closest('[data-v]');if(b){go(b.dataset.v);return}
-  var a=e.target.closest('[data-act]');if(a){if(a.tagName==='A')e.preventDefault();act(a.dataset.act);return}
+function onClick(e){
+  if(EMBED&&!e.target.closest('#adm-root'))return;
+  var b=e.target.closest('[data-v],[data-av]');if(b){go(b.dataset.v||b.dataset.av);return}
+  var a=e.target.closest('[data-aact]');if(a){if(a.tagName==='A')e.preventDefault();act(a.dataset.aact);return}
   var d=e.target.closest('[data-days]');if(d){D.days=Number(d.dataset.days);D.report=null;render();safe('uso',rpc('forma_admin_report',{p_days:D.days}).then(function(x){D.report=x})).then(render);return}
-  if(!e.target.closest('#menu')&&!e.target.closest('#bUser'))$('#menu').hidden=true;
-});
-document.addEventListener('input',function(e){if(e.target.id==='pq'){D.q=e.target.value.trim();clearTimeout(document.pqT);document.pqT=setTimeout(render,250)}});
-$('#bUser').onclick=function(){var m=$('#menu');m.hidden=!m.hidden;this.setAttribute('aria-expanded',String(!m.hidden))};
-window.addEventListener('hashchange',function(){var h=location.hash.slice(1);if(V[h]&&h!==view)go(h)});
-try{var th=localStorage.getItem('forma-gestion-theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
+  if(!EMBED&&!e.target.closest('#menu')&&!e.target.closest('#bUser'))$('#menu').hidden=true;
+}
+function onInput(e){if(e.target.id==='apq'){D.q=e.target.value.trim();clearTimeout(document.pqT);document.pqT=setTimeout(render,250)}}
+document.addEventListener('click',onClick);document.addEventListener('input',onInput);
+if(!EMBED){
+  $('#bUser').onclick=function(){var m=$('#menu');m.hidden=!m.hidden;this.setAttribute('aria-expanded',String(!m.hidden))};
+  window.addEventListener('hashchange',function(){var h=location.hash.slice(1);if(V[h]&&h!==view)go(h)});
+  try{var th=localStorage.getItem('forma-gestion-theme');if(th)document.documentElement.setAttribute('data-theme',th)}catch(e){}
+}
 function gate(msg,login){
   $('#app').innerHTML='<section class="gate card"><h1>FORMÁ Administración</h1><p>'+esc(msg)+'</p>'+(login?'<a class="btn p" href="/">Entrar con mi cuenta de FORMÁ</a>':'')+'</section>';
   $('#tabs').innerHTML='';$('#bnav').hidden=true;
@@ -148,5 +156,14 @@ function demoRpc(name,a){
   if(name==='forma_education')return{count:12,items:[]};
   return null;
 }
-boot();
+var loaded=false,LAB={resumen:'Resumen',personas:'Personas',cursos:'Cursos online',ajustes:'Ajustes'};
+if(EMBED){
+  /* Dentro de Gestión: Gestión da el cliente de sesión y pinta este bloque; aquí no hay cabecera ni menú propios. */
+  window.FormaAdmin={
+    init:function(c){client=c.client},
+    html:function(){return '<div id="adm-root"><div class="seg" role="group" aria-label="Administración" style="margin-bottom:16px">'+NAV.map(function(n){return '<button data-av="'+n[0]+'" aria-pressed="'+(view===n[0])+'">'+LAB[n[0]]+'</button>'}).join('')+'</div><div id="adm-body"></div></div>'},
+    mount:function(){if(!demo&&!client)return;render();if(!loaded){loaded=true;load().then(render)}},
+    reset:function(){loaded=false}
+  };
+}else boot();
 })();

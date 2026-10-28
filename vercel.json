@@ -64,6 +64,11 @@
       "permanent": false
     },
     {
+      "source": "/administracion.html",
+      "destination": "/agenda.html#admin",
+      "permanent": false
+    },
+    {
       "source": "/clasica.html",
       "destination": "/",
       "permanent": false

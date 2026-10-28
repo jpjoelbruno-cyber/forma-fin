@@ -2,8 +2,8 @@
    No da ni quita permisos: cada acción sigue validándose en el servidor (owner / manager / instructor).
    Sin sesión o ante cualquier error, no muestra nada y la página funciona como siempre. */
 (function(){'use strict';
-var SP=[{k:'alumno',t:'Alumno',d:'Mi presupuesto y cursos',u:'/',need:null},{k:'gestion',t:'Gestión',d:'Agenda, cobros, alumnos, ventas',u:'/agenda.html',need:['owner','manager','instructor']},{k:'admin',t:'Administración',d:'Accesos, cursos y ajustes',u:'/administracion.html',need:['owner']}];
-function here(){var p=location.pathname;return /administracion/.test(p)?'admin':/agenda|gestion/.test(p)?'gestion':'alumno'}
+var SP=[{k:'alumno',t:'Alumno',d:'Mi presupuesto y cursos',u:'/',need:null},{k:'gestion',t:'Gestión',d:'Agenda, cobros, alumnos, ventas',u:'/agenda.html#inicio',need:['owner','manager','instructor']},{k:'admin',t:'Administración',d:'Personas, accesos y cursos online',u:'/agenda.html#admin',need:['owner']}];
+function here(){var p=location.pathname;if(/agenda|gestion|administracion/.test(p))return(/administracion/.test(p)||location.hash==='#admin')?'admin':'gestion';return 'alumno'}
 function token(){try{var s=JSON.parse(localStorage.getItem('forma-independent-auth-v1')||'null');return s&&s.access_token||null}catch(e){return null}}
 function role(){var cfg=window.FORMA_CONFIG,t=token();if(!cfg||!t)return Promise.resolve(null);
   var c=new AbortController(),to=setTimeout(function(){c.abort()},8000);
@@ -13,9 +13,12 @@ function mount(host,list){
   var cur=here(),now=list.filter(function(s){return s.k===cur})[0]||list[0];
   var w=document.createElement('div');w.id='fs-sw';w.className='on';
   w.innerHTML='<button type="button" aria-haspopup="true" aria-expanded="false" aria-label="Cambiar de espacio"><span class="fs-t">'+now.t+'</span><span class="fs-c">▼</span></button><div id="fs-menu" role="menu" hidden>'+list.map(function(s){return '<a role="menuitem" href="'+s.u+'"'+(s.k===cur?' aria-current="true"':'')+'><span>'+s.t+'<br><small>'+s.d+'</small></span>'+(s.k===cur?'<span>✓</span>':'')+'</a>'}).join('')+'</div>';
+  var sm=host.querySelector('small');if(sm)sm.hidden=true;
   host.parentNode.insertBefore(w,host.nextSibling);
   var b=w.querySelector('button'),m=w.querySelector('#fs-menu');
   function close(){m.hidden=true;b.setAttribute('aria-expanded','false')}
+  function sync(){var c=here(),n=list.filter(function(s){return s.k===c})[0]||list[0];w.querySelector('.fs-t').textContent=n.t;w.querySelectorAll('a').forEach(function(a,i){if(list[i].k===c)a.setAttribute('aria-current','true');else a.removeAttribute('aria-current');var ck=a.lastElementChild;if(a.children.length>1)a.removeChild(ck);if(list[i].k===c)a.insertAdjacentHTML('beforeend','<span>✓</span>')});close()}
+  window.addEventListener('hashchange',sync);
   b.addEventListener('click',function(e){e.stopPropagation();var o=m.hidden;m.hidden=!o;b.setAttribute('aria-expanded',String(o))});
   document.addEventListener('click',function(e){if(!w.contains(e.target))close()});
   document.addEventListener('keydown',function(e){if(e.key==='Escape')close()});

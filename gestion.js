@@ -115,7 +115,7 @@ function hbars(rows,methods){
 /* ---------- vistas ---------- */
 var view='inicio',cobTab='resumen',cobPer='Mes',alF='Todos',agFilter='Todo';
 var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cursos','Cursos','cap'],['cobros','Cobros','cash'],['alumnos','Alumnos','users'],['interesados','Ventas','chat']];
-function navFor(){return manager()?NAV:NAV.slice(0,2)}
+function navFor(){var n=manager()?NAV.slice():NAV.slice(0,2);if(role==='owner')n.push(['admin','Administración','gear']);return n}
 function kpi(l,v,cls,d,dc){return '<div class="card kpi c3"><small>'+l+'</small><b class="num '+(cls||'')+'">'+v+'</b>'+(d?'<span class="d '+(dc||'flat')+'">'+d+'</span>':'')+'</div>'}
 function head(t,sub,right){return '<div class="head"><div><h1>'+t+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div><div style="display:flex;gap:10px;flex-wrap:wrap">'+(right||'')+'</div></div>'}
 function movRow(m){return '<div class="row"><div class="t"><b>'+esc(m.t)+'</b><span>'+esc(m.m)+' · '+esc(dl(m.f))+'</span></div><span class="v num '+(m.v>0?'in':'out')+'">'+(m.v>0?'+ ':'− ')+R(Math.abs(m.v))+'</span></div>'}
@@ -291,6 +291,8 @@ V.avisos=function(){
   return head('Avisos','Cobranza y pendientes que piden una acción.','')+'<section class="card"><div class="list">'+(a.map(function(x){return '<div class="row"><span class="pill '+(x.k==='bad'?'down':x.k==='up'?'up':'flat')+'" style="'+(x.k==='warn'?'background:var(--warnbg);color:var(--warn)':'')+'">'+esc(x.t)+'</span><div class="t"><span style="color:var(--ink)">'+esc(x.s)+'</span></div><button class="btn s sm" data-act="'+x.act+'">'+({cobrar:'Cobrar',asist:'Registrar',interesados:'Responder'})[x.act]+'</button></div>'}).join('')||'<p class="note" style="margin:0">Sin avisos. Todo al día.</p>')+'</div></section>';
 };
 V.cursos=function(){return manager()?window.GestionCursos.html():head('Cursos','Solo para administración.','')};
+/* Administración vive aquí dentro (solo propietario): el servidor sigue validando el rol en cada consulta. */
+V.admin=function(){return role==='owner'&&window.FormaAdmin?head('Administración','Personas, accesos, cursos online y uso de FORMÁ.','')+window.FormaAdmin.html():head('Administración','Solo para el propietario de FORMA.','')};
 V.ajustes=function(){
   function row(t,s,a){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div>'+(a?'<button class="btn s sm" data-act="'+a+'">Abrir</button>':'<span class="pill flat">Disponible pronto</span>')+'</div>'}
   return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores','Quién da clases: agregar o desactivar','instructores')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
@@ -322,10 +324,11 @@ function render(){
   var banner=demo?'<div class="demo">Vista de ejemplo · datos ficticios · no se guarda nada.</div>':'';
   if(errors.length)banner+='<div class="err">No se pudo cargar: '+esc(errors.filter(function(x,i,a){return a.indexOf(x)===i}).join(', '))+'. Lo que ves puede estar incompleto; no se borró nada.</div>';
   app.innerHTML=banner+(V[view]||V.inicio)();
+  if(view==='admin'&&role==='owner'&&window.FormaAdmin)window.FormaAdmin.mount();
   var n=avisos().length,dot=$('#nAv');dot.textContent=n>9?'9+':String(n);dot.hidden=!n;
   if(keep&&$('#'+keep)){var el=$('#'+keep);el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}
 }
-function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['alumnos','interesados','ajustes','avisos'].indexOf(view)>-1))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['alumnos','interesados','ajustes','avisos','admin'].indexOf(view)>-1))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
 function buildNav(){
   var nv=navFor();
   $('#tabs').innerHTML=nv.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
@@ -335,7 +338,7 @@ function buildNav(){
 }
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-act="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Mi presupuesto y cursos</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes y datos de FORMA</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
 function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
@@ -380,7 +383,7 @@ function act(k,el){
   if(k==='install'){if(installEvt){installEvt.prompt();installEvt=null}else toast('En el menú de tu navegador elige “Instalar app” o “Añadir a pantalla de inicio”.');return}
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión. Intenta de nuevo.')});return}
   if(k==='presupuesto'){location.href='/?personal=1';return}
-  if(k==='admin'){location.href='/administracion.html';return}
+  if(k==='admin'){if(role==='owner')go('admin');return}
   if(k==='cerrar'){$('#dlg').close();return}
   if(k==='interesados'){go('interesados');return}
   if(k==='instructores'){window.GestionCursos.insDialog();return}
@@ -438,6 +441,7 @@ function boot(){
   var cfg=window.FORMA_CONFIG;
   if(!cfg||cfg.supabaseUrl!=='https://irsuevjqmgpwunvymxbc.supabase.co'||!cfg.publishableKey){gate('La configuración de FORMÁ no está disponible.');return}
   client=supabase.createClient(cfg.supabaseUrl,cfg.publishableKey,{auth:{persistSession:true,flowType:'pkce',storageKey:'forma-independent-auth-v1'}});
+  if(window.FormaAdmin)window.FormaAdmin.init({client:client});
   client.auth.getUser().then(function(r){
     if(r.error||!r.data||!r.data.user){gate('Inicia sesión con tu cuenta de FORMÁ para ver tu espacio de trabajo.',true);return}
     userEmail=r.data.user.email||'';
@@ -451,7 +455,7 @@ function boot(){
 }
 function start(h){
   buildNav();$('#bnav').hidden=false;if($('#mAdmin'))$('#mAdmin').hidden=role!=='owner';
-  view=V[h]&&(manager()||['inicio','agenda','avisos','ajustes'].indexOf(h)>-1)?h:'inicio';
+  view=V[h]&&(manager()||['inicio','agenda','avisos','ajustes'].indexOf(h)>-1)&&(h!=='admin'||role==='owner')?h:'inicio';
   render();mark();
   loadCore().then(function(){render();mark();ensure()});
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&!demo&&role){D.reports={};loadCore().then(function(){render()})}});
@@ -492,6 +496,7 @@ function demoRpc(name,a){
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
 window.GestionEmbudo=window.GestionEmbudo||{init:function(){},click:function(){},html:function(s,h){return h('Ventas','','')+'<p class="skel">Recarga la página para ver el embudo.</p>'}};
 window.GestionEmbudo.init({crm:crm,esc:esc,dl:dl,dlg:dlg,plus:ico('plus'),data:function(){return D.crmSales},manager:manager,close:function(){var d=$('#dlg');if(d&&d.open)d.close()},render:function(){if(view==='interesados')render()},reload:function(){crm('sales',{stage:'',offset:0}).then(function(d){D.crmSales=d;D.crmAlerts=null;if(view==='interesados')render()},function(){toast('No se pudo actualizar la lista.')})}});
+if(window.FormaAdmin)window.FormaAdmin.onHome=function(){go('inicio')};
 window.GestionCursos.init({dlg:dlg,rpc:rpc,esc:esc,render:render,head:head,R:R,M:M,T:T,demo:demo,view:function(){return view}});
 document.addEventListener('click',function(e){window.GestionCursos.click(e);window.GestionEmbudo.click(e)});
 boot();
