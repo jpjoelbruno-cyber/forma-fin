@@ -1,6 +1,6 @@
 /* FORMÁ Gestión nueva: una sola estructura (barra de PC / barra inferior de celular).
-   Lee los mismos datos reales de FORMA por las mismas funciones del servidor. En esta versión no escribe nada:
-   las acciones que registran dinero o reservas se abren en la pantalla actual hasta probarlas con datos reales. */
+   Lee los mismos datos reales de FORMA por las mismas funciones del servidor. Es la app de gestión única:
+   matricular, cobrar, corregir contratos y pagos, grupos y agenda se hacen aquí; todo se valida en el servidor. */
 (function(){'use strict';
 var M=window.FormaAgendaModel,FI=window.FormaAgendaIncomeModel||{};
 var $=function(s,r){return(r||document).querySelector(s)};
@@ -295,7 +295,7 @@ V.cursos=function(){return manager()?window.GestionCursos.html():head('Cursos','
 V.admin=function(){return role==='owner'&&window.FormaAdmin?head('Administración','Personas, accesos, cursos online y uso de FORMÁ.','')+window.FormaAdmin.html():head('Administración','Solo para el propietario de FORMA.','')};
 V.ajustes=function(){
   function row(t,s,a){return '<div class="row"><div class="t"><b>'+t+'</b><span>'+s+'</span></div>'+(a?'<button class="btn s sm" data-act="'+a+'">Abrir</button>':'<span class="pill flat">Disponible pronto</span>')+'</div>'}
-  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores','Quién da clases: agregar o desactivar','instructores')+row('Cuentas y control de caja','Cuentas, saldo inicial y conciliación')+row('Respuestas preparadas','Mensajes para atender interesados'):'')+row('Historial de agenda','Quién cambió qué y cuándo')+'</div><p class="note">Estas opciones se abren por ahora en la pantalla clásica de FORMA Gestão.</p></section>';
+  return head('Ajustes','Datos de FORMA y de tu cuenta.','')+'<section class="card"><div class="list">'+(manager()?row('Instructores','Quién da clases: agregar o desactivar','instructores'):'<p class="note">Aquí aparecerán los ajustes de tu cuenta.</p>')+'</div><p class="note">Cuentas y control de caja, respuestas preparadas e historial de agenda todavía no están en esta pantalla.</p></section>';
 };
 
 /* ---------- carga perezosa por vista ---------- */

@@ -379,3 +379,19 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 /* Dentro de un diálogo el pie va pegado abajo del propio diálogo (no sobre la barra inferior de la página) */
 dialog .cu-foot{bottom:0;padding-bottom:4px}
 .ac-tb .r{white-space:nowrap}
+/* Fase 3-4 · estados, filtros, totales, color único */
+.cu-st{display:inline-block;color:#fff;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;letter-spacing:.01em;vertical-align:middle}
+.cu-flt{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:10px;align-items:end;margin:0 0 14px}
+.cu-flt label{display:flex;flex-direction:column;gap:3px;font-size:12px;font-weight:700;color:var(--ink2);min-width:0}
+.cu-flt select{width:100%;min-width:0;min-height:40px;padding:6px 8px;font-size:14px}
+.cu-tot{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0}
+.cu-tot div{background:var(--soft);border-radius:12px;padding:8px 10px;min-width:0}
+.cu-tot small{display:block;font-size:11px;color:var(--ink2);font-weight:700}
+.cu-tot b{font-size:14px;white-space:nowrap}
+.cu-totd{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.cu-totd summary{cursor:pointer;font-weight:800;color:var(--brand2)}
+.cu-totd .r,.cu-totd th.r{text-align:right;white-space:nowrap}
+.cu-sw.used{opacity:.35}
+.cu-bar.off{opacity:.55;filter:grayscale(.6)}
+.btn.s.cu-danger,.cu-danger{color:var(--bad,#C0392B);border-color:var(--bad,#C0392B)}
+.btn.p.cu-danger{background:var(--bad,#C0392B);color:#fff}
