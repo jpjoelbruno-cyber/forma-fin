@@ -2,7 +2,7 @@
    Usa las mismas operaciones del servidor que la pantalla clásica (forma_academic: catalog, course_save, group_save, group_detail).
    Antes de guardar valida fechas, cupos y cruces de horario para no dejar un curso a medias. No borra nada. */
 (function(){'use strict';
-var X=null,C={flt:{c:'',st:'',m:'',h:''},reg:null,cat:null,err:'',busy:false,selG:null,detail:{},wiz:null,msg:'',demoCat:null};
+var X=null,C={vw:'t',calM:'',flt:{c:'',st:'',m:'',h:''},reg:null,cat:null,err:'',busy:false,selG:null,detail:{},wiz:null,msg:'',demoCat:null};
 var PAL=['#7C3AED','#0D9488','#F97316','#DB2777','#2563EB','#CA8A04','#DC2626','#0891B2','#16A34A','#9333EA','#0EA5E9','#E11D48','#65A30D','#B45309','#0F766E','#4F46E5'];
 var DOW=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'],MES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 var FERIADOS={'2026-11-02':'Finados','2026-11-20':'Conciencia Negra','2026-12-25':'Navidad','2027-01-01':'Año Nuevo','2027-02-16':'Carnaval','2027-04-02':'Viernes Santo','2027-04-21':'Tiradentes','2027-05-01':'Día del Trabajo'};
@@ -130,6 +130,24 @@ function board(){
   var cols='<div class="cu-grid" style="--cols:'+w.ms.length+'">'+head+tl+'</div>';
   return '<div class="cu-tl">'+cols+'</div><div class="cu-list">'+(lst||'<p class="note">'+(fltOn()?'Ningún grupo coincide con los filtros.':'Aún no hay grupos con fechas.')+'</p>')+'</div>';
 }
+/* calendario mensual: todas las clases de los grupos activos, con choques marcados (mismo día, horas que se pisan y mismo instructor o sala) */
+function calendar(){
+  var cat=C.cat;if(!C.calM)C.calM=X.T.slice(0,7);
+  var y=Number(C.calM.slice(0,4)),m=Number(C.calM.slice(5,7))-1,first=new Date(Date.UTC(y,m,1)),days=new Date(Date.UTC(y,m+1,0)).getUTCDate(),lead=(first.getUTCDay()+6)%7;
+  var byDay={};cat.groups.forEach(function(g){if(g.active===false||!passes(g))return;var c=cat.courses.filter(function(k){return k.id===g.course_id})[0]||{id:g.course_id,name:g.course};
+    (g.sessions||[]).forEach(function(x){if(x.cancelled||x.day.slice(0,7)!==C.calM)return;(byDay[x.day]=byDay[x.day]||[]).push({g:g,c:c,s:x,ins:x.instructor||g.instructor,room:x.room||g.room})})});
+  var cells='';for(var i=0;i<lead;i++)cells+='<div class="cu-cd off"></div>';
+  for(var d=1;d<=days;d++){
+    var iso=C.calM+'-'+String(d).padStart(2,'0'),L=(byDay[iso]||[]).sort(function(a,b){return a.s.start_min-b.s.start_min}),fer=FERIADOS[iso];
+    L.forEach(function(a){a.bad=L.some(function(b){return b!==a&&a.s.start_min<b.s.end_min&&b.s.start_min<a.s.end_min&&(a.ins===b.ins||a.room===b.room)})});
+    cells+='<div class="cu-cd'+(iso===X.T?' today':'')+'"><span class="n">'+d+(fer?' <em>'+esc(fer)+'</em>':'')+'</span>'+L.map(function(a){return '<button class="cu-ev'+(a.bad?' bad':'')+'" data-cu="pick" data-id="'+a.g.id+'" style="background:'+colorOf(a.c)+'" title="'+esc(a.c.name+' · '+a.g.name+' · '+a.ins+' · '+a.room)+(a.bad?' — CHOQUE':'')+'"><b>'+hhmm(a.s.start_min)+'</b> '+esc(a.c.name)+(a.bad?' ⚠':'')+'</button>'}).join('')+'</div>';
+  }
+  var prev=new Date(Date.UTC(y,m-1,1)),next=new Date(Date.UTC(y,m+1,1)),k=function(dt){return dt.getUTCFullYear()+'-'+String(dt.getUTCMonth()+1).padStart(2,'0')};
+  var bad=0;Object.keys(byDay).forEach(function(k2){byDay[k2].forEach(function(a){if(a.bad)bad++})});
+  return '<div class="cu-calh"><button class="btn s sm" data-cu="calm" data-m="'+k(prev)+'">‹</button><b>'+MES[m]+' '+y+'</b><button class="btn s sm" data-cu="calm" data-m="'+k(next)+'">›</button></div>'
+   +(bad?'<div class="err">Hay <b>'+bad+'</b> clase(s) que se pisan (mismo instructor o sala a la misma hora). Están marcadas con ⚠: abre el grupo y usa «Editar grupo».</div>':'<div class="cu-ok">Sin choques este mes ✓</div>')
+   +'<div class="cu-cal"><div class="cu-cw">Lun</div><div class="cu-cw">Mar</div><div class="cu-cw">Mié</div><div class="cu-cw">Jue</div><div class="cu-cw">Vie</div><div class="cu-cw">Sáb</div><div class="cu-cw">Dom</div>'+cells+'</div>';
+}
 function courseTotals(){
   var cat=C.cat,rows=[];
   cat.courses.slice().sort(function(a,b){return a.name.localeCompare(b.name)}).forEach(function(c){
@@ -162,7 +180,7 @@ function html(){
   if(C.ed)return edView();
   var right='<button class="btn s" data-cu="insman">Instructores</button> <button class="btn p" data-cu="newc">+ Nuevo curso</button>';
   var leg=C.cat.courses.map(function(c){return '<span><i class="cu-dot" style="background:'+colorOf(c)+'"></i>'+esc(c.name)+'</span>'}).join('');
-  return X.head('Cursos','Cada barra es un grupo, con el color de su curso.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+fltBar()+board()+courseTotals()+'</section>'+panel()+'</div>';
+  return X.head('Cursos','Cada barra es un grupo, con el color de su curso.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+'<div class="cu-vw"><button class="btn s sm" data-cu="vw" data-cv="t" aria-pressed="'+(C.vw==='t')+'">Tablero</button><button class="btn s sm" data-cu="vw" data-cv="c" aria-pressed="'+(C.vw==='c')+'">Calendario del mes</button></div>'+fltBar()+(C.vw==='c'?calendar():board())+courseTotals()+'</section>'+panel()+'</div>';
 }
 /* ---------- asistente ---------- */
 function instructors(){var s=['Joel','René','Luis','Emerson','Miguel'];if(C.reg)C.reg.ins.forEach(function(i){if(i.active&&s.indexOf(i.name)<0)s.push(i.name)});C.cat.groups.forEach(function(g){if(g.instructor&&s.indexOf(g.instructor)<0)s.push(g.instructor)});return s}
@@ -462,6 +480,8 @@ function click(e){
   if(k==='repeat'){var g=C.cat.groups.filter(function(x){return x.id===b.dataset.id})[0];if(g)startWiz(g.course_id,g.id);return true}
   if(k==='cancel'){C.wiz=null;X.render();return true}
   if(k==='color'){var cid=b.dataset.id,cc=b.dataset.c,oth=C.cat.courses.filter(function(o){return o.id!==cid&&ownColor(o)===cc})[0];if(oth){C.msg='';X.dlg('Color ya usado','<p>Ese color ya lo usa <b>'+esc(oth.name)+'</b>. Elige otro para que cada curso se distinga.</p>');return true}setColor(cid,cc);X.render();return true}
+  if(k==='vw'){C.vw=b.dataset.cv;X.render();return true}
+  if(k==='calm'){C.calM=b.dataset.m;X.render();return true}
   if(k==='editg'){startEdit(b.dataset.id);return true}
   if(k==='cancelg'){cancelDlg(b.dataset.id);return true}
   if(k==='cancelok'){setActive(b.dataset.id,false);return true}
@@ -496,7 +516,8 @@ function demoCatalog(){
   return{version:1,academic:true,academic_version:2,course_templates:1,courses:[{id:c1,name:'Método FORMA',modules:[],active:true,encounter_count:25},{id:c2,name:'Estructura Empresarial',modules:[],active:true,encounter_count:12},{id:c3,name:'Educación Financiera',modules:[],active:true,encounter_count:10}],groups:[
    {id:'g1',course_id:c1,course:'Método FORMA',name:'Grupo octubre',instructor:'Joel',room:'Sala 3',capacity:12,students:9,active:true,financial:{contracted_cents:2610000,paid_cents:1500000,pending_cents:1110000},fee_cents:20000,installments:3,monthly_cents:90000,sessions:mk(M.plus(mon,-14),[1,4],25,900,1020,'Joel','Sala 3').map(function(x,i){if(i%3===1)x.instructor='René';if(i%3===2)x.instructor='Luis';return x})},
    {id:'g2',course_id:c2,course:'Estructura Empresarial',name:'Grupo octubre',instructor:'René',room:'Sala 2',capacity:10,students:6,active:true,financial:{contracted_cents:720000,paid_cents:480000,pending_cents:240000},fee_cents:0,installments:1,monthly_cents:120000,sessions:mk(M.plus(mon,-7),[2,4],12,780,900,'René','Sala 2')},
-   {id:'g3',course_id:c3,course:'Educación Financiera',name:'Grupo noviembre',instructor:'Miguel',room:'Sala 1',capacity:10,students:1,active:true,financial:{contracted_cents:290000,paid_cents:145000,pending_cents:145000},fee_cents:20000,installments:3,monthly_cents:30000,sessions:mk(M.plus(mon,14),[1,4],10,780,900,'Miguel','Sala 1')}]};
+   {id:'g3',course_id:c3,course:'Educación Financiera',name:'Grupo noviembre',instructor:'Miguel',room:'Sala 1',capacity:10,students:1,active:true,financial:{contracted_cents:290000,paid_cents:145000,pending_cents:145000},fee_cents:20000,installments:3,monthly_cents:30000,sessions:mk(M.plus(mon,14),[1,4],10,780,900,'Miguel','Sala 1')},
+   {id:'g4',course_id:c3,course:'Educación Financiera',name:'Grupo diciembre',instructor:'Miguel',room:'Sala 1',capacity:10,students:0,active:true,financial:{contracted_cents:0,paid_cents:0,pending_cents:0},fee_cents:20000,installments:3,monthly_cents:30000,sessions:mk(M.plus(mon,49),[2,5],10,900,1020,'Miguel','Sala 1')}]};
 }
 function demoApply(kind,a,b){
   if(kind==='course'){C.demoCat.courses.push({id:b,name:a,modules:[],active:true,encounter_count:0});return}

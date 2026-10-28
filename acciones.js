@@ -27,6 +27,7 @@ function errText(e){
   if(/timeout/i.test(m))return 'No se confirmó a tiempo. Si pulsas de nuevo se reintenta el mismo registro, sin duplicar.';
   if(e&&e.code==='40001')return 'El grupo cambió mientras lo preparabas. Cierra y vuelve a abrir Matricular.';
   if(e&&e.code==='42501')return 'No tienes permiso para esta acción.';
+  if(e&&(e.code==='PGRST202'||e.code==='42883'))return 'Esta función todavía no está activada en el servidor (falta ejecutar forma-enrolment-admin.sql). No se cambió nada.';
   if(e&&e.code==='23505')return 'Esa persona ya está matriculada en este grupo. Para cobrar usa «Cobrar un pago».';
   if(m&&m.length<220&&!/^(fetch|Failed|Network)/i.test(m))return m;
   return 'No se pudo guardar. No se cambió nada. Intenta de nuevo.';
@@ -34,9 +35,70 @@ function errText(e){
 function field(label,name,type,val,extra){return '<label>'+label+'<input name="'+name+'" type="'+(type||'text')+'" value="'+X.esc(val==null?'':val)+'" '+(extra||'')+'></label>'}
 function shell(title,body){X.dlg(title,'<div id="ac-err" class="err" role="alert" hidden></div>'+body,true)}
 
+/* ---------- CAMBIAR DE GRUPO y OBSERVACIONES (funciones nuevas del servidor: forma-enrolment-admin.sql) ---------- */
+function openMove(person,e,ficha){
+  S={kind:'mov',busy:false,pending:null,p:person,e:e,f:ficha,sel:'',reason:'',msg:'',cat:null};
+  shell('Cambiar de grupo','<p class="skel" role="status">Cargando grupos…</p>');
+  X.cursos.load(true).then(function(){S.cat=X.cursos.cat();paintMove()},function(){shell('Cambiar de grupo','<div class="err">No se pudieron cargar los grupos. No se cambió nada.</div>')});
+}
+function paintMove(){
+  var cat=S.cat,e=S.e,cur=cat.groups.filter(function(g){return g.id===e.group_id})[0];
+  if(!cur){shell('Cambiar de grupo','<div class="err">Esta matrícula no está en un grupo. Usa «Matricular en un curso» para asignarlo.</div><div class="cu-foot"><button class="btn s" data-act="cerrar">Cerrar</button></div>');return}
+  var opts=cat.groups.filter(function(g){return g.course_id===cur.course_id&&g.id!==cur.id&&g.active!==false});
+  function sp(g){var l=(g.sessions||[]).filter(function(x){return !x.cancelled}).map(function(x){return x.day}).sort();return l.length?l[0]+'|'+l[l.length-1]:''}
+  var rows=opts.map(function(g){var q=sp(g).split('|'),full=Number(g.students)>=Number(g.capacity),dis=full||!q[0],t=(q[0]?dmy(q[0])+' → '+dmy(q[1]):'Sin encuentros');
+    return '<label class="row ac-opt'+(dis?' off':'')+'"><input type="radio" name="mvg" value="'+X.esc(g.id)+'"'+(S.sel===g.id?' checked':'')+(dis?' disabled':'')+'><div class="t"><b>'+X.esc(g.name)+'</b><span>'+t+' · '+Number(g.students)+'/'+Number(g.capacity)+' cupos'+(full?' · completo':'')+(g.instructor?' · '+X.esc(g.instructor):'')+'</span></div></label>'}).join('')||'<p class="note">No hay otros grupos activos de este curso. Crea primero el grupo de destino en Cursos.</p>';
+  var h='<p class="note"><b>'+X.esc(S.p.name)+'</b> · '+X.esc(e.course||'')+' · ahora en <b>'+X.esc(cur.name)+'</b></p>'
+   +'<div class="ac-rev"><p><small>Valor acordado (no cambia)</small><b>'+X.R(Number(e.total_cents))+'</b></p><p><small>Ya recibido (se conserva)</small><b>'+X.R(Number(e.paid_cents||0))+'</b></p></div>'
+   +'<h4>Grupo de destino</h4><div class="list">'+rows+'</div>'
+   +'<form id="ac-mv" class="cu-form" onsubmit="return false" style="margin-top:12px">'+reasonField(S.reason)+'</form>'
+   +'<p class="note">Los pagos, el plan de cuotas y el historial quedan igual. Las clases ya registradas del grupo anterior se conservan y el alumno ve el nuevo horario en su app.</p>'
+   +'<div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cerrar</button><button class="btn p" data-ac="mvgo"'+(S.busy?' disabled':'')+'>'+(S.pending?'Reintentar el mismo cambio':'Cambiar de grupo')+'</button></div>';
+  shell('Cambiar de grupo',h);say(S.msg);S.msg='';
+}
+function saveMove(){
+  if(S.busy)return;var f=$('#ac-mv'),sel=document.querySelector('input[name=mvg]:checked');
+  S.reason=f?String(new FormData(f).get('reason')||'').trim():S.reason;if(sel)S.sel=sel.value;
+  if(!S.sel){say('Elige el grupo de destino.');return}
+  if(S.reason.length<3){say('Escribe el motivo del cambio.');return}
+  if(!S.pending||S.pending.group_id!==S.sel||S.pending.reason!==S.reason)S.pending={enrolment_id:S.e.id,expected:S.e.version,group_id:S.sel,reason:S.reason,request_id:uuid()};
+  S.busy=true;
+  admCall('move_group',S.pending).then(function(r){
+    if(!r||!r.saved)throw Error('Sin confirmar');
+    S.busy=false;S.pending=null;X.refresh();reopenFicha(S.p.id);
+  },function(er){S.busy=false;if(er&&FATAL.indexOf(er.code)>-1)S.pending=null;S.msg=errText(er);paintMove()});
+}
+function openNotes(person,e,ficha){
+  S={kind:'not',busy:false,p:person,e:e,f:ficha,items:null,msg:'',txt:'',pending:null,demoNotes:(S&&S.kind==='not'&&S.e&&S.e.id===e.id)?S.demoNotes:[]};
+  paintNotes();
+  admCall('notes_list',{enrolment_id:e.id}).then(function(r){S.items=(r&&r.items)||[];paintNotes()},function(er){S.items=[];S.msg=errText(er);paintNotes()});
+}
+function paintNotes(){
+  var list=S.items==null?'<p class="skel" role="status">Cargando…</p>':(S.items.map(function(n){return '<div class="row"><div class="t"><b style="white-space:pre-wrap;font-weight:600">'+X.esc(n.note)+'</b><span>'+dmy(String(n.created_at).slice(0,10))+'</span></div></div>'}).join('')||'<p class="note">Aún no hay observaciones.</p>');
+  var h='<p class="note"><b>'+X.esc(S.p.name)+'</b> · '+X.esc(S.e.course||'')+(S.e.group_name?' · '+X.esc(S.e.group_name):'')+'. Solo la ve administración; el alumno no.</p><div class="list">'+list+'</div>'
+   +'<form id="ac-nt" class="cu-form" onsubmit="return false" style="margin-top:12px"><label>Nueva observación<textarea name="note" rows="3" maxlength="1000" placeholder="Ej.: pidió pasar a la tarde en diciembre">'+X.esc(S.txt||'')+'</textarea></label></form>'
+   +'<div class="cu-foot"><button class="btn s" data-act="cerrar">Cerrar</button><button class="btn p" data-ac="ntgo"'+(S.busy?' disabled':'')+'>Guardar observación</button></div>';
+  shell('Observaciones',h);say(S.msg);S.msg='';
+}
+function saveNote(){
+  if(S.busy)return;var f=$('#ac-nt'),t=f?String(new FormData(f).get('note')||'').trim():'';S.txt=t;
+  if(!t){say('Escribe la observación.');return}
+  if(!S.pending||S.pending.note!==t)S.pending={enrolment_id:S.e.id,note:t,request_id:uuid()};
+  S.busy=true;
+  admCall('note_add',S.pending).then(function(r){
+    if(!r||!r.saved)throw Error('Sin confirmar');
+    if(X.demo)S.demoNotes=[{note:t,created_at:X.T}].concat(S.demoNotes||[]);
+    S.busy=false;S.pending=null;S.txt='';openNotes(S.p,S.e,S.f);
+  },function(er){S.busy=false;if(er&&FATAL.indexOf(er.code)>-1)S.pending=null;S.msg=errText(er);paintNotes()});
+}
+
 /* ---------- servidor ---------- */
 function simulate(kind){return Promise.resolve({saved:true,person_id:'demo-p',id:'demo-'+kind})}
 function eduCall(a,d){return X.demo&&['person','payment','contract','replace_payment','void_payment','person_edit'].indexOf(a)>-1?simulate(a):X.edu(a,d)}
+function admCall(a,d){
+  if(X.demo)return Promise.resolve(a==='notes_list'?{items:(S&&S.demoNotes)||[]}:{saved:true});
+  return X.rpc('forma_enrolment_admin',{p_action:a,p_data:d});
+}
 function acaCall(a,d){return X.demo&&a==='enrol_group'?simulate(a):X.rpc('forma_academic',{p_action:a,p_data:d})}
 
 /* ---------- PLAN DE PAGO: valor acordado → entrada + cuotas (compartido por Matricular y Corregir condiciones) ---------- */
@@ -734,6 +796,8 @@ function click(e){
   else if(k==='edcancel'||k==='edcancel2')cancelEd();
   else if(k==='emgo')saveEdm();
   else if(k==='ctgo')saveContract();
+  else if(k==='mvgo')saveMove();
+  else if(k==='ntgo')saveNote();
   else if(k==='fpgo')saveFixPay();
   else if(k==='fpvoid'||k==='fpvoid2')voidPay();
   else if(k==='epgo')saveEp();
@@ -754,6 +818,8 @@ window.GestionAcciones={
   editarReserva:openEditRes,
   editarMatricula:openEditMat,
   corregirCondiciones:openContract,
+  cambiarGrupo:openMove,
+  observaciones:openNotes,
   corregirPago:openFixPay,
   corregirPersona:openEditPerson,
   click:click
