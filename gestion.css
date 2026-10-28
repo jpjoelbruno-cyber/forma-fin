@@ -375,3 +375,7 @@ i.t-none,.vt-b.t-none{background:var(--t-none)}i.t-frio,.vt-b.t-frio{background:
 .ac-note{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:10px 14px;margin-top:10px;font-weight:600}
 .ac-pr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:8px 0}
 @media (max-width:560px){.ac-pr{grid-template-columns:1fr}}
+.ac-ro{min-height:44px;display:flex;align-items:center;padding:0 12px;border:2px solid var(--line);border-radius:12px;background:var(--soft);font-weight:700;color:var(--ink2)}
+/* Dentro de un diálogo el pie va pegado abajo del propio diálogo (no sobre la barra inferior de la página) */
+dialog .cu-foot{bottom:0;padding-bottom:4px}
+.ac-tb .r{white-space:nowrap}

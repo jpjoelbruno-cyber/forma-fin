@@ -64,10 +64,18 @@ function calcPlan(Q){
   o.srv=o.rows.map(function(x){return{due_on:x.due,amount_cents:x.cents,label:x.label}});
   return o;
 }
-function planHTML(Q){
+/* Guarda en la primera fila del calendario cómo se llegó al valor (lista, descuento, motivo). El servidor ignora claves extra. */
+function withTerms(c,Q){
+  var l=Number(Q.listC||0),srv=c.srv.map(function(x){return{due_on:x.due_on,amount_cents:x.amount_cents,label:x.label}});
+  if(srv.length&&(l>0&&(l!==c.total||String(Q.disc||'').trim())||Q.terms))srv[0].terms={list_cents:l||(Q.terms&&Q.terms.list_cents)||0,agreed_cents:c.total,discount_cents:Math.max(0,l-c.total),reason:String(Q.disc||'').trim().slice(0,200)};
+  return srv;
+}
+function planHTML(Q,o){
+  o=o||{};
   var chips=[1,2,3,4,5,6,10,12].map(function(n){return '<button type="button" class="chip" data-ac="qn" data-n="'+n+'" aria-pressed="'+(Number(Q.n)===n)+'">'+n+'</button>'}).join('');
-  return '<div class="ac-pl"><div class="cu-form ac-grid">'+field('Valor acordado con el alumno (R$)','total','text',Q.total,'inputmode="decimal" data-q="total" placeholder="0,00"')+field('Entrada (R$) · ya forma parte del valor','ent','text',Q.ent,'inputmode="decimal" data-q="ent" placeholder="0,00"')+field('Fecha de la entrada','entDue','date',Q.entDue,'data-q="entDue"')+'</div>'
-   +'<label style="margin-top:10px">¿En cuántas veces paga el resto?</label><div class="chips" role="group">'+chips+'<input type="number" min="1" max="60" inputmode="numeric" data-q="n" data-nowheel="1" value="'+X.esc(Q.n)+'" aria-label="Otra cantidad de cuotas" class="ac-n"></div>'
+  return '<div class="ac-pl"><div class="cu-form ac-grid">'+field('Valor acordado con el alumno (R$)','total','text',Q.total,'inputmode="decimal" data-q="total" placeholder="0,00"')+'</div>'+(o.afterTotal||'')
+   +'<h3 style="margin:14px 0 6px">Entrada <small style="font-weight:500;color:var(--ink2)">· ya forma parte del valor acordado</small></h3><div class="cu-form ac-grid">'+field('Importe de la entrada (R$)','ent','text',Q.ent,'inputmode="decimal" data-q="ent" placeholder="0,00"')+field('Fecha de la entrada','entDue','date',Q.entDue,'data-q="entDue"')+'</div>'+(o.afterEnt||'')
+   +'<h3 style="margin:14px 0 6px">El resto</h3><label>¿En cuántas veces paga?</label><div class="chips" role="group">'+chips+'<input type="number" min="1" max="60" inputmode="numeric" data-q="n" data-nowheel="1" value="'+X.esc(Q.n)+'" aria-label="Otra cantidad de cuotas" class="ac-n"></div>'
    +'<div class="cu-form ac-grid" style="margin-top:10px">'+field('Vence la primera cuota','first','date',Q.first,'data-q="first"')+'</div><div id="ac-plan" aria-live="polite"></div></div>';
 }
 function paintPlan(){
@@ -82,7 +90,7 @@ function paintPlan(){
 }
 function wirePlan(Q){PQ=Q;paintPlan()}
 document.addEventListener('input',function(e){var t=e.target;if(!PQ||!t||!t.dataset||t.dataset.q===undefined)return;PQ[t.dataset.q]=t.value;if(t.dataset.q==='first')PQ.dates=[];if(t.dataset.q==='n'&&t.value!=='')PQ.dates=(PQ.dates||[]).slice(0,Number(t.value)||0);paintPlan()});
-document.addEventListener('change',function(e){var t=e.target;if(!PQ||!t||!t.dataset)return;if(t.dataset.qd!==undefined){PQ.dates=PQ.dates||[];PQ.dates[Number(t.dataset.qd)]=t.value;paintPlan()}});
+document.addEventListener('change',function(e){var t=e.target;if(!PQ||!t||!t.dataset)return;if(t.dataset.qd!==undefined){PQ.dates=PQ.dates||[];PQ.dates[Number(t.dataset.qd)]=t.value;paintPlan()}if(t.dataset.qb!==undefined){PQ[t.dataset.qb]=!!t.checked;paintPlan()}});
 
 /* ---------- selector de persona (compartido) ---------- */
 var searchT=0;
@@ -134,6 +142,13 @@ function stepsBar(){
   var n=['Persona','Grupo','Pago','Confirmar'];
   return '<div class="ac-steps">'+n.map(function(t,i){return '<span class="'+(i+1===S.step?'on':i+1<S.step?'ok':'')+'">'+(i+1)+'. '+t+'</span>'}).join('')+'</div>';
 }
+var DOWN=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+function grpWhen(g){
+  var ss=(g.sessions||[]).filter(function(x){return !x.cancelled});if(!ss.length)return 'sin encuentros';
+  var days=[];ss.forEach(function(x){var d=new Date(x.day+'T12:00:00Z').getUTCDay();if(days.indexOf(d)<0)days.push(d)});days.sort(function(a,b){return((a+6)%7)-((b+6)%7)});
+  var f=ss.slice().sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min})[0];
+  return days.map(function(d){return DOWN[d]}).join('-')+' '+hm(f.start_min)+'–'+hm(f.end_min);
+}
 function paintMat(){
   var h=stepsBar(),g=S.gid?curG():null;
   if(S.step===1){
@@ -149,26 +164,43 @@ function paintMat(){
     var gs=groups();
     h+='<h3>¿En qué grupo?</h3><div class="list">'+(gs.map(function(x){
       var full=x.left<=0;
-      return '<button type="button" class="row ac-g'+(x.g.id===S.gid?' on':'')+'"'+(full?' disabled':'')+' data-ac="grp" data-id="'+X.esc(x.g.id)+'"><div class="t"><b>'+X.esc(x.g.course)+' · '+X.esc(x.g.name)+'</b><span>'+(x.from?X.dl(x.from)+' → '+X.dl(x.to):'Sin fechas')+' · '+X.esc(x.g.room||'')+'</span></div><span class="pill '+(full?'down':x.left<=2?'flat':'up')+'">'+(full?'Completo':x.left+(x.left===1?' cupo':' cupos'))+'</span></button>';
+      return '<button type="button" class="row ac-g'+(x.g.id===S.gid?' on':'')+'"'+(full?' disabled':'')+' data-ac="grp" data-id="'+X.esc(x.g.id)+'"><div class="t"><b>'+X.esc(x.g.course)+' · '+X.esc(x.g.name)+(x.from&&x.from<X.T?' <span class="pill flat">ya empezó</span>':'')+'</b><span>'+(x.from?X.dl(x.from)+' → '+X.dl(x.to):'Sin fechas')+' · '+grpWhen(x.g)+' · '+X.esc(x.g.instructor||'')+' · '+X.esc(x.g.room||'')+'</span></div><span class="pill '+(full?'down':x.left<=2?'flat':'up')+'">'+(full?'Completo':x.left+(x.left===1?' cupo':' cupos'))+'</span></button>';
     }).join('')||'<p class="note">No hay grupos abiertos. Crea uno en Cursos.</p>')+'</div>';
     h+='<div class="cu-foot"><button class="btn s" data-ac="back">Atrás</button><button class="btn p" data-ac="next">Siguiente</button></div>';
   }
   if(S.step===3){
-    var ex=existingEnrol(g),p=S.pay||(S.pay={fee:eur(g.fee_cents),inst:String(g.installments),monthly:eur(g.monthly_cents),adv:'',fee_due:X.T,first_due:X.T,paid_on:X.T,method:'pix',card:'credito',conf:false,portal:false});
-    h+='<h3>Condiciones de pago</h3>';
-    if(ex)h+='<p class="note">Esta persona ya tiene una matrícula de <b>'+X.esc(ex.course)+'</b> sin grupo. Se vincula a ese grupo y se conservan sus pagos y su contrato.</p>';
-    else h+='<form id="ac-pay" class="cu-form ac-grid">'+field('Matrícula / reserva (R$)','fee','text',p.fee,'inputmode="decimal"')+field('Cantidad de cuotas','inst','number',p.inst,'min="0" max="60" data-nowheel="1"')+field('Valor de cada cuota (R$)','monthly','text',p.monthly,'inputmode="decimal"')+field('Vence la matrícula','fee_due','date',p.fee_due,'')+field('Vence la 1.ª cuota','first_due','date',p.first_due,'')+'</form><div id="ac-tot" class="note"></div>';
-    h+='<form id="ac-adv" class="cu-form ac-grid">'+field('Abono recibido hoy (R$, opcional)','adv','text',p.adv,'inputmode="decimal" placeholder="0,00"')+field('Fecha real del pago','paid_on','date',p.paid_on,'max="'+X.T+'"')+'<label>Medio<select name="method">'+Object.keys(METHODS).map(function(k){return '<option value="'+k+'"'+(p.method===k?' selected':'')+'>'+METHODS[k]+'</option>'}).join('')+'</select></label><label>Tarjeta<select name="card"><option value="credito"'+(p.card==='credito'?' selected':'')+'>Crédito</option><option value="debito"'+(p.card==='debito'?' selected':'')+'>Débito</option></select></label><label class="ac-chk"><input name="conf" type="checkbox"'+(p.conf?' checked':'')+'> Confirmo que el dinero fue recibido.</label><label class="ac-chk"><input name="portal" type="checkbox"'+(p.portal?' checked':'')+'> Habilitar acceso del alumno a su área</label></form>';
+    var ex=existingEnrol(g);
+    h+='<h3>'+(ex?'Condiciones de pago':'Valor y forma de pago')+'</h3><p class="note" style="margin:-6px 0 10px">'+X.esc(g.course+' · '+g.name)+' · '+grpWhen(g)+'</p>';
+    if(ex){
+      var p=S.pay||(S.pay={adv:'',paid_on:X.T,method:'pix',card:'credito',conf:false,portal:false});
+      h+='<p class="note">Esta persona ya tiene una matrícula de <b>'+X.esc(ex.course)+'</b> sin grupo. Se vincula a ese grupo y se conservan sus pagos y su contrato.</p>';
+      h+='<form id="ac-adv" class="cu-form ac-grid">'+field('Abono recibido hoy (R$, opcional)','adv','text',p.adv,'inputmode="decimal" placeholder="0,00"')+field('Fecha real del pago','paid_on','date',p.paid_on,'max="'+X.T+'"')+'<label>Medio<select name="method">'+Object.keys(METHODS).map(function(k){return '<option value="'+k+'"'+(p.method===k?' selected':'')+'>'+METHODS[k]+'</option>'}).join('')+'</select></label><label>Tarjeta<select name="card"><option value="credito"'+(p.card==='credito'?' selected':'')+'>Crédito</option><option value="debito"'+(p.card==='debito'?' selected':'')+'>Débito</option></select></label><label class="ac-chk"><input name="conf" type="checkbox"'+(p.conf?' checked':'')+'> Confirmo que el dinero fue recibido.</label><label class="ac-chk"><input name="portal" type="checkbox"'+(p.portal?' checked':'')+'> Habilitar acceso del alumno a su área</label></form>';
+    }else{
+      var Q=S.Q||(S.Q=newPlanState(g));
+      var pms=PMS.map(function(m){return '<button type="button" class="chip" data-ac="pm" data-m="'+m[0]+'" aria-pressed="'+(Q.pm===m[0])+'">'+m[1]+'</button>'}).join('');
+      var afterTotal='<div class="ac-pr"><div><label>Precio de lista del grupo</label><div class="ac-ro">'+(Q.listC>0?X.R(Q.listC):'Sin precio de lista')+'</div></div><div><label>Descuento</label><div class="ac-ro" id="ac-disc">—</div></div></div><div id="ac-dr" hidden>'+field('Motivo del descuento (opcional)','disc','text',Q.disc,'data-q="disc" maxlength="200" placeholder="Ej.: negociación al matricularse"')+'</div>';
+      var afterEnt='<div id="ac-entx"><label>¿Cómo pagó la entrada?</label><div class="chips" role="group">'+pms+'</div><label class="ac-chk"><input type="checkbox" data-qb="recv"'+(Q.recv?' checked':'')+'> La entrada ya fue recibida</label><label class="ac-chk"><input type="checkbox" data-qb="conf"'+(Q.conf?' checked':'')+'> Confirmo que el dinero fue recibido.</label></div>';
+      h+=planHTML(Q,{afterTotal:afterTotal,afterEnt:afterEnt});
+      h+='<label class="ac-chk" style="margin-top:8px"><input type="checkbox" data-qb="portal"'+(Q.portal?' checked':'')+'> Habilitar acceso del alumno a su área</label>';
+    }
     h+='<div class="cu-foot"><button class="btn s" data-ac="back">Atrás</button><button class="btn p" data-ac="next">Revisar</button></div>';
   }
   if(S.step===4){
-    var d=S.payload,tot=d.total;
-    h+='<h3>Revisa y confirma</h3><div class="ac-rev"><p><small>Alumno</small><b>'+X.esc(S.person?S.person.name:S.np.name)+(S.isNew?' (persona nueva)':'')+'</b></p><p><small>Grupo</small><b>'+X.esc(g.course+' · '+g.name)+'</b></p><p><small>Contrato</small><b>'+X.R(tot)+'</b>'+(d.ex?' <span class="note">(matrícula existente)</span>':'')+'</p><p><small>Abono hoy</small><b>'+X.R(d.adv)+'</b></p><p><small>Quedará por pagar</small><b>'+X.R(tot-d.adv-d.paidBefore)+'</b></p></div>';
+    var d=S.payload,tot=d.total,c=d.plan,Q4=S.Q;
+    h+='<h3>Revisa y confirma</h3><div class="ac-rev"><p><small>Alumno</small><b>'+X.esc(S.person?S.person.name:S.np.name)+(S.isNew?' (persona nueva)':'')+'</b></p><p><small>Grupo</small><b>'+X.esc(g.course+' · '+g.name)+'</b></p><p><small>Días y horario</small><b>'+grpWhen(g)+'</b></p>';
+    if(c){
+      var disc=Q4.listC>0?Q4.listC-c.total:0;
+      h+='<p><small>Valor acordado</small><b>'+X.R(c.total)+'</b></p>'+(disc>0?'<p><small>Lista '+X.R(Q4.listC)+' · descuento</small><b>'+X.R(disc)+(Q4.disc?' · '+X.esc(Q4.disc):'')+'</b></p>':'')+(c.ent>0?'<p><small>Entrada</small><b>'+X.R(c.ent)+' · '+pmLabel(Q4.pm)+' · '+(d.adv>0?'recibida el '+dmy(Q4.entDue):'pendiente, vence el '+dmy(Q4.entDue))+'</b></p>':'')+'</div>';
+      h+='<div class="tw"><table class="ac-tb"><thead><tr><th>Pago</th><th>Fecha</th><th class="r">Valor</th></tr></thead><tbody>'+c.rows.map(function(x){return '<tr><td>'+X.esc(x.label)+'</td><td>'+dmy(x.due)+'</td><td class="r">'+X.R(x.cents)+'</td></tr>'}).join('')+'</tbody></table></div><div class="ac-rev" style="margin-top:10px">';
+    }else{
+      h+='<p><small>Contrato</small><b>'+X.R(tot)+' <span class="note">(matrícula existente)</span></b></p><p><small>Abono hoy</small><b>'+X.R(d.adv)+'</b></p>';
+    }
+    h+='<p><small>Quedará por pagar</small><b>'+X.R(tot-d.adv-d.paidBefore)+'</b></p></div>';
     h+='<div class="cu-foot"><button class="btn s" data-ac="back"'+(S.busy?' disabled':'')+'>Atrás</button><button class="btn p" data-ac="go"'+(S.busy?' disabled':'')+'>'+(S.pending?'Reintentar el mismo registro':'Confirmar matrícula')+'</button></div>';
   }
   shell('Matricular un alumno',h);
   if(S.step===1&&!S.person&&!S.isNew)wirePerson(true);
-  if(S.step===3)wireTotals();
+  if(S.step===3&&S.Q&&!existingEnrol(curG()))wirePlan(S.Q);
   say(S.msg);S.msg='';
 }
 function existingEnrol(g){
@@ -176,40 +208,49 @@ function existingEnrol(g){
   var c=norm(g.course);
   return(S.detail.enrolments||[]).filter(function(e){return !e.group_id&&e.state!=='cancelado'&&norm(e.course)===c})[0]||null;
 }
+var PMS=[['pix','PIX'],['efectivo','Dinero'],['debito','Débito'],['credito','Crédito'],['transferencia','Transferencia']];
+function pmLabel(k){var f=PMS.filter(function(m){return m[0]===k})[0];return f?f[1]:k}
+function pmSplit(k){return k==='debito'||k==='credito'?{method:'tarjeta',card:k}:{method:k,card:''}}
+function afterMat(c){
+  var Q=PQ,tot=0,ent=0;if(!Q)return;
+  try{tot=cents(Q.total)}catch(e){}try{ent=cents(Q.ent)}catch(e){}
+  var d=$('#ac-disc'),dr=$('#ac-dr'),ex=$('#ac-entx'),disc=Q.listC>0&&tot>0?Q.listC-tot:0;
+  if(d)d.textContent=!tot?'—':disc>0?X.R(disc)+' ('+Math.round(disc/Q.listC*100)+'%)':disc<0?'Sobre la lista: '+X.R(-disc):'Sin descuento';
+  if(dr)dr.hidden=!(disc>0);
+  if(ex)ex.hidden=!(ent>0);
+}
+function newPlanState(g){
+  var list=Number(g.fee_cents||0)+Number(g.installments||0)*Number(g.monthly_cents||0);
+  return{listC:list,total:list>0?eur(list):'',ent:'',entDue:X.T,n:Number(g.installments)>0?Number(g.installments):1,first:isoAdd(X.T,1),dates:[],disc:'',pm:'pix',recv:true,conf:false,portal:false,after:afterMat};
+}
 function readPay(){
-  var f=$('#ac-pay'),a=$('#ac-adv'),p=S.pay;
-  if(f){var v=new FormData(f);p.fee=v.get('fee');p.inst=v.get('inst');p.monthly=v.get('monthly');p.fee_due=v.get('fee_due');p.first_due=v.get('first_due')}
-  if(a){var w=new FormData(a);p.adv=w.get('adv');p.paid_on=w.get('paid_on');p.method=w.get('method');p.card=w.get('card');p.conf=!!a.elements.conf.checked;p.portal=!!a.elements.portal.checked}
-}
-function totalOf(){
-  var p=S.pay;return cents(p.fee)+Number(p.inst||0)*cents(p.monthly);
-}
-function wireTotals(){
-  var upd=function(){var t=$('#ac-tot');if(!t)return;try{readPay();var n=Number(S.pay.inst);t.textContent='Total del contrato: '+X.R(totalOf())+' ('+X.R(cents(S.pay.fee))+' + '+n+' × '+X.R(cents(S.pay.monthly))+')'}catch(e){t.textContent='Revisa los importes.'}};
-  var f=$('#ac-pay');if(f){f.oninput=upd;upd()}
+  var a=$('#ac-adv'),p=S.pay;
+  if(a&&p){var w=new FormData(a);p.adv=w.get('adv');p.paid_on=w.get('paid_on');p.method=w.get('method');p.card=w.get('card');p.conf=!!a.elements.conf.checked;p.portal=!!a.elements.portal.checked}
 }
 function buildPayload(){
   var g=curG(),ex=existingEnrol(g);
-  readPay();var p=S.pay;
   if(!g||!g.active||g.students>=g.capacity)throw Error('El grupo no está disponible o no tiene cupos.');
   if(!(g.sessions||[]).length)throw Error('Este grupo no tiene encuentros. Prepáralo en Cursos.');
-  var adv=cents(p.adv),fee,monthly,inst,total,paidBefore=0;
-  if(ex){total=Number(ex.total_cents);paidBefore=Number(ex.paid_cents||0);fee=null}
-  else{
-    fee=cents(p.fee);monthly=cents(p.monthly);inst=Number(p.inst);
-    if(!Number.isInteger(inst)||inst<0||inst>60)throw Error('Revisa la cantidad de cuotas (de 0 a 60).');
-    total=fee+monthly*inst;
-    if(total<=0)throw Error('El contrato debe tener un valor mayor que cero.');
-    if(!p.fee_due||!p.first_due)throw Error('Indica las fechas de vencimiento.');
-  }
-  if(adv>total-paidBefore)throw Error('El abono supera el saldo. Revisa el importe.');
-  if(adv>0){
-    if(!p.conf)throw Error('Marca que recibiste el dinero antes de registrar el abono.');
-    if(!p.paid_on||p.paid_on>X.T)throw Error('Revisa la fecha real del pago.');
-  }
   var email=S.isNew?S.np.email:(S.person&&S.person.email);
-  if(p.portal&&!email)throw Error('Para habilitar el acceso del alumno hace falta su correo.');
-  return{ex:ex,adv:adv,total:total,paidBefore:paidBefore,fee:fee,monthly:monthly,inst:inst};
+  if(ex){
+    readPay();var p=S.pay,adv=cents(p.adv),total=Number(ex.total_cents),pb=Number(ex.paid_cents||0);
+    if(adv>total-pb)throw Error('El abono supera el saldo. Revisa el importe.');
+    if(adv>0){
+      if(!p.conf)throw Error('Marca que recibiste el dinero antes de registrar el abono.');
+      if(!p.paid_on||p.paid_on>X.T)throw Error('Revisa la fecha real del pago.');
+    }
+    if(p.portal&&!email)throw Error('Para habilitar el acceso del alumno hace falta su correo.');
+    return{ex:ex,adv:adv,total:total,paidBefore:pb,plan:null};
+  }
+  if(S.cat.academic_version!==2)throw Error('Esta versión de FORMÁ no admite un valor distinto al del grupo. Avisa a Joel.');
+  var Q=S.Q;PQ=Q;var c=calcPlan(Q);if(c.err)throw Error(c.err);
+  var adv=(c.ent>0&&Q.recv)?c.ent:0;
+  if(adv>0){
+    if(!Q.conf)throw Error('Marca que confirmas que recibiste la entrada, o desmarca «La entrada ya fue recibida».');
+    if(!Q.entDue||Q.entDue>X.T)throw Error('La entrada recibida no puede tener fecha futura. Corrige la fecha o desmarca «ya fue recibida».');
+  }
+  if(Q.portal&&!email)throw Error('Para habilitar el acceso del alumno hace falta su correo.');
+  return{ex:null,plan:c,adv:adv,total:c.total,paidBefore:0};
 }
 function stepNext(){
   say('');
@@ -221,8 +262,8 @@ function stepNext(){
         if(S.np.email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(S.np.email))throw Error('Revisa el correo.');
       }else if(!S.person)throw Error('Busca y elige a la persona, o marca que es nueva.');
     }
-    if(S.step===2){if(!S.gid)throw Error('Elige un grupo.');S.pay=null}
-    if(S.step===3){S.payload=buildPayload()}
+    if(S.step===2){if(!S.gid)throw Error('Elige un grupo.');if(S.qGid!==S.gid){S.pay=null;S.Q=null;S.qGid=S.gid}}
+    if(S.step===3){var ex0=existingEnrol(curG());if(!ex0)PQ=S.Q;S.payload=buildPayload()}
     S.step++;paintMat();
   }catch(e){say(e.message)}
 }
@@ -232,8 +273,13 @@ function confirmMat(){
   if(!S.pending){
     var steps=[];
     if(S.isNew&&!S.personId)steps.push({api:'edu',a:'person',d:{name:S.np.name,phone:S.np.phone,email:S.np.email,language:'es',person_id:null,request_id:uuid()}});
-    var en={group_id:g.id,expected:g.version,existing_enrolment_id:pl.ex?pl.ex.id:null,fee_due:p.fee_due,first_due:p.first_due,advance_cents:pl.adv,paid_on:p.paid_on,method:p.method,card_type:p.method==='tarjeta'?p.card:'',confirmed:!!p.conf,portal:!!p.portal,request_id:uuid()};
-    if(!pl.ex&&S.cat.academic_version===2){en.fee_cents=pl.fee;en.monthly_cents=pl.monthly;en.installments=pl.inst;en.payment_schedule=[]}
+    var en;
+    if(pl.ex){
+      en={group_id:g.id,expected:g.version,existing_enrolment_id:pl.ex.id,fee_due:X.T,first_due:X.T,advance_cents:pl.adv,paid_on:p.paid_on,method:p.method,card_type:p.method==='tarjeta'?p.card:'',confirmed:!!p.conf,portal:!!p.portal,request_id:uuid()};
+    }else{
+      var Q=S.Q,c=pl.plan,pm=pmSplit(Q.pm);
+      en={group_id:g.id,expected:g.version,existing_enrolment_id:null,fee_due:c.ent>0?Q.entDue:Q.first,first_due:c.n>0?Q.first:Q.entDue,advance_cents:pl.adv,paid_on:pl.adv>0?Q.entDue:X.T,method:pm.method,card_type:pm.card,confirmed:pl.adv>0,portal:!!Q.portal,request_id:uuid(),fee_cents:c.fee,monthly_cents:c.monthly,installments:c.n,payment_schedule:withTerms(c,Q)};
+    }
     steps.push({api:'aca',a:'enrol_group',d:en});
     S.pending={steps:steps,i:0};
   }
@@ -269,6 +315,12 @@ function openPay(pre){
     loadPerson(pre.person_id).then(paintPay,function(){shell('Cobrar un pago','<div class="err">No se pudo cargar la ficha. No se cambió nada.</div>')});
   }else paintPay();
 }
+/* Próximo vencimiento pendiente de una matrícula (para sugerir el importe al cobrar) */
+function nextDue(eid){
+  var ds=((S&&S.detail&&S.detail.debts)||[]).filter(function(x){return x.enrolment_id===eid&&!x.cancelled&&Number(x.total_cents)-Number(x.paid_cents)>0}).sort(function(a,b){return(a.due_on||'9')<(b.due_on||'9')?-1:1});
+  var d=ds[0];if(!d)return null;
+  return{rest:Number(d.total_cents)-Number(d.paid_cents),due:d.due_on,label:'Pago recibido · vence '+dmy(d.due_on)};
+}
 function openEnrols(){return(S.detail&&S.detail.enrolments||[]).filter(function(e){return e.state!=='cancelado'})}
 function paintPay(){
   var h='';
@@ -279,7 +331,7 @@ function paintPay(){
   var en=openEnrols();
   if(!en.length){shell('Cobrar un pago','<div class="ac-chosen"><b>'+X.esc(S.person.name)+'</b></div><p class="note">Esta persona todavía no tiene una matrícula. Primero matricúlala.</p><div class="fi-acts"><button class="btn p" data-ac="mat-from-pay">Matricular</button><button class="btn s" data-ac="chg">Cambiar persona</button></div>');return}
   if(!S.enrId||!en.some(function(e){return e.id===S.enrId}))S.enrId=(en.filter(function(e){return Number(e.total_cents)>Number(e.paid_cents)})[0]||en[0]).id;
-  var v=S.form||{amount:'',paid_on:X.T,method:'pix',card:'',note:'Pago recibido',conf:false};S.form=v;
+  var nd=nextDue(S.enrId),v=S.form||{amount:nd?eur(nd.rest):'',paid_on:X.T,method:'pix',card:'',note:nd&&nd.label?nd.label:'Pago recibido',conf:false};S.form=v;
   h+='<div class="ac-chosen"><b>'+X.esc(S.person.name)+'</b><span>'+X.esc(S.person.phone||'')+'</span><button type="button" class="btn s sm" data-ac="chg">Cambiar</button></div>';
   h+='<form id="ac-pf" class="cu-form ac-grid"><label>Matrícula<select name="enr">'+en.map(function(e){return '<option value="'+X.esc(e.id)+'"'+(e.id===S.enrId?' selected':'')+'>'+X.esc(e.course+(e.group_name?' · '+e.group_name:''))+'</option>'}).join('')+'</select></label><div id="ac-bal" class="note ac-bal"></div>'+field('Importe recibido (R$)','amount','text',v.amount,'inputmode="decimal" required placeholder="0,00"')+field('Fecha real del pago','paid_on','date',v.paid_on,'required max="'+X.T+'" min="2020-01-01"')+'<label>Medio<select name="method">'+Object.keys(METHODS).map(function(k){return '<option value="'+k+'"'+(v.method===k?' selected':'')+'>'+METHODS[k]+'</option>'}).join('')+'</select></label><label>Tarjeta (si corresponde)<select name="card"><option value="">No corresponde</option><option value="credito"'+(v.card==='credito'?' selected':'')+'>Crédito</option><option value="debito"'+(v.card==='debito'?' selected':'')+'>Débito</option></select></label>'+field('Concepto / referencia','note','text',v.note,'required maxlength="500"')+'<label class="ac-chk"><input name="conf" type="checkbox"'+(v.conf?' checked':'')+'> Confirmo que el dinero fue recibido.</label></form>';
   h+='<p class="note">Un pago prometido no se registra aquí. Se genera el comprobante al guardar.</p><div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cancelar</button><button class="btn p" data-ac="paygo"'+(S.busy?' disabled':'')+'>'+(S.pending?'Reintentar el mismo registro':'Guardar el pago')+'</button></div>';
@@ -560,7 +612,7 @@ function openContract(person,e,ficha){
   var paid=Number(e.paid_cents||0),sch=Array.isArray(e.payment_schedule)?e.payment_schedule:[],Q;
   if(sch.length&&sch[0].label==='Entrada'){
     var cu=sch.slice(1);
-    Q={total:eur(Number(e.total_cents)),ent:eur(Number(sch[0].amount_cents)),entDue:sch[0].due_on,n:cu.length,first:cu.length?cu[0].due_on:isoAdd(sch[0].due_on,1),dates:cu.map(function(x){return x.due_on})};
+    Q={total:eur(Number(e.total_cents)),ent:eur(Number(sch[0].amount_cents)),entDue:sch[0].due_on,n:cu.length,first:cu.length?cu[0].due_on:isoAdd(sch[0].due_on,1),dates:cu.map(function(x){return x.due_on}),terms:sch[0].terms||null,listC:sch[0].terms?Number(sch[0].terms.list_cents||0):0,disc:sch[0].terms?String(sch[0].terms.reason||''):''};
   }else if(sch.length){
     Q={total:eur(Number(e.total_cents)),ent:'0,00',entDue:X.T,n:sch.length,first:sch[0].due_on,dates:sch.map(function(x){return x.due_on}),legacy:true};
   }else{
@@ -586,7 +638,7 @@ function saveContract(){
   if(c.err){say(c.err);return}
   if(c.total<Number(S.e.paid_cents||0)){say('El valor no puede quedar por debajo de lo ya recibido ('+X.R(Number(S.e.paid_cents||0))+').');return}
   if(reason.length<3){say('Escribe el motivo de la corrección.');return}
-  if(!S.pending)S.pending={person_id:S.p.id,enrolment_id:S.e.id,expected:S.e.version,fee_cents:c.fee,monthly_cents:c.monthly,installments:c.n,fee_due:c.ent>0?Q.entDue:Q.first,first_due:c.n>0?Q.first:Q.entDue,payment_schedule:c.srv,reason:reason,request_id:uuid()};
+  if(!S.pending)S.pending={person_id:S.p.id,enrolment_id:S.e.id,expected:S.e.version,fee_cents:c.fee,monthly_cents:c.monthly,installments:c.n,fee_due:c.ent>0?Q.entDue:Q.first,first_due:c.n>0?Q.first:Q.entDue,payment_schedule:withTerms(c,Q),reason:reason,request_id:uuid()};
   S.busy=true;
   eduCall('contract',S.pending).then(function(r){
     if(!r||!r.saved)throw Error('Sin confirmar');
