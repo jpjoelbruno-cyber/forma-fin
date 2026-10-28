@@ -30,7 +30,7 @@ function start(){
     if(!r)return;
     var list=SP.filter(function(s){return !s.need||s.need.indexOf(r)>=0});
     /* una sola puerta: el personal que abre la app de alumno al empezar su sesión entra directo a Gestión (una vez por sesión del navegador) */
-    try{if(here()==='alumno'&&list.length>1&&!/[?&](alumno|personal)=1/.test(location.search)&&!sessionStorage.getItem('forma-landed')){sessionStorage.setItem('forma-landed','1');location.replace('/agenda.html#inicio');return}sessionStorage.setItem('forma-landed','1')}catch(e){}
+    try{if(/[?&](alumno|personal)=1/.test(location.search))sessionStorage.setItem('forma-stay-alumno','1');if(here()==='alumno'&&list.length>1&&!sessionStorage.getItem('forma-stay-alumno')){location.replace('/agenda.html#inicio');return}sessionStorage.setItem('forma-landed','1')}catch(e){}
     if(list.length<2)return;
     var tries=0;(function wait(){var h=hostEl();if(h)mount(h,list);else if(++tries<40)setTimeout(wait,250)})();
   });
