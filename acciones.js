@@ -190,7 +190,7 @@ function loadPerson(id){
 
 /* ---------- MATRICULAR ---------- */
 function openMat(pre){
-  S={kind:'mat',step:1,person:null,detail:null,isNew:false,np:{name:'',phone:'',email:'',cpf:''},cpfEx:'',warn:'',cat:null,gid:null,pay:null,pending:null,busy:false,done:false};
+  S={kind:'mat',step:1,person:null,detail:null,isNew:false,np:{name:'',phone:'',email:'',cpf:''},cpfEx:'',warn:'',dups:[],cat:null,gid:null,pay:null,pending:null,busy:false,done:false};
   shell('Matricular un alumno','<p class="skel" role="status">Cargando grupos…</p>');
   X.cursos.load(true).then(function(){
     S.cat=X.cursos.cat();
@@ -269,6 +269,7 @@ function paintMat(){
   if(S.step===1&&!S.person&&!S.isNew)wirePerson(true);
   if(S.step===3&&S.Q&&!existingEnrol(curG()))wirePlan(S.Q);
   say(S.msg);S.msg='';
+  if(S.dups&&S.dups.length&&S.step===4){var bx=document.createElement('div');bx.className='list';bx.innerHTML=S.dups.map(function(p){return '<div class="row" style="display:flex;gap:8px;align-items:center;justify-content:space-between"><div class="t"><b>'+X.esc(p.name)+'</b><span>'+X.esc(p.phone||p.email||'Sin contacto')+'</span></div><button type="button" class="btn p sm" data-ac="usedup" data-id="'+X.esc(p.id)+'">Usar esta ficha</button></div>'}).join('');var er=$('#ac-err');if(er)er.after(bx)}
 }
 function existingEnrol(g){
   if(!S.person||S.isNew||!S.detail)return null;
@@ -367,10 +368,16 @@ function confirmMat(){
       if(st.soft){S.warn='La matrícula quedó guardada, pero el CPF no se guardó: '+errText(e)+' Complétalo desde la ficha del alumno.';S.pending.i++;return run()}
       S.busy=false;
       if(e&&FATAL.indexOf(e.code)>-1){S.pending=null}
+      if(st.a==='person'&&e&&e.code==='23505'){S.pending=null;S.msg='Esta persona ya tiene una ficha (mismo correo o teléfono). Buscándola…';S.dups=[];paintMat();findDups().then(function(l){S.dups=l;S.msg=l.length?'Esta persona ya tiene una ficha. Elige «Usar esta ficha» y confirma de nuevo: no se crea otra.':'El servidor dice que ya existe una ficha con ese correo o teléfono, pero no la encontré. Búscala por nombre en el paso 1 (Persona).';paintMat()});return}
       if(e&&e.code==='23505'){S.msg='Comprobando si la persona ya está en el grupo…';paintMat();dupCheck(e).then(function(t){S.msg=t;paintMat()});return}
       S.msg=errText(e);paintMat();
     });
   })();
+}
+function findDups(){
+  var np=S.np||{},qs=[np.email,cpfDigits(np.phone).length>=8?np.phone:'',np.name].filter(function(x){return x&&String(x).trim().length>=2});
+  return Promise.all(qs.map(function(q){return X.edu('list',{query:q,offset:0,state:''}).then(function(d){return(d&&d.items)||[]},function(){return[]})})).then(function(r){
+    var seen={},out=[];[].concat.apply([],r).forEach(function(p){if(!seen[p.id]){seen[p.id]=1;out.push(p)}});return out.slice(0,5)});
 }
 function dupCheck(e){
   var g=curG(),pid=S.personId||(S.person&&S.person.id);
@@ -799,6 +806,10 @@ function click(e){
   else if(k==='pick'){
     var id=b.dataset.id;$('#ac-res').innerHTML='<p class="skel" role="status">Consultando ficha…</p>';
     loadPerson(id).then(function(){S.kind==='mat'?paintMat():paintPay()},function(){say('No se pudo cargar la ficha.')});
+  }
+  else if(k==='usedup'){
+    var did=b.dataset.id,keep=S.np&&S.np.cpf;b.disabled=true;b.textContent='Cargando…';
+    loadPerson(did).then(function(){S.dups=[];S.pending=null;S.personId=null;S.cpfEx=keep||'';S.step=3;S.msg='Se usará la ficha existente de '+S.person.name+'. Revisa el pago y confirma de nuevo.';paintMat()},function(){say('No se pudo cargar esa ficha.')});
   }
   else if(k==='grp'){S.gid=b.dataset.id;paintMat()}
   else if(k==='next')stepNext();

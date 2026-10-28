@@ -451,7 +451,7 @@ function setActive(gid,on){
   var btn=d&&d.querySelector('.cu-danger');if(btn){btn.disabled=true;btn.textContent=on?'Reactivando…':'Cancelando…'}
   function viaSave(){return ac('group_save',payload)}
   var step=X.demo?viaSave():X.rpc('forma_enrolment_admin',{p_action:'group_set_active',p_data:{group_id:gid,expected:g.version,active:on,request_id:uuid()}}).catch(function(er){
-    if(er&&(er.code==='PGRST202'||er.code==='42883'||/Acción no admitida|Falta identificador/.test(er.message||'')))return viaSave();throw er});
+    if(er&&(er.code==='PGRST202'||er.code==='42883'||er.code==='42501'||/Acción no admitida|Falta identificador/.test(er.message||'')))return viaSave();throw er});
   step.then(function(r){
     if(!r||!r.saved)throw Error('El servidor no confirmó el cambio.');
     if(X.demo)demoEdit(gid,payload);

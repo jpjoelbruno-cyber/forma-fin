@@ -65,6 +65,7 @@ begin
  return result;
 end$$;
 revoke all on function forma_private.enrolment_admin(text,jsonb) from public,anon,authenticated;
+grant execute on function forma_private.enrolment_admin(text,jsonb) to authenticated;
 create or replace function public.forma_enrolment_admin(p_action text,p_data jsonb default '{}'::jsonb) returns jsonb language sql security invoker set search_path='' as $$select forma_private.enrolment_admin(p_action,p_data)$$;
 revoke all on function public.forma_enrolment_admin(text,jsonb) from public,anon;
 grant execute on function public.forma_enrolment_admin(text,jsonb) to authenticated;
