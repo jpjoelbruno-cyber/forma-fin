@@ -128,7 +128,7 @@ var V={};
 V.inicio=function(){
   var h=spNow().hour,sal=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
   var mine=sessionsOn(T,D.work&&D.work.bookings),av=avisos(),p=D.pending,cur=D.month,prev=D.prevMonth;
-  var acts=manager()?'<div class="acts" style="margin-bottom:16px"><button class="act a1" data-act="cobrar">'+ico('cash')+'<span>Cobrar un pago<small>Y dar su comprobante</small></span></button><button class="act a2" data-act="matricular">'+ico('cap')+'<span>Matricular un alumno<small>Paso a paso</small></span></button><button class="act a3" data-act="agendar">'+ico('cal')+'<span>Agendar un servicio<small>Elige día y hora</small></span></button><button class="act a4" data-act="interesado">'+ico('chat')+'<span>Nuevo interesado<small>Guardar contacto</small></span></button></div>':'';
+  var acts=manager()?'<div class="acts" style="margin-bottom:16px"><button class="act a1" data-act="cobrar">'+ico('cash')+'<span>Cobrar un pago<small>Y dar su comprobante</small></span></button><button class="act a2" data-act="matricular">'+ico('cap')+'<span>Matricular un alumno<small>Paso a paso</small></span></button><button class="act a3" data-act="agendar">'+ico('cal')+'<span>Agendar un servicio<small>Elige día y hora</small></span></button><button class="act a4" data-act="interesado">'+ico('chat')+'<span>Nuevo interesado<small>Guardar contacto</small></span></button><button class="act a1" data-act="salida">'+ico('cash')+'<span>Registrar una salida<small>Gasto o pago que sale</small></span></button></div>':'';
   var k='';
   if(manager()){
     var dm=cur&&prev?delta(Number(cur.received_cents),Number(prev.received_cents),'vs mes anterior'):null,w=((D.crmAlerts&&D.crmAlerts.total_count)||0),ov=overdue();
@@ -253,15 +253,22 @@ function openBooking(id,day){
   dlg(esc(b.client),h,false);
 }
 V.cobros=function(){
-  var tabs='<div class="seg" role="tablist">'+[['resumen','Resumen'],['porcobrar','Por cobrar'],['mov','Movimientos']].map(function(t){return '<button data-ct="'+t[0]+'" aria-pressed="'+(cobTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
+  var tabs='<div class="seg" role="tablist">'+[['resumen','Resumen'],['porcobrar','Por cobrar'],['salidas','Salidas'],['mov','Movimientos']].map(function(t){return '<button data-ct="'+t[0]+'" aria-pressed="'+(cobTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
   var per='<div class="seg" role="group" aria-label="Período">'+['Hoy','Semana','Mes','Año'].map(function(p){return '<button data-cp="'+p+'" aria-pressed="'+(cobPer===p)+'">'+p+'</button>'}).join('')+'</div>';
-  var h=head('Cobros','Lo que entra, lo que sale y lo que falta cobrar.','<button class="btn p" data-act="cobrar">'+ico('plus')+'Cobrar un pago</button>')+'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px">'+tabs+(cobTab==='porcobrar'?'':per)+'</div>';
+  var h=head('Cobros','Lo que entra, lo que sale y lo que falta cobrar.','<button class="btn p" data-act="cobrar">'+ico('plus')+'Cobrar un pago</button><button class="btn s" data-act="salida">'+ico('plus')+'Registrar una salida</button>')+'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px">'+tabs+(cobTab==='porcobrar'?'':per)+'</div>';
   var rr=periodRange(cobPer),d=D.reports[rr.cur.from+'|'+rr.cur.to+'|'+rr.cur.bucket],pv=D.reports[rr.prev.from+'|'+rr.prev.to+'|'+rr.prev.bucket];
   if(cobTab==='porcobrar'){
     var p=D.pending,items=(p&&p.items)||[];
     return h+'<div class="grid"><section class="card c12"><h2>Alumnos y clientes con saldo pendiente'+(p?' · '+R(Number(p.total_cents)):'')+'</h2><input class="search" id="pq" placeholder="Buscar por nombre, teléfono o curso" aria-label="Buscar" value="'+esc(D.pendQuery)+'" style="margin-bottom:12px"><div class="tw"><table><thead><tr><th>Cliente</th><th>Curso o servicio</th><th>Vencimiento</th><th style="text-align:right">Debe</th><th></th></tr></thead><tbody>'+(items.map(function(a){return '<tr><td><b>'+esc(a.client)+'</b></td><td>'+esc(a.activity||'')+(a.group_name?'<br><span style="color:var(--ink2);font-size:13px">'+esc(a.group_name)+'</span>':'')+'</td><td><span class="pill '+(a.due_status==='Vencido'?'down':'flat')+'">'+esc(a.due_on?a.due_status+' · '+dl(a.due_on):'Sin fecha')+'</span></td><td class="num out" style="text-align:right"><b>'+R(Number(a.pending_cents))+'</b></td><td style="text-align:right"><button class="btn p sm" data-act="cobrar">Cobrar</button></td></tr>'}).join('')||'<tr><td colspan="5" class="note">'+(p?'Nada pendiente.':'Cargando…')+'</td></tr>')+'</tbody></table></div>'+(p&&p.has_more?'<p class="note"><button class="link" id="pmore">Ver más</button></p>':'')+'</section></div>';
   }
   if(!d)return h+'<p class="skel" role="status">Cargando '+cobPer.toLowerCase()+'…</p>';
+  if(cobTab==='salidas'){
+    var os=(d.outflows||[]),tot=Number(d.outflow_cents||0),ex=Number(d.expense_cents||0),rf=Number(d.refund_cents||0),cat={};
+    os.forEach(function(o){var k=(o.category||'Sin categoría')+(o.kind==='reembolso'?' (reembolso)':'');cat[k]=(cat[k]||0)+Number(o.amount_cents)});
+    var cr=Object.keys(cat).map(function(k){return{label:k,cents:cat[k]}}).sort(function(a,b){return b.cents-a.cents});
+    var rows=os.map(function(o){return '<div class="row"><div class="t"><b>'+esc(o.category||'Salida')+(o.kind==='reembolso'?' · reembolso':'')+'</b><span>'+esc(methodLabel(o.method))+' · '+esc(dl(o.paid_on))+(o.note?' · '+esc(o.note):'')+'</span></div><span class="v num out">− '+R(Number(o.amount_cents))+'</span>'+(o.kind==='gasto'?'<button class="btn s sm" data-act="voidout" data-oid="'+esc(o.id)+'">Anular</button>':'')+'</div>'}).join('');
+    return h+'<div class="grid">'+kpi('Salidas del período',R(tot),'out',cobPer.toLowerCase(),'flat')+kpi('Gastos',R(ex),'out','Alquiler, servicios, materiales…','flat')+kpi('Reembolsos',R(rf),'out','Devueltos a alumnos','flat')+kpi('Entradas del período',R(Number(d.received_cents)),'in','Para comparar','flat')+'<section class="card c8"><h2>Salidas registradas</h2><div class="list">'+(rows||'<p class="note" style="margin:0">Aún no hay salidas en este período. Usa «Registrar una salida» cuando pagues algo.</p>')+'</div>'+(os.length>=100?'<p class="note">Se muestran las más recientes.</p>':'')+'</section><section class="card c4"><h2>¿En qué salió el dinero?</h2>'+hbars(cr)+'</section></div>';
+  }
   if(cobTab==='mov'){var mv=movements(d);return h+'<div class="grid"><section class="card c12"><h2>Movimientos · '+cobPer.toLowerCase()+'</h2><div class="list">'+(mv.map(movRow).join('')||'<p class="note" style="margin:0">Sin movimientos en este período.</p>')+'</div>'+(d.entries_limited?'<p class="note">Se muestran los 200 más recientes.</p>':'')+'</section></div>'}
   var inn=Number(d.received_cents),out=Number(d.outflow_cents),dm=pv?delta(inn,Number(pv.received_cents),'vs período anterior'):null;
   return h+'<div class="grid">'+kpi('Entradas',R(inn),'in',dm&&dm.t,dm&&dm.c)+kpi('Salidas',R(out),'out','Incluye '+R(Number(d.refund_cents||0))+' reembolsados','flat')+kpi('Por cobrar (todo)',D.pending?R(Number(D.pending.total_cents)):'—','out',D.pending?Number(D.pending.total_count)+' con saldo':'','flat')+kpi('Resultado del período',R(inn-out),inn-out>=0?'in':'out','Entradas menos salidas','flat')+
@@ -388,6 +395,8 @@ function act(k,el){
   if(k==='interesados'){go('interesados');return}
   if(k==='instructores'){window.GestionCursos.insDialog();return}
   if(k==='cobrar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.cobrar(el&&el.dataset.pid?{person_id:el.dataset.pid,enrolment_id:el.dataset.eid||null}:null);return}
+  if(k==='salida'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.salida();return}
+  if(k==='voidout'&&manager()){var oo=null,rp=D.reports,kk;for(kk in rp){((rp[kk]&&rp[kk].outflows)||[]).forEach(function(x){if(x.id===(el&&el.dataset.oid))oo=x})}if(oo)window.GestionAcciones.anularSalida(oo);else toast('No se encontró la salida. Actualiza.');return}
   if(k==='matricular'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.matricular(el&&el.dataset.pid?{person_id:el.dataset.pid}:null);return}
   if(k==='agendar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.agendar();return}
   if(k==='asist'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.clase();return}

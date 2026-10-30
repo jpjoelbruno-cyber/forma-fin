@@ -825,6 +825,9 @@ function click(e){
   else if(k==='intgo')saveInt(false);
   else if(k==='intforce')saveInt(true);
   else if(k==='intnew')openInt();
+  else if(k==='salgo')saveSalida();
+  else if(k==='salnew')openSalida();
+  else if(k==='salvgo')saveVoidSalida();
   else if(k==='aggo')saveAg();
   else if(k==='agnew')openAgendar();
   else if(k==='edgo')saveEd();
@@ -843,12 +846,72 @@ document.addEventListener('change',function(e){var t=e.target;if(S&&S.kind==='cl
 function wheel(e){var t=e.target;if(t&&t.matches&&t.matches('input[data-nowheel]'))t.blur()}
 document.addEventListener('wheel',wheel,{passive:true});
 
+
+/* ---------- SALIDAS (gastos) · usa forma_finance expense / expense_void, solo propietario y gestor ---------- */
+var CATS_OUT=['Alquiler','Luz, agua e internet','Sueldos e instructores','Materiales','Marketing y publicidad','Impuestos y tasas','Transporte','Mantenimiento','Otros'];
+function openSalida(){
+  S={kind:'sal',busy:false,pending:null,msg:'',f:{cat:'',amount:'',day:X.T,method:'pix',reason:'',ok:false}};paintSalida();
+}
+function paintSalida(){
+  var f=S.f,locked=S.busy||S.pending;
+  var h='<form id="ac-sf" class="cu-form ac-grid" autocomplete="off"><label>Categoría de la salida<input name="cat" list="ac-cats" required maxlength="120" placeholder="Elige o escribe" value="'+X.esc(f.cat)+'"'+(locked?' disabled':'')+'><datalist id="ac-cats">'+CATS_OUT.map(function(c){return '<option value="'+X.esc(c)+'">'}).join('')+'</datalist></label>'
+   +'<label>Importe R$<input name="amount" type="text" inputmode="decimal" required placeholder="150,00" value="'+X.esc(f.amount)+'"'+(locked?' disabled':'')+'></label>'
+   +'<label>Fecha en que salió<input name="day" type="date" required max="'+X.T+'" min="2020-01-01" value="'+X.esc(f.day)+'"'+(locked?' disabled':'')+'></label>'
+   +'<label>Cómo se pagó<select name="method"'+(locked?' disabled':'')+'>'+Object.keys(METHODS).map(function(k){return '<option value="'+k+'"'+(f.method===k?' selected':'')+'>'+METHODS[k]+'</option>'}).join('')+'</select></label>'
+   +'<label style="grid-column:1/-1">¿Para qué fue? (descripción)<textarea name="reason" required minlength="3" maxlength="500" rows="2" placeholder="Ej.: alquiler de octubre de la sala"'+(locked?' disabled':'')+'>'+X.esc(f.reason)+'</textarea></label>'
+   +'<label class="ac-chk" style="display:flex;gap:10px;align-items:center;grid-template-columns:none"><input type="checkbox" name="ok" style="width:22px;min-height:22px"'+(f.ok?' checked':'')+(locked?' disabled':'')+'> Confirmo que este dinero ya salió</label>'
+   +'<p class="note" style="grid-column:1/-1;margin:0">Se guarda con tu usuario y la fecha real. Si te equivocas, podrás anularla con un motivo; no se borra del historial.</p>'
+   +'<div class="cu-foot" style="grid-column:1/-1"><button type="button" class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cancelar</button><button type="button" class="btn p" data-ac="salgo"'+(S.busy?' disabled':'')+'>'+(S.busy?'Guardando…':S.pending?'Reintentar el mismo registro':'Guardar salida')+'</button></div></form>';
+  shell('Registrar una salida',h);say(S.msg);S.msg='';
+}
+function readSal(){var fd=new FormData($('#ac-sf'));S.f={cat:String(fd.get('cat')||'').trim(),amount:String(fd.get('amount')||'').trim(),day:String(fd.get('day')||''),method:String(fd.get('method')||'pix'),reason:String(fd.get('reason')||'').trim(),ok:fd.get('ok')==='on'};return S.f}
+function saveSalida(){
+  if(S.busy)return;
+  if(!S.pending){
+    var f=readSal(),am;
+    try{am=cents(f.amount)}catch(e){say(e.message);return}
+    if(!f.cat){say('Indica la categoría de la salida.');return}
+    if(am<1||am>100000000){say('El importe debe ser mayor a cero.');return}
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(f.day)||f.day>X.T||f.day<'2020-01-01'){say('Pon la fecha real en que salió el dinero (no puede ser futura).');return}
+    if(f.reason.length<3){say('Escribe para qué fue la salida (mínimo 3 letras).');return}
+    if(!f.ok){say('Marca la casilla para confirmar que el dinero ya salió.');return}
+    S.pending={request_id:uuid(),reason:f.reason,amount_cents:am,paid_on:f.day,method:f.method,category:f.cat};
+  }
+  var p=S.pending;S.busy=true;paintSalida();
+  (X.demo?simulate('sal'):X.rpc('forma_finance',{p_action:'expense',p_data:p})).then(function(r){
+    if(!r||!(r.saved||r.already_saved))throw Error('Sin confirmar');
+    S.busy=false;S.pending=null;X.refresh();
+    X.dlg('Salida guardada','<div class="ac-ok"><b>'+X.R(p.amount_cents)+'</b> · '+X.esc(p.category)+' · '+X.dl(p.paid_on)+' quedó registrado como salida.</div><div class="fi-acts"><button class="btn p" data-ac="salnew">Registrar otra</button><button class="btn s" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){
+    S.busy=false;if(e&&FATAL.indexOf(e.code)>-1)S.pending=null;
+    S.msg=(e&&e.code==='42501')?'Tu rol no puede registrar salidas.':(e&&e.code==='22023'&&e.message)?e.message:errText(e);paintSalida();
+  });
+}
+function openVoidSalida(o){
+  S={kind:'salv',busy:false,pending:null,o:o,msg:''};paintVoidSalida();
+}
+function paintVoidSalida(){
+  var o=S.o;
+  shell('Anular una salida','<div class="ac-ok" style="background:var(--warnbg,#fff4e0);color:var(--warn,#8a5300)"><b>'+X.R(Number(o.amount_cents))+'</b> · '+X.esc(o.category||'Salida')+' · '+X.dl(o.paid_on)+'</div><p class="note">Úsalo solo para corregir un error de registro. La salida deja de contar en los totales, pero queda en el historial con tu motivo.</p><label>Motivo de la anulación<textarea id="ac-vr" required minlength="3" maxlength="500" rows="2"'+(S.busy||S.pending?' disabled':'')+'>'+X.esc(S.reason||'')+'</textarea></label><div class="cu-foot"><button class="btn s" data-act="cerrar"'+(S.busy?' disabled':'')+'>Cancelar</button><button class="btn p cu-danger" data-ac="salvgo"'+(S.busy?' disabled':'')+'>'+(S.busy?'Anulando…':'Anular esta salida')+'</button></div>');say(S.msg);S.msg='';
+}
+function saveVoidSalida(){
+  if(S.busy)return;
+  if(!S.pending){var t=$('#ac-vr'),r=t?t.value.trim():'';S.reason=r;if(r.length<3){say('Explica el motivo (mínimo 3 letras).');return}S.pending={request_id:uuid(),outflow_id:S.o.id,reason:r}}
+  S.busy=true;paintVoidSalida();
+  (X.demo?simulate('salv'):X.rpc('forma_finance',{p_action:'expense_void',p_data:S.pending})).then(function(r){
+    if(!r||!(r.saved||r.already_saved||r.voided))throw Error('Sin confirmar');
+    S.busy=false;S.pending=null;X.refresh();X.dlg('Salida anulada','<div class="ac-ok">La salida quedó anulada y ya no cuenta en los totales. El historial se conserva.</div><div class="fi-acts"><button class="btn p" data-act="cerrar">Cerrar</button></div>',false);
+  },function(e){S.busy=false;if(e&&FATAL.indexOf(e.code)>-1)S.pending=null;S.msg=(e&&e.code==='22023'&&e.message)?e.message:errText(e);paintVoidSalida()});
+}
+
 window.GestionAcciones={
   init:function(ctx){X=ctx},
   matricular:openMat,
   cobrar:openPay,
   clase:openClase,
   interesado:openInt,
+  salida:openSalida,
+  anularSalida:openVoidSalida,
   agendar:openAgendar,
   editarReserva:openEditRes,
   editarMatricula:openEditMat,
