@@ -78,7 +78,7 @@ V.cursos=function(){
   var cs=D.courses||[],ls=D.lessons||[];
   function box(title,list,hint){return '<section class="card c6"><h2>'+title+' <span class="pill" style="background:var(--soft);color:var(--brand2)">'+list.length+'</span></h2>'+(list.length?'<div class="list">'+list.map(function(c){var n=ls.filter(function(l){return l.course_id===c.id}).length;return '<div class="row"><div class="t"><b>'+esc(c.title)+'</b><span>'+n+' lección'+(n===1?'':'es')+' · '+(c.status==='published'?'Publicado':'Borrador')+'</span></div></div>'}).join('')+'</div>':'<p class="note">'+hint+'</p>')+'</section>'}
   var free=cs.filter(function(c){return c.access_level==='free'}),sub=cs.filter(function(c){return c.access_level!=='free'});
-  return head('Cursos','Gratis para seguidores y solo para matriculados.')+'<div class="grid">'+box('Gratis (para seguidores)',free,'Aún no hay cursos gratis.')+box('Solo matriculados',sub,'Aún no hay cursos de suscripción.')+'</div><p class="note">Para crear o editar cursos y lecciones (duración, pregunta), <a class="link" href="/?abrir=accesos" data-aact="clasica">abre el editor de cursos</a>. Cada lección necesita duración y pregunta para guardar el progreso.</p>';
+  return head('Cursos','Gratis para seguidores y solo para matriculados.')+'<div class="grid">'+box('Gratis (para seguidores)',free,'Aún no hay cursos gratis.')+box('Solo matriculados',sub,'Aún no hay cursos de suscripción.')+'</div><p class="note">Para crear o editar cursos y lecciones (duración, pregunta), <a class="link" href="/?alumno=1&abrir=cursos" data-aact="editcursos">abre el editor de cursos</a> (ahí vinculas los videos de YouTube). Cada lección necesita duración y pregunta para guardar el progreso.</p>';
 };
 V.ajustes=function(){
   return head('Ajustes')+'<div class="grid"><section class="card c6"><h2>WhatsApp de ayuda</h2><p style="margin:0 0 6px"><b class="num">'+(D.phone?'+'+esc(D.phone):'Sin configurar')+'</b></p><p class="note">Es el número que abre el botón «Me interesa» y la ayuda. Para cambiarlo, abre «Validar accesos y editar cursos» aquí abajo.</p></section>'
@@ -106,7 +106,8 @@ function act(k){
   if(k==='out'){if(demo){toast('Vista de ejemplo: no hay sesión real.');return}client.auth.signOut().then(function(){location.href='/'},function(){toast('No se confirmó el cierre de sesión.')});return}
   if(k==='presupuesto'){location.href='/?personal=1';return}
   if(k==='gestion'){if(EMBED&&window.FormaAdmin&&window.FormaAdmin.onHome){window.FormaAdmin.onHome();return}location.href='/agenda.html';return}
-  if(k==='clasica'){location.href='/?abrir=accesos';return}
+  if(k==='clasica'){location.href='/?alumno=1&abrir=accesos';return}
+  if(k==='editcursos'){location.href='/?alumno=1&abrir=cursos';return}
 }
 function onClick(e){
   if(EMBED&&!e.target.closest('#adm-root'))return;

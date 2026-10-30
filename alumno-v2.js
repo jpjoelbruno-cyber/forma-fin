@@ -228,8 +228,8 @@ function land(){
 /* Enlace directo desde Gestión → Administración: /?abrir=accesos abre el panel de accesos y cursos online (si la cuenta es propietaria). */
 function openAdminFromUrl(){
   let q=null;try{q=new URLSearchParams(location.search).get('abrir')}catch(e){}
-  if(q!=='accesos')return;
-  let n=0;const t=setInterval(()=>{const b=$('forma-admin-button');if(b&&visible('#forma-admin-button')){clearInterval(t);b.click();try{history.replaceState(null,'','/')}catch(e){}}else if(++n>40)clearInterval(t);},500);
+  if(q!=='accesos'&&q!=='cursos')return;
+  let n=0;const t=setInterval(()=>{const b=$('forma-admin-button');if(b&&visible('#forma-admin-button')){clearInterval(t);b.click();if(q==='cursos')setTimeout(()=>{try{document.querySelector('#p-admin [data-tab="courses"]')?.click()}catch(e){}},300);try{history.replaceState(null,'','/')}catch(e){}}else if(++n>40)clearInterval(t);},500);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
 openAdminFromUrl();
