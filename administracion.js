@@ -1,6 +1,6 @@
-/* FORMÁ Administración (solo lectura, solo propietario): Resumen · Personas · Cursos online · Ajustes.
+/* FORMÁ Administración (solo propietario; Cursos online también edita cursos y videos): Resumen · Personas · Cursos online · Ajustes.
    Modo incrustado: si el script lleva data-embed, vive dentro de Gestión (una sola app) y no toca la cabecera ni la navegación de la página.
-   Lee los mismos datos reales por las mismas funciones del servidor. No escribe nada. */
+   Lee los mismos datos reales por las mismas funciones del servidor. Solo escribe en Cursos online (cursos, lecciones y videos), con las reglas de seguridad del servidor. */
 (function(){'use strict';
 var $=function(s){return document.querySelector(s)};
 var demo=new URLSearchParams(location.search).get('vista')==='ejemplo';
@@ -34,8 +34,8 @@ function load(){
     safe('por cobrar',rpc('forma_finance_reports',{p_action:'pending',p_data:{offset:0}}).then(function(d){D.pending=d})),
     safe('interesados',rpc('forma_crm',{p_action:'sales',p_data:{stage:'',offset:0}}).then(function(d){D.crm=d})),
     safe('matriculados',rpc('forma_education',{p_action:'list',p_data:{query:'',offset:0,state:''}}).then(function(d){D.edu=d})),
-    safe('cursos',table('forma_courses','id,title,access_level,status,position','position').then(function(d){D.courses=d})),
-    safe('lecciones',table('forma_course_lessons','id,course_id,status','position').then(function(d){D.lessons=d})),
+    safe('cursos',table('forma_courses','id,title,access_level,status,position,summary','position').then(function(d){D.courses=d})),
+    safe('lecciones',table('forma_course_lessons','id,course_id,module_title,title,youtube_id,status,position,body,action_text','position').then(function(d){D.lessons=d})),
     safe('WhatsApp',(demo?Promise.resolve({whatsapp:'5511999990000'}):client.from('forma_support_settings').select('whatsapp').eq('id',true).single().then(function(r){if(r.error)throw r.error;return r.data})).then(function(d){D.phone=d&&d.whatsapp||''}))
   ]);
 }
@@ -74,12 +74,103 @@ V.personas=function(){
   return head('Personas','Quién entró, cuánto usa y quién espera acceso.')+'<input class="search" id="apq" placeholder="Buscar por nombre o correo" value="'+esc(D.q)+'" maxlength="100" style="margin-bottom:16px">'
    +'<div class="grid"><section class="card c4"><h2>Esperan acceso <span class="pill" style="background:var(--warnbg);color:var(--warn)">'+(a?Number(a.pending_count||0):'—')+'</span></h2>'+pv+'</section><section class="card c8"><h2>Con actividad</h2>'+uv+'<p class="note">● tiene datos guardados · Los montos y descripciones siguen privados.</p></section></div>';
 };
+/* ---- Cursos online: editor simple de cursos, módulos y videos de YouTube (escribe con las mismas tablas y reglas de seguridad del editor anterior) ---- */
+var CE={cid:'',lid:null,mod:'',newMod:'',title:'',url:'',pub:true,body:'',act:'',pos:'',dur:'',q:'',o:['','',''],ok:0,more:false,cform:null,busy:false,msg:'',err:''};
+function ytId(u){return window.FormaCourseUtils?FormaCourseUtils.youtubeId(u):null}
+function lessonsOf(cid){return (D.lessons||[]).filter(function(l){return l.course_id===cid}).sort(function(a,b){return a.position-b.position})}
+function modsOf(cid){var m=[];lessonsOf(cid).forEach(function(l){if(l.module_title&&m.indexOf(l.module_title)<0)m.push(l.module_title)});return m}
+function ceReset(keepCourse){CE.lid=null;CE.mod='';CE.newMod='';CE.title='';CE.url='';CE.pub=true;CE.body='';CE.act='';CE.pos='';CE.dur='';CE.q='';CE.o=['','',''];CE.ok=0;CE.more=false;CE.msg='';CE.err='';if(!keepCourse)CE.cform=null}
+function ceRead(){
+  var g=function(id){var e=document.getElementById(id);return e?e.value:null},v;
+  if((v=g('ce-mod'))!==null)CE.mod=v;if((v=g('ce-newmod'))!==null)CE.newMod=v;if((v=g('ce-title'))!==null)CE.title=v;if((v=g('ce-url'))!==null)CE.url=v;
+  var p=document.getElementById('ce-pub');if(p)CE.pub=p.checked;
+  if((v=g('ce-body'))!==null)CE.body=v;if((v=g('ce-act'))!==null)CE.act=v;if((v=g('ce-pos'))!==null)CE.pos=v;if((v=g('ce-dur'))!==null)CE.dur=v;if((v=g('ce-q'))!==null)CE.q=v;
+  for(var i=0;i<3;i++)if((v=g('ce-o'+i))!==null)CE.o[i]=v;if((v=g('ce-ok'))!==null)CE.ok=Number(v);
+  var cf=CE.cform;if(cf){if((v=g('cf-title'))!==null)cf.title=v;if((v=g('cf-acc'))!==null)cf.acc=v;var c2=document.getElementById('cf-pub');if(c2)cf.pub=c2.checked}
+}
+function ceCourseForm(){
+  var f=CE.cform;
+  return '<div class="card" style="margin-bottom:12px;background:var(--soft)"><h2>'+(f.id?'Editar curso':'Nuevo curso')+'</h2><div style="display:grid;gap:10px"><label>Nombre del curso<input id="cf-title" maxlength="120" value="'+esc(f.title)+'"></label><label>Quién lo ve<select id="cf-acc"><option value="free"'+(f.acc==='free'?' selected':'')+'>Gratis (para seguidores)</option><option value="subscription"'+(f.acc!=='free'?' selected':'')+'>Solo matriculados</option></select></label><label style="display:flex;gap:10px;align-items:center;grid-template-columns:none"><input type="checkbox" id="cf-pub" style="width:22px;min-height:22px"'+(f.pub?' checked':'')+'> Publicado (visible para los alumnos)</label>'+(CE.err&&CE.cform?'<div class="err">'+esc(CE.err)+'</div>':'')+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p sm" data-ce="csave"'+(CE.busy?' disabled':'')+'>'+(CE.busy?'Guardando…':'Guardar curso')+'</button><button class="btn s sm" data-ce="ccancel">Cancelar</button></div></div></div>';
+}
+function ceVideoForm(c){
+  var id=ytId(CE.url),mods=modsOf(c.id),isNew=!CE.lid,usingNew=CE.mod==='__new'||(!mods.length);
+  var modSel='<select id="ce-mod" data-ce-change="mod">'+mods.map(function(m){return '<option value="'+esc(m)+'"'+(CE.mod===m?' selected':'')+'>'+esc(m)+'</option>'}).join('')+'<option value="__new"'+(usingNew?' selected':'')+'>+ Módulo nuevo…</option></select>';
+  var thumb=id?'<div class="ce-th"><img src="https://i.ytimg.com/vi/'+id+'/mqdefault.jpg" alt="" width="120" height="68"><div><b>Video reconocido ✓</b><span>Si esta es la imagen de tu video, el enlace es correcto.</span></div></div>':(CE.url.trim()?'<div class="err" style="margin:0">Ese enlace no parece un video de YouTube. Copia la dirección completa (youtube.com/watch?v=… o youtu.be/…).</div>':'');
+  return '<div class="card"><h2>'+(isNew?'Agregar video':'Editar video')+'</h2><p class="note" style="margin:-6px 0 10px">Curso: <b>'+esc(c.title)+'</b></p><div style="display:grid;gap:12px">'
+   +'<label>1 · Módulo'+modSel+'</label>'+(usingNew?'<label>Nombre del módulo nuevo<input id="ce-newmod" maxlength="120" placeholder="Ej.: Primeros pasos" value="'+esc(CE.newMod)+'"></label>':'')
+   +'<label>2 · Título del video<input id="ce-title" maxlength="160" placeholder="Ej.: Cómo armar tu presupuesto en 10 minutos" value="'+esc(CE.title)+'"></label>'
+   +'<label>3 · Enlace de YouTube<input id="ce-url" type="url" maxlength="500" placeholder="https://www.youtube.com/watch?v=…" value="'+esc(CE.url)+'" data-ce-input="url"></label>'+thumb
+   +'<label style="display:flex;gap:10px;align-items:center;grid-template-columns:none"><input type="checkbox" id="ce-pub" style="width:22px;min-height:22px"'+(CE.pub?' checked':'')+'> Visible para alumnos (el curso también debe estar publicado)</label>'
+   +'<details'+(CE.more?' open':'')+' data-ce-more><summary style="cursor:pointer;font-weight:700;color:var(--brand2)">Opciones extra (explicación, actividad, pregunta de comprensión, orden)</summary><div style="display:grid;gap:12px;margin-top:10px">'
+   +'<label>Explicación<textarea id="ce-body" maxlength="4000" rows="3">'+esc(CE.body)+'</textarea></label><label>Actividad práctica<textarea id="ce-act" maxlength="1000" rows="2">'+esc(CE.act)+'</textarea></label>'
+   +'<label>Orden (número; menor sale primero)<input id="ce-pos" type="number" min="0" max="999999" value="'+esc(CE.pos)+'" placeholder="Automático: al final"></label>'
+   +'<div class="note" style="margin:0">Para que el alumno avance clase por clase (ver el video y responder), completa esto. Si lo dejas vacío, se guarda solo el video.</div>'
+   +'<label>Duración del video (minutos)<input id="ce-dur" type="number" min="1" max="240" step="1" value="'+esc(CE.dur)+'"></label><label>Pregunta breve de comprensión<input id="ce-q" maxlength="200" value="'+esc(CE.q)+'"></label>'
+   +[0,1,2].map(function(i){return '<label>Respuesta '+(i+1)+'<input id="ce-o'+i+'" maxlength="200" value="'+esc(CE.o[i])+'"></label>'}).join('')
+   +'<label>Respuesta correcta<select id="ce-ok">'+[0,1,2].map(function(i){return '<option value="'+i+'"'+(CE.ok===i?' selected':'')+'>Respuesta '+(i+1)+'</option>'}).join('')+'</select></label></div></details>'
+   +(CE.err&&!CE.cform?'<div class="err" style="margin:0">'+esc(CE.err)+'</div>':'')+(CE.msg?'<div class="cu-ok" style="margin:0">'+esc(CE.msg)+'</div>':'')
+   +'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-ce="vsave"'+(CE.busy?' disabled':'')+'>'+(CE.busy?'Guardando…':'Guardar video')+'</button>'+(isNew?'':'<button class="btn s" data-ce="vnew">Cancelar edición</button>')+'</div></div></div>';
+}
 V.cursos=function(){
-  var cs=D.courses||[],ls=D.lessons||[];
-  function box(title,list,hint){return '<section class="card c6"><h2>'+title+' <span class="pill" style="background:var(--soft);color:var(--brand2)">'+list.length+'</span></h2>'+(list.length?'<div class="list">'+list.map(function(c){var n=ls.filter(function(l){return l.course_id===c.id}).length;return '<div class="row"><div class="t"><b>'+esc(c.title)+'</b><span>'+n+' lección'+(n===1?'':'es')+' · '+(c.status==='published'?'Publicado':'Borrador')+'</span></div></div>'}).join('')+'</div>':'<p class="note">'+hint+'</p>')+'</section>'}
-  var free=cs.filter(function(c){return c.access_level==='free'}),sub=cs.filter(function(c){return c.access_level!=='free'});
-  return head('Cursos','Gratis para seguidores y solo para matriculados.')+'<div class="grid">'+box('Gratis (para seguidores)',free,'Aún no hay cursos gratis.')+box('Solo matriculados',sub,'Aún no hay cursos de suscripción.')+'</div><p class="note">Para crear o editar cursos y lecciones (duración, pregunta), <a class="link" href="/?alumno=1&abrir=cursos" data-aact="editcursos">abre el editor de cursos</a> (ahí vinculas los videos de YouTube). Cada lección necesita duración y pregunta para guardar el progreso.</p>';
+  var cs=(D.courses||[]).slice().sort(function(a,b){return a.position-b.position});
+  if(!CE.cid&&cs.length)CE.cid=cs[0].id;
+  var cur=cs.filter(function(c){return c.id===CE.cid})[0];
+  var left='<section class="card"><h2>Tus cursos</h2><div class="list">'+(cs.length?cs.map(function(c){var n=lessonsOf(c.id).length;return '<div class="row ce-c'+(c.id===CE.cid?' on':'')+'"><button class="ce-pick" data-ce="course" data-id="'+c.id+'" aria-pressed="'+(c.id===CE.cid)+'"><b>'+esc(c.title)+'</b><span>'+n+' video'+(n===1?'':'s')+' · '+(c.status==='published'?'Publicado':c.status==='archived'?'Archivado':'Borrador')+' · '+(c.access_level==='free'?'Gratis':'Solo matriculados')+'</span></button><button class="btn s sm" data-ce="cedit" data-id="'+c.id+'">Editar</button></div>'}).join(''):'<p class="note">Aún no hay cursos. Crea el primero.</p>')+'</div><div style="margin-top:12px"><button class="btn p sm" data-ce="cnew">+ Nuevo curso</button></div></section>';
+  var right='';
+  if(CE.cform)right+=ceCourseForm();
+  if(cur){
+    var ls=lessonsOf(cur.id),mods=modsOf(cur.id);
+    right+='<section class="card" style="margin-bottom:12px"><h2>Videos de «'+esc(cur.title)+'»</h2>'+(ls.length?mods.map(function(m){return '<div class="cu-sec" style="margin:10px 0 4px">'+esc(m)+'</div><div class="list">'+ls.filter(function(l){return l.module_title===m}).map(function(l){return '<div class="row"><div class="t"><b>'+esc(l.title)+'</b><span>'+(l.youtube_id?'Con video':'Sin video aún')+' · '+(l.status==='published'?'Visible':l.status==='archived'?'Archivado':'Borrador')+'</span></div><button class="btn s sm" data-ce="vedit" data-id="'+l.id+'">Editar</button></div>'}).join('')+'</div>'}).join(''):'<p class="note">Este curso aún no tiene videos. Agrega el primero abajo.</p>')+'</section>'+ceVideoForm(cur);
+  }else if(!CE.cform)right+='<section class="card"><p class="note">Crea un curso para empezar a agregar videos.</p></section>';
+  return head('Cursos','Cursos y videos de YouTube.')+'<div class="ce-g"><div>'+left+'</div><div>'+right+'</div></div>'+(demo?'<p class="note">Vista de ejemplo: aquí no se guarda nada.</p>':'');
 };
+function ceErr(e){var m=(e&&(e.message||e.code))||'';if(/row-level|42501|permission/i.test(m))return 'Tu cuenta no tiene permiso de administrador de cursos.';return 'No se confirmó el guardado. Revisa tu conexión y vuelve a intentar; no se perdió nada.'}
+function ceReload(){return Promise.all([table('forma_courses','id,title,access_level,status,position,summary','position').then(function(d){D.courses=d}),table('forma_course_lessons','id,course_id,module_title,title,youtube_id,status,position,body,action_text','position').then(function(d){D.lessons=d})])}
+function ceUuid(){return window.crypto&&crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
+function ceSaveCourse(){
+  ceRead();var f=CE.cform,t=(f.title||'').trim();CE.err='';
+  if(!t||t.length>120){CE.err='Escribe el nombre del curso (máx. 120 letras).';render();return}
+  if(demo){CE.err='Vista de ejemplo: no se guarda nada.';render();return}
+  var row={title:t,access_level:f.acc==='free'?'free':'subscription',status:f.pub?'published':'draft'},q;
+  if(f.id)q=client.from('forma_courses').update(row).eq('id',f.id).select('id').single();
+  else{row.id=ceUuid();row.summary='';row.icon='📚';row.language='es';row.position=((D.courses||[]).reduce(function(m,c){return Math.max(m,Number(c.position)||0)},0))+1;q=client.from('forma_courses').insert(row).select('id').single()}
+  CE.busy=true;render();
+  q.then(function(r){if(r.error||!r.data)throw r.error||Error('save');CE.cid=r.data.id;CE.cform=null;CE.msg='';return ceReload()}).then(function(){CE.busy=false;toast('Curso guardado');render()},function(e){CE.busy=false;CE.err=ceErr(e);render()});
+}
+function ceSaveVideo(){
+  ceRead();CE.err='';CE.msg='';
+  var c=(D.courses||[]).filter(function(x){return x.id===CE.cid})[0];if(!c)return;
+  var mods=modsOf(c.id),usingNew=CE.mod==='__new'||!mods.length,mod=(usingNew?CE.newMod:(CE.mod||mods[0])).trim(),title=CE.title.trim(),raw=CE.url.trim(),yid=raw?ytId(raw):null;
+  var bad=function(t){CE.err=t;render()};
+  if(!mod||mod.length>120)return bad('Elige o escribe el módulo.');
+  if(!title||title.length>160)return bad('Escribe el título del video.');
+  if(!raw)return bad('Pega el enlace de YouTube del video.');
+  if(!yid)return bad('Ese enlace no parece un video de YouTube.');
+  var pos=CE.pos===''?null:Number(CE.pos);if(pos!==null&&(!Number.isInteger(pos)||pos<0||pos>999999))return bad('El orden debe ser un número entero.');
+  var q=CE.q.trim(),opts=CE.o.map(function(x){return x.trim()}),dur=Number(CE.dur),wantCheck=!!(q||opts.some(Boolean)||CE.dur!=='');
+  if(wantCheck&&(!q||opts.some(function(o){return !o})||!(dur>=1&&dur<=240&&Number.isInteger(dur))))return bad('Para la pregunta de comprensión completa duración (minutos), pregunta y las 3 respuestas, o deja todo vacío.');
+  if(demo)return bad('Vista de ejemplo: no se guarda nada.');
+  var all=D.lessons||[],isNew=!CE.lid,id=isNew?ceUuid():CE.lid;
+  var row={module_title:mod,title:title,youtube_id:yid,body:CE.body.trim(),action_text:CE.act.trim(),status:CE.pub?'published':'draft'};
+  if(pos!==null)row.position=pos;else if(isNew)row.position=lessonsOf(c.id).reduce(function(m,l){return Math.max(m,Number(l.position)||0)},0)+1;
+  var req;if(isNew){row.id=id;row.course_id=c.id;req=client.from('forma_course_lessons').insert(row).select('id').single()}else req=client.from('forma_course_lessons').update(row).eq('id',id).eq('course_id',c.id).select('id').single();
+  CE.busy=true;render();
+  req.then(function(r){if(r.error||!r.data||r.data.id!==id)throw r.error||Error('save');
+    if(!wantCheck)return;
+    return client.rpc('forma_learning_config',{p_lesson:id,p_duration:dur*60,p_question:q,p_options:opts,p_correct:CE.ok}).then(function(x){if(x.error)throw Object.assign(Error('check'),{check:true})})
+  }).then(function(){return ceReload()}).then(function(){CE.busy=false;toast('Video guardado');ceReset(true);CE.msg='Video guardado. Ya puedes agregar otro.';render()},function(e){CE.busy=false;if(e&&e.check){CE.err='El video se guardó, pero no se pudo guardar la pregunta de comprensión (¿falta activar el SQL de aprendizaje?). Puedes dejarla vacía.';ceReload().then(render,render)}else{CE.err=ceErr(e);render()}});
+}
+function ceClick(b){
+  var k=b.dataset.ce;ceRead();
+  if(k==='course'){CE.cid=b.dataset.id;ceReset();render();return}
+  if(k==='cnew'){ceReset(true);CE.cform={id:null,title:'',acc:'free',pub:false};CE.err='';render();return}
+  if(k==='cedit'){var c=(D.courses||[]).filter(function(x){return x.id===b.dataset.id})[0];if(!c)return;CE.cid=c.id;ceReset(true);CE.cform={id:c.id,title:c.title,acc:c.access_level==='free'?'free':'subscription',pub:c.status==='published'};CE.err='';render();return}
+  if(k==='ccancel'){CE.cform=null;CE.err='';render();return}
+  if(k==='csave'){ceSaveCourse();return}
+  if(k==='vsave'){ceSaveVideo();return}
+  if(k==='vnew'){ceReset(true);render();return}
+  if(k==='vedit'){var l=(D.lessons||[]).filter(function(x){return x.id===b.dataset.id})[0];if(!l)return;ceReset(true);CE.lid=l.id;CE.mod=l.module_title;CE.title=l.title;CE.url=l.youtube_id?'https://www.youtube.com/watch?v='+l.youtube_id:'';CE.pub=l.status==='published';CE.body=l.body||'';CE.act=l.action_text||'';CE.pos=String(l.position==null?'':l.position);CE.more=!!(l.body||l.action_text);render();var f=document.getElementById('ce-title');if(f)f.scrollIntoView({behavior:'smooth',block:'center'})}
+}
 V.ajustes=function(){
   return head('Ajustes')+'<div class="grid"><section class="card c6"><h2>WhatsApp de ayuda</h2><p style="margin:0 0 6px"><b class="num">'+(D.phone?'+'+esc(D.phone):'Sin configurar')+'</b></p><p class="note">Es el número que abre el botón «Me interesa» y la ayuda. Para cambiarlo, abre «Validar accesos y editar cursos» aquí abajo.</p></section>'
    +'<section class="card c6"><h2>Otras pantallas</h2><div class="list"><div class="row"><div class="t"><b>Validar accesos y editar cursos</b><span>Herramientas de administración dentro de la app</span></div><button class="btn s sm" data-aact="clasica">Abrir</button></div><div class="row"><div class="t"><b>Gestión (René)</b><span>Agenda, cobros, alumnos, interesados</span></div><button class="btn s sm" data-aact="gestion">Abrir</button></div><div class="row"><div class="t"><b>Mi presupuesto y cursos</b><span>Vista del alumno</span></div><button class="btn s sm" data-aact="presupuesto">Abrir</button></div></div></section></div>';
@@ -107,10 +198,11 @@ function act(k){
   if(k==='presupuesto'){location.href='/?personal=1';return}
   if(k==='gestion'){if(EMBED&&window.FormaAdmin&&window.FormaAdmin.onHome){window.FormaAdmin.onHome();return}location.href='/agenda.html';return}
   if(k==='clasica'){location.href='/?alumno=1&abrir=accesos';return}
-  if(k==='editcursos'){location.href='/?alumno=1&abrir=cursos';return}
+  if(k==='editcursos'){go('cursos');return}
 }
 function onClick(e){
   if(EMBED&&!e.target.closest('#adm-root'))return;
+  var ce=e.target.closest('[data-ce]');if(ce){ceClick(ce);return}
   var b=e.target.closest('[data-v],[data-av]');if(b){go(b.dataset.v||b.dataset.av);return}
   var a=e.target.closest('[data-aact]');if(a){if(a.tagName==='A')e.preventDefault();act(a.dataset.aact);return}
   var d=e.target.closest('[data-days]');if(d){D.days=Number(d.dataset.days);D.report=null;render();safe('uso',rpc('forma_admin_report',{p_days:D.days}).then(function(x){D.report=x})).then(render);return}
@@ -118,6 +210,8 @@ function onClick(e){
 }
 function onInput(e){if(e.target.id==='apq'){D.q=e.target.value.trim();clearTimeout(document.pqT);document.pqT=setTimeout(render,250)}}
 document.addEventListener('click',onClick);document.addEventListener('input',onInput);
+document.addEventListener('change',function(e){if(EMBED&&!e.target.closest('#adm-root'))return;if(e.target.dataset&&e.target.dataset.ceChange==='mod'&&view==='cursos'){ceRead();render()}});
+document.addEventListener('focusout',function(e){if(e.target.dataset&&e.target.dataset.ceInput==='url'&&view==='cursos'&&(!EMBED||e.target.closest('#adm-root'))){ceRead();render()}});
 if(!EMBED){
   $('#bUser').onclick=function(){var m=$('#menu');m.hidden=!m.hidden;this.setAttribute('aria-expanded',String(!m.hidden))};
   window.addEventListener('hashchange',function(){var h=location.hash.slice(1);if(V[h]&&h!==view)go(h)});
@@ -146,7 +240,7 @@ function boot(){
 /* datos de ejemplo */
 function demoTable(n){
   if(n==='forma_courses')return[{id:'c1',title:'Tu primer presupuesto',access_level:'free',status:'published',position:1},{id:'c2',title:'Salir de deudas',access_level:'free',status:'published',position:2},{id:'c3',title:'Invertir sin miedo',access_level:'free',status:'draft',position:3},{id:'c4',title:'Método FORMA',access_level:'subscriber',status:'published',position:4}];
-  return[{id:'l1',course_id:'c1',status:'published'},{id:'l2',course_id:'c1',status:'published'},{id:'l3',course_id:'c2',status:'published'},{id:'l4',course_id:'c4',status:'published'}];
+  return[{id:'l1',course_id:'c1',module_title:'Primeros pasos',title:'Cómo armar tu presupuesto en 10 minutos',youtube_id:'dQw4w9WgXcQ',status:'published',position:1},{id:'l2',course_id:'c1',module_title:'Primeros pasos',title:'Registrar tus gastos cada día',youtube_id:'dQw4w9WgXcQ',status:'published',position:2},{id:'l5',course_id:'c1',module_title:'Mantener el hábito',title:'Revisar tu mes',youtube_id:null,status:'draft',position:3},{id:'l3',course_id:'c2',module_title:'Primeros pasos',title:'Ordena tus deudas',youtube_id:'dQw4w9WgXcQ',status:'published',position:1},{id:'l4',course_id:'c4',module_title:'Introducción',title:'Bienvenida al método',youtube_id:'dQw4w9WgXcQ',status:'published',position:1}];
 }
 function demoRpc(name,a){
   if(name==='forma_agenda_access')return{role:'owner'};

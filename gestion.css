@@ -408,3 +408,30 @@ dialog .cu-foot{bottom:0;padding-bottom:4px}
 .cu-ev{color:#fff;border-radius:6px;font-size:10px;line-height:1.2;text-align:left;padding:2px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;border:2px solid transparent}
 .cu-ev.bad{border-color:#DC2626;box-shadow:0 0 0 1px #fff inset}
 @media(max-width:520px){.cu-cd{min-height:56px}.cu-ev{font-size:9px;padding:1px 2px}.cu-ev b{display:none}}
+
+/* Cursos · tarjetas por grupo con fechas claras */
+.cu-sec{font:800 12px var(--f1);letter-spacing:.09em;text-transform:uppercase;color:var(--ink2);margin:16px 0 8px}
+.cu-gl{display:grid;gap:10px}
+@media(min-width:1500px){.cu-gl{grid-template-columns:1fr 1fr}}
+.cu-gc{border:2px solid var(--line);border-left:8px solid var(--c);border-radius:16px;background:var(--card);padding:10px 12px;display:grid;gap:8px}
+.cu-gc.sel{border-color:var(--brand);border-left-color:var(--c);background:var(--soft)}
+.cu-gc.off{opacity:.65}
+.cu-gm{display:grid;gap:6px;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;min-width:0}
+.cu-g1{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}.cu-g1 b{font-size:15px;line-height:1.25;min-width:0;overflow-wrap:anywhere}
+.cu-rng{font:800 16px var(--f1);letter-spacing:-.01em}.cu-rng i{font-style:normal;color:var(--brand);margin:0 2px}
+.cu-pb{position:relative;display:block;height:8px;border-radius:8px;background:var(--line);margin:16px 0 18px}
+.cu-pb u{position:absolute;left:0;top:0;bottom:0;border-radius:8px;background:var(--c)}
+.cu-pb em{position:absolute;top:-5px;width:3px;height:18px;margin-left:-1px;background:var(--ink);border-radius:2px}
+.cu-pb em::after{content:"HOY";position:absolute;top:-14px;left:50%;transform:translateX(-50%);font:800 9px var(--f1);font-style:normal;color:var(--ink)}
+.cu-pb s{position:absolute;top:12px;text-decoration:none;font-size:11px;font-weight:700;color:var(--ink2);white-space:nowrap}.cu-pb s.l{left:0}.cu-pb s.r{right:0}
+.cu-meta{display:flex;flex-wrap:wrap;gap:6px}.cu-meta span{background:var(--soft);color:var(--brand2);border-radius:999px;padding:3px 9px;font-size:12px;font-weight:700}
+.cu-ga{display:flex;gap:8px;flex-wrap:wrap}
+
+/* Administración · Cursos online */
+.ce-g{display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:900px){.ce-g{grid-template-columns:minmax(0,.8fr) minmax(0,1.3fr)}}
+.ce-c{padding:8px 0}.ce-c.on .ce-pick{background:var(--soft)}
+.ce-pick{flex:1;min-width:0;text-align:left;border:0;background:none;border-radius:12px;padding:6px 8px;color:inherit;font:inherit}
+.ce-pick b{display:block}.ce-pick span{color:var(--ink2);font-size:13px}
+.ce-th{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:14px;padding:8px}.ce-th img{border-radius:10px;flex:none;height:auto}.ce-th b{display:block}.ce-th span{font-size:13px;color:var(--ink2)}
+textarea{font:inherit;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;width:100%}

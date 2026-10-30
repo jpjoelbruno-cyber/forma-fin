@@ -110,26 +110,44 @@ function monthWin(){
   return{ms:ms,from:X.M.iso(a),to:X.M.iso(end)};
 }
 function pct(day,w){var a=X.M.date(w.from).getTime(),b=X.M.date(w.to).getTime(),t=X.M.date(day).getTime();return Math.max(0,Math.min(100,(t-a)/(b-a)*100))}
+function dfull(d){var p=d.split('-');return DOW[dow(d)]+' '+Number(p[2])+' '+MES[Number(p[1])-1].toLowerCase()+' '+p[0]}
+function dshort(d){var p=d.split('-');return Number(p[2])+' '+MES[Number(p[1])-1].toLowerCase()}
+function gcard(r){
+  var g=r.g,s=r.s,k=stOf(g),sel=C.selG===g.id,done=0,pc=0,mark='',meta=[];
+  if(s.from){
+    s.list.forEach(function(x){if(!x.cancelled&&x.day<=X.T)done++});
+    var A=X.M.date(s.from).getTime(),B=X.M.date(s.to).getTime(),T=X.M.date(X.T).getTime();
+    pc=k==='fin'?100:(k==='curso'?Math.max(2,Math.min(100,B>A?(T-A)/(B-A)*100:100)):0);
+    if(k==='curso')mark='<em style="left:'+pc.toFixed(1)+'%"></em>';
+    var left=Math.round((A-T)/864e5);
+    if(k==='curso')meta.push('Va la clase '+Math.max(1,Math.min(s.n,done))+' de '+s.n);
+    else if(k==='fin')meta.push(s.n+' clases · terminó')
+    else if(left>0&&k!=='cancel')meta.push(left===1?'Empieza mañana':'Empieza en '+left+' días');
+    meta.push(s.days.map(function(d){return DOW[d]}).join('-')+' '+hhmm(s.start)+'–'+hhmm(s.end));
+  }
+  meta.push(Number(g.students)+' / '+Number(g.capacity)+' cupos');
+  if(g.instructor)meta.push(esc(g.instructor));
+  if(g.room)meta.push(esc(g.room));
+  return '<div class="cu-gc'+(sel?' sel':'')+(g.active===false?' off':'')+'" style="--c:'+r.col+'"><button class="cu-gm" data-cu="pick" data-id="'+g.id+'" aria-pressed="'+sel+'"><span class="cu-g1"><b>'+esc(r.c.name)+' · '+esc(g.name)+'</b>'+badge(g)+'</span>'
+   +(s.from?'<span class="cu-rng">'+dfull(s.from)+' <i>→</i> '+dfull(s.to)+'</span><span class="cu-pb"><u style="width:'+pc.toFixed(1)+'%"></u>'+mark+'<s class="l">'+dshort(s.from)+'</s><s class="r">'+dshort(s.to)+'</s></span>':'<span class="cu-rng">Sin fechas preparadas</span>')
+   +'<span class="cu-meta">'+meta.map(function(m){return '<span>'+m+'</span>'}).join('')+'</span></button>'
+   +'<div class="cu-ga"><button class="btn p sm" data-cu="pick" data-id="'+g.id+'">Ver alumnos</button><button class="btn s sm" data-cu="editg" data-id="'+g.id+'">Editar</button></div></div>';
+}
 function board(){
-  var cat=C.cat,w=monthWin(),rows=[],tl='',lst='';
+  var cat=C.cat,secs={curso:[],prox:[],fin:[],cancel:[]},empt=[];
   cat.courses.slice().sort(function(a,b){return a.name.localeCompare(b.name)}).forEach(function(c){
     if(c.active===false&&C.flt.st!=='all'&&C.flt.st!=='cancel')return;
-    var gs=cat.groups.filter(function(g){return g.course_id===c.id&&passes(g)}).map(function(g){return{g:g,s:span(g)}}).sort(function(a,b){return(a.s.from||'9')<(b.s.from||'9')?-1:1});
+    var gs=cat.groups.filter(function(g){return g.course_id===c.id&&passes(g)});
     var col=colorOf(c);
-    if(!gs.length){if(!fltOn())rows.push({c:c,col:col,empty:true});return}
-    gs.forEach(function(x,i){rows.push({c:c,col:col,g:x.g,s:x.s,first:i===0})});
+    if(!gs.length){if(!fltOn())empt.push({c:c,col:col});return}
+    gs.forEach(function(g){var k=stOf(g),key=k==='curso'?'curso':k==='fin'?'fin':k==='cancel'?'cancel':'prox';secs[key].push({c:c,col:col,g:g,s:span(g)})});
   });
-  var head='<div class="cu-h"></div><div class="cu-hm">'+w.ms.map(function(m){return '<span>'+MES[m.getUTCMonth()]+(m.getUTCMonth()===0?' '+m.getUTCFullYear():'')+'</span>'}).join('')+'</div>';
-  rows.forEach(function(r){
-    var name='<div class="cu-n"><i class="cu-dot" style="background:'+r.col+'"></i><span>'+esc(r.c.name)+(r.c.active===false?' <small>(inactivo)</small>':'')+'</span></div>';
-    if(r.empty){tl+=name+'<div class="cu-t">'+(r.c.active===false?'<button class="cu-ghost" data-cu="unarch" data-id="'+r.c.id+'">Restaurar curso archivado</button>':'<button class="cu-ghost" data-cu="newg" data-id="'+r.c.id+'">+ Primer grupo de '+esc(r.c.name)+'</button> <button class="cu-ghost" data-cu="arch" data-id="'+r.c.id+'">Archivar este curso</button>')+'</div>';return}
-    var inwin=r.s.from&&r.s.to>=w.from&&r.s.from<w.to,sel=C.selG===r.g.id;
-    var bar=inwin?'<button class="cu-bar'+(sel?' sel':'')+(r.g.active===false?' off':'')+'" data-cu="pick" data-id="'+r.g.id+'" style="left:'+pct(r.s.from,w)+'%;width:'+Math.max(2.5,pct(r.s.to,w)-pct(r.s.from,w))+'%;background:'+r.col+'" title="'+esc(r.g.name)+'"><b>'+esc(r.g.name)+' · '+Number(r.g.students)+'/'+Number(r.g.capacity)+'</b><small>'+r.s.days.map(function(d){return DOW[d]}).join('-')+' '+hhmm(r.s.start)+'–'+hhmm(r.s.end)+'</small></button>':'<span class="cu-out">'+esc(r.g.name)+' · fuera de este período ('+(r.s.from?dm(r.s.from)+' → '+dm(r.s.to):'sin fechas')+')</span>';
-    tl+=(r.first?name:'<div class="cu-n sub"><span></span></div>')+'<div class="cu-t">'+bar+'</div>';
-    lst+='<button class="cu-card'+(sel?' sel':'')+'" data-cu="pick" data-id="'+r.g.id+'"><i class="cu-dot" style="background:'+r.col+'"></i><span><b>'+esc(r.c.name)+' · '+esc(r.g.name)+'</b> '+badge(r.g)+'<small>'+(r.s.from?dm(r.s.from)+' → '+dm(r.s.to)+' · '+r.s.days.map(function(d){return DOW[d]}).join('-')+' '+hhmm(r.s.start)+'–'+hhmm(r.s.end):'Sin fechas')+' · '+Number(r.g.students)+'/'+Number(r.g.capacity)+' cupos</small></span></button>';
-  });
-  var cols='<div class="cu-grid" style="--cols:'+w.ms.length+'">'+head+tl+'</div>';
-  return '<div class="cu-tl">'+cols+'</div><div class="cu-list">'+(lst||'<p class="note">'+(fltOn()?'Ningún grupo coincide con los filtros.':'Aún no hay grupos con fechas.')+'</p>')+'</div>';
+  var asc=function(a,b){return(a.s.from||'9')<(b.s.from||'9')?-1:(a.s.from||'9')>(b.s.from||'9')?1:0};
+  secs.fin.sort(function(a,b){return -asc(a,b)});
+  var T={curso:'En curso',prox:'Próximos',fin:'Terminados',cancel:'Cancelados'},out='';
+  ['curso','prox','fin','cancel'].forEach(function(k){if(!secs[k].length)return;secs[k].sort(k==='fin'?function(a,b){return -asc(a,b)}:asc);out+='<div class="cu-sec">'+T[k]+' · '+secs[k].length+'</div><div class="cu-gl">'+secs[k].map(gcard).join('')+'</div>'});
+  if(empt.length)out+='<div class="cu-sec">Cursos sin grupo · '+empt.length+'</div><div class="cu-gl">'+empt.map(function(r){return '<div class="cu-gc" style="--c:'+r.col+'"><div class="cu-gm"><span class="cu-g1"><b>'+esc(r.c.name)+(r.c.active===false?' <small>(archivado)</small>':'')+'</b></span><span class="cu-meta"><span>Sin grupos vigentes</span></span></div><div class="cu-ga">'+(r.c.active===false?'<button class="btn p sm" data-cu="unarch" data-id="'+r.c.id+'">Restaurar curso</button>':'<button class="btn p sm" data-cu="newg" data-id="'+r.c.id+'">+ Primer grupo</button><button class="btn s sm" data-cu="arch" data-id="'+r.c.id+'">Archivar curso</button>')+'</div></div>'}).join('')+'</div>';
+  return out||'<p class="note">'+(fltOn()?'Ningún grupo coincide con los filtros.':'Aún no hay grupos con fechas.')+'</p>';
 }
 /* calendario mensual: todas las clases de los grupos activos, con choques marcados (mismo día, horas que se pisan y mismo instructor o sala) */
 function calendar(){
@@ -161,9 +179,9 @@ function courseTotals(){
 }
 function panel(){
   var cat=C.cat,g=cat.groups.filter(function(x){return x.id===C.selG})[0];
-  if(!g)return '<section class="card cu-side"><h2>Selecciona un grupo</h2><p class="note">Toca una barra del tablero para ver cupos y alumnos, o abre un grupo nuevo.</p></section>';
+  if(!g)return '<section class="card cu-side"><h2>Selecciona un grupo</h2><p class="note">Toca un grupo de la lista para ver cupos y alumnos, o abre un grupo nuevo.</p></section>';
   var c=cat.courses.filter(function(x){return x.id===g.course_id})[0]||{id:g.course_id,name:g.course||''},s=span(g),col=colorOf(c);loadDetail(g.id);
-  var d=C.detail[g.id]||{},al=d.loading?'<p class="note">Cargando alumnos…</p>':d.err?'<p class="note">No se pudo cargar la lista.</p>':((d.students||[]).filter(function(x){return x.state!=='cancelado'}).slice(0,12).map(function(x){var debt=Number(x.total_cents)-Number(x.paid_cents);return '<div class="row"><div class="t"><b>'+esc(x.name)+'</b></div>'+(debt>0?'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Debe '+X.R(debt)+'</span>':'<span class="pill up">Al día</span>')+'</div>'}).join('')||'<p class="note">Aún no hay alumnos matriculados.</p>');
+  var d=C.detail[g.id]||{},al=d.loading?'<p class="note">Cargando alumnos…</p>':d.err?'<p class="note">No se pudo cargar la lista.</p>':((d.students||[]).filter(function(x){return x.state!=='cancelado'}).map(function(x){var debt=Number(x.total_cents)-Number(x.paid_cents);return '<div class="row"><div class="t"><b>'+esc(x.name)+'</b></div>'+(debt>0?'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Debe '+X.R(debt)+'</span>':'<span class="pill up">Al día</span>')+'</div>'}).join('')||'<p class="note">Aún no hay alumnos matriculados.</p>');
   var usedBy={};cat.courses.forEach(function(o){if(o.id!==c.id){var k=ownColor(o);if(k)usedBy[k]=o.name}});
   var sw=PAL.map(function(p){var u=usedBy[p];return '<button class="cu-sw'+(p===col?' on':'')+(u?' used':'')+'" data-cu="color" data-id="'+c.id+'" data-c="'+p+'" style="background:'+p+'" aria-label="Color '+(u?'ya usado por '+esc(u):p)+'" title="'+(u?'Ya lo usa '+esc(u):'')+'"></button>'}).join('');
   var fin=g.financial||{},tot=(fin.contracted_cents!==undefined)?'<div class="cu-tot"><div><small>Negociado</small><b>'+X.R(Number(fin.contracted_cents)||0)+'</b></div><div><small>Recibido</small><b style="color:var(--ok)">'+X.R(Number(fin.paid_cents)||0)+'</b></div><div><small>Pendiente</small><b style="color:var(--warn)">'+X.R(Number(fin.pending_cents)||0)+'</b></div></div>':'';
@@ -171,7 +189,7 @@ function panel(){
   return '<section class="card cu-side"><h2><span><i class="cu-dot" style="background:'+col+'"></i><span>'+esc(c.name)+' · '+esc(g.name)+'</span></span></h2><div style="margin:-4px 0 8px">'+badge(g)+'</div>'
    +'<p class="note" style="margin:0 0 10px">'+(s.from?s.days.map(function(x){return DOW[x]}).join(' y ')+' · '+hhmm(s.start)+'–'+hhmm(s.end)+' · '+esc(g.room||'')+' · '+esc(g.instructor||'')+'<br>'+dmy(s.from)+' → '+dmy(s.to)+' · '+s.n+' encuentros':'Sin fechas preparadas')+'</p>'
    +'<b>Cupos '+Number(g.students)+' de '+Number(g.capacity)+'</b><div class="cu-seats">'+seats(Number(g.capacity),Number(g.students))+'</div>'
-   +tot+'<div class="list" style="margin:8px 0 12px">'+al+'</div>'
+   +tot+'<b>Alumnos'+((d.students&&!d.loading)?' ('+d.students.filter(function(x){return x.state!=="cancelado"}).length+')':'')+'</b><div class="list" style="margin:8px 0 12px">'+al+'</div>'
    +'<div class="cu-acts">'+(off?'':'<button class="btn p" data-act="matricular">+ Matricular en este grupo</button>')+'<button class="btn s" data-cu="editg" data-id="'+g.id+'">Editar grupo (horario, cupos, sala…)</button><button class="btn s" data-cu="repeat" data-id="'+g.id+'">Repetir para el mes siguiente</button><button class="btn s" data-act="agenda">Ver y mover las clases en la Agenda</button><button class="btn s cu-danger" data-cu="'+(off?'react':'cancelg')+'" data-id="'+g.id+'">'+lbl+'</button></div>'
    +(c.active===false?'<div class="cu-acts"><button class="btn p" data-cu="unarch" data-id="'+c.id+'">Restaurar el curso archivado «'+esc(c.name)+'»</button></div>':'')+(c.active===false||C.cat.groups.some(function(x){return x.course_id===c.id&&x.active!==false})?'':'<div class="cu-acts"><button class="btn s" data-cu="arch" data-id="'+c.id+'">Archivar el curso «'+esc(c.name)+'» (no tiene grupos vigentes)</button></div>')+'<p class="note">Color del curso:</p><div class="cu-sws">'+sw+'</div><p class="note">Cada curso tiene su propio color; los ya usados aparecen atenuados.</p></section>';
 }
@@ -181,7 +199,7 @@ function html(){
   if(C.ed)return edView();
   var right='<button class="btn s" data-cu="insman">Instructores</button> <button class="btn p" data-cu="newc">+ Nuevo curso</button>';
   var leg=C.cat.courses.filter(function(c){return c.active!==false}).map(function(c){return '<span><i class="cu-dot" style="background:'+colorOf(c)+'"></i>'+esc(c.name)+'</span>'}).join('');
-  return X.head('Cursos','Cada barra es un grupo, con el color de su curso.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+'<div class="cu-vw"><button class="btn s sm" data-cu="vw" data-cv="t" aria-pressed="'+(C.vw==='t')+'">Tablero</button><button class="btn s sm" data-cu="vw" data-cv="c" aria-pressed="'+(C.vw==='c')+'">Calendario del mes</button></div>'+fltBar()+(C.vw==='c'?calendar():board())+courseTotals()+'</section>'+panel()+'</div>';
+  return X.head('Cursos','Cada tarjeta es un grupo: cuándo empieza, cuándo termina y quién está dentro.',right)+(C.msg?'<div class="cu-ok">'+esc(C.msg)+'</div>':'')+'<div class="cu-main"><section class="card"><div class="cu-leg">'+leg+'</div>'+'<div class="cu-vw"><button class="btn s sm" data-cu="vw" data-cv="t" aria-pressed="'+(C.vw!=='c')+'">Lista</button><button class="btn s sm" data-cu="vw" data-cv="c" aria-pressed="'+(C.vw==='c')+'">Calendario del mes</button></div>'+fltBar()+(C.vw==='c'?calendar():board())+courseTotals()+'</section>'+panel()+'</div>';
 }
 /* ---------- asistente ---------- */
 function instructors(){var s=['Joel','René','Luis','Emerson','Miguel'];if(C.reg)C.reg.ins.forEach(function(i){if(i.active&&s.indexOf(i.name)<0)s.push(i.name)});C.cat.groups.forEach(function(g){if(g.instructor&&s.indexOf(g.instructor)<0)s.push(g.instructor)});return s}
@@ -493,7 +511,7 @@ function demoEdit(gid,pl){
 function click(e){
   var b=e.target.closest('[data-cu]');if(!b)return false;if(X.view()!=='cursos'&&['insman','insadd','instog'].indexOf(b.dataset.cu)<0)return false;
   var k=b.dataset.cu,w=C.wiz;
-  if(k==='pick'){C.selG=b.dataset.id;C.msg='';X.render();return true}
+  if(k==='pick'){C.selG=b.dataset.id;C.msg='';X.render();if(window.innerWidth<1100){var sd=document.querySelector('.cu-side');if(sd)sd.scrollIntoView({behavior:'smooth',block:'start'})}return true}
   if(k==='insman'){insDialog();return true}
   if(k==='insadd'){insAdd();return true}
   if(k==='instog'){insToggle(b.dataset.n,b.dataset.a==='1');return true}
