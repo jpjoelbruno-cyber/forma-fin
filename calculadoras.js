@@ -17,7 +17,7 @@ es:{im1:'Quiero recibir al mes → ¿cuánto necesito?',im2:'Ya tengo un patrimo
  goal:'Mi meta',gm1:'¿En cuánto tiempo llego?',gm2:'¿Cuánto aporto para llegar en…?',reach:'Llegas a tu meta en',mustAp:'Debes aportar al mes',
  hit:'Etapas del camino',grow:'Cómo va creciendo',sum:'Resumen',full:'Completo',seeAll:'Ver todo mes a mes ({n} meses) ▾',seeLess:'Ver menos ▴',
  stage:'Etapa',colPut:'Tú pusiste',colGain:'Rendimiento',colTotal:'Total',colPm:'Rinde por mes',colAp:'Aportaste',colRin:'Rinde',colAcc:'Rend. acumulado',vals:'Valores',start:'Inicio',
- yearN:'Año {n}',monthN:'Mes {n}',bad:'Revisa los números: algún valor está vacío o fuera de rango.',never:'Con estos números no llegas a la meta en 100 años.',
+ yearN:'Año {n}',yearDone:'Año {n} completo',monthN:'Mes {n}',bad:'Revisa los números: algún valor está vacío o fuera de rango.',never:'Con estos números no llegas a la meta en 100 años.',
  foot:'Ejemplo educativo. Las tasas son estimaciones que tú escribes: no son una promesa de rentabilidad ni una recomendación de inversión. Los cálculos se hacen en tu equipo y no se guardan.',
  back:'← Interés',indep:'Independencia →',chartPut:'Lo que tú pones',chartGain:'Lo que gana tu dinero',chartGoal:'Tu meta',currency:'Moneda',lang:'Idioma',
  tillGoal:'{y} y {m}',yS:'{n} año',yP:'{n} años',mS:'{n} mes',mP:'{n} meses',and:' y ',inY:'en el año {n}',inM:'en el mes {n}',already:'Ya llegaste',linkBtn:'Usar el total de mi simulación',noSim:'Tu total de la simulación'},
@@ -30,7 +30,7 @@ pt:{im1:'Quero receber por mês → quanto preciso?',im2:'Já tenho um patrimôn
  goal:'Minha meta',gm1:'Em quanto tempo chego?',gm2:'Quanto aporto para chegar em…?',reach:'Você chega à meta em',mustAp:'Você deve aportar por mês',
  hit:'Etapas do caminho',grow:'Como vai crescendo',sum:'Resumo',full:'Completo',seeAll:'Ver tudo mês a mês ({n} meses) ▾',seeLess:'Ver menos ▴',
  stage:'Etapa',colPut:'Você colocou',colGain:'Rendimento',colTotal:'Total',colPm:'Rende por mês',colAp:'Aportou',colRin:'Rende',colAcc:'Rend. acumulado',vals:'Valores',start:'Início',
- yearN:'Ano {n}',monthN:'Mês {n}',bad:'Confira os números: algum valor está vazio ou fora do limite.',never:'Com estes números você não chega à meta em 100 anos.',
+ yearN:'Ano {n}',yearDone:'Ano {n} completo',monthN:'Mês {n}',bad:'Confira os números: algum valor está vazio ou fora do limite.',never:'Com estes números você não chega à meta em 100 anos.',
  foot:'Exemplo educativo. As taxas são estimativas que você digita: não são promessa de rentabilidade nem recomendação de investimento. Os cálculos são feitos no seu aparelho e não são guardados.',
  back:'← Juros',indep:'Independência →',chartPut:'O que você coloca',chartGain:'O que seu dinheiro rende',chartGoal:'Sua meta',currency:'Moeda',lang:'Idioma',
  yS:'{n} ano',yP:'{n} anos',mS:'{n} mês',mP:'{n} meses',and:' e ',already:'Você já chegou',linkBtn:'Usar o total da minha simulação',noSim:'Seu total da simulação'}
@@ -112,6 +112,7 @@ function hints(){
  if(tm&&Number.isFinite(d.time)){const m=C.toMonths(d.time,d.timeU);tm.textContent=d.timeU==='y'?t('isM',{x:pc(m,0)}):(m>=12?t('isY',{x:span(m)}):'');}
 }
 /* ---------- tabla ---------- */
+function isOpen(k,y){const v=S.open[k][y];return v===undefined?y===1:!!v}
 function tableHTML(key,rows){
  const n=rows.length;const mode=S.tbl[key];
  const head='<div class="cl-th"><h2>'+esc(t('grow'))+'</h2><span class="cl-sg2" role="group"><button type="button" data-tbl="r" class="'+(mode==='r'?'on':'')+'">'+esc(t('sum'))+'</button><button type="button" data-tbl="f" class="'+(mode==='f'?'on':'')+'">'+esc(t('full'))+'</button></span></div>';
@@ -125,9 +126,13 @@ function tableHTML(key,rows){
   b='<table class="cl-t"><thead><tr><th>'+esc(t('vals'))+'</th><th>'+esc(t('colAp'))+'</th><th>'+esc(t('colRin'))+'</th><th class="hc">'+esc(t('colAcc'))+'</th><th>'+esc(t('colTotal'))+'</th></tr></thead><tbody>'+
   '<tr class="ini"><td>'+esc(t('start'))+'</td><td class="b">'+dec2(ini)+'</td><td class="g">—</td><td class="hc g">0,00</td><td>'+dec2(ini)+'</td></tr>';
   const Y=Math.ceil(n/12);
-  for(let y=1;y<=Y;y++){const a=(y-1)*12,z=Math.min(y*12,n);const seg=rows.slice(a,z);const open=!!S.open[key][y];const last=seg[seg.length-1];
-   b+='<tr class="y'+(open?' o':'')+'" data-y="'+y+'" tabindex="0" role="button" aria-expanded="'+open+'"><td>'+esc(t('yearN',{n:y}))+'</td><td class="b">+'+dec2(seg.reduce((s,r)=>s+r.ap,0))+'</td><td class="g">+'+dec2(seg.reduce((s,r)=>s+r.g,0))+'</td><td class="hc g">'+dec2(last.gain)+'</td><td>'+dec2(last.bal)+'</td></tr>';
-   if(open)seg.forEach(r=>{b+='<tr class="m"><td>'+esc(t('monthN',{n:r.m}))+'</td><td class="b">+'+dec2(r.ap)+'</td><td class="g">+'+dec2(r.g)+'</td><td class="hc g">'+dec2(r.gain)+'</td><td>'+dec2(r.bal)+'</td></tr>';});}
+  /* Orden cronológico: Inicio → Mes 1…12 → «Año 1 completo» (resumen). El año aparece solo al cumplirse los 12 meses; el primer año se ve abierto. */
+  const mrow=r=>'<tr class="m"><td>'+esc(t('monthN',{n:r.m}))+'</td><td class="b">+'+dec2(r.ap)+'</td><td class="g">+'+dec2(r.g)+'</td><td class="hc g">'+dec2(r.gain)+'</td><td>'+dec2(r.bal)+'</td></tr>';
+  for(let y=1;y<=Y;y++){const a=(y-1)*12,z=Math.min(y*12,n);const seg=rows.slice(a,z);const last=seg[seg.length-1];
+   if(seg.length<12){seg.forEach(r=>{b+=mrow(r);});continue;}
+   const open=isOpen(key,y);
+   if(open)seg.forEach(r=>{b+=mrow(r);});
+   b+='<tr class="y'+(open?' o':'')+'" data-y="'+y+'" tabindex="0" role="button" aria-expanded="'+open+'"><td>'+esc(t('yearDone',{n:y}))+'</td><td class="b">+'+dec2(seg.reduce((s,r)=>s+r.ap,0))+'</td><td class="g">+'+dec2(seg.reduce((s,r)=>s+r.g,0))+'</td><td class="hc g">'+dec2(last.gain)+'</td><td>'+dec2(last.bal)+'</td></tr>';}
   b+='</tbody></table><button type="button" class="cl-more" data-tbl="r">'+esc(t('seeLess'))+'</button>';
  }
  return head+'<div class="cl-tw">'+b+'</div>';
@@ -216,7 +221,7 @@ function click(e){
  if(b.dataset.imode){S.ind.mode=b.dataset.imode;S.done.ind=false;fieldsOnly();return;}
  if(b.dataset.pct){S.ind.pct=Number(b.dataset.pct);fieldsOnly();return;}
  if(b.dataset.tbl){S.tbl[S.tab]=b.dataset.tbl;render();return;}
- if(b.dataset.y){const k=S.tab,y=b.dataset.y;S.open[k][y]=!S.open[k][y];render();return;}
+ if(b.dataset.y){const k=S.tab,y=b.dataset.y;S.open[k][y]=!isOpen(k,Number(y));render();return;}
  if(b.dataset.go){if(b.dataset.go==='ind'&&b.dataset.total){S.ind.have=Number(b.dataset.total);S.ind.linked=true;S.ind.ap=S.int.ap;S.ind.rate=S.int.rate;S.ind.rateU=S.int.rateU;S.done.ind=true;}
   S.tab=b.dataset.go;shell();window.scrollTo({top:0,behavior:'smooth'});try{document.body.scrollTo({top:0,behavior:'smooth'})}catch{}}
 }
