@@ -107,6 +107,58 @@ function bankParts(compact){
   const mv='<section class="bk-card"><div class="bk-ch"><h2>Últimos movimientos</h2><button type="button" class="bk-link" data-bk="hist">Ver todos</button></div>'+(v.recent.length?v.recent.map(t=>'<div class="bk-mv"><span class="bk-mi">'+esc(t.i)+'</span><span class="bk-mt">'+esc(t.l)+'<small>'+esc(t.d)+'</small></span><b class="'+(t.type==='income'?'g':'')+'">'+(t.type==='income'?'+':'−')+' '+f(t.a)+'</b></div>').join(''):'<p class="bk-empty">Aún no hay movimientos.</p>')+'</section>';
   return {hero,acts,groups,mv};
 }
+
+/* ---------- Pizza del presupuesto + regulación (simulación; no cambia el plan hasta que el alumno lo edite) ---------- */
+const PZ=['#F59E0B','#16A34A','#2563EB','#DB2777','#9333EA','#0891B2','#DC2626','#65A30D','#B45309','#4F46E5'];
+const SIMK={mode:'',cut:{}};
+function pzData(){
+  const v=BV();if(!v)return null;
+  const hasPlan=v.plannedExpense>0,mode=SIMK.mode||(hasPlan?'plan':'real');
+  const gs=v.groups.map((g,i)=>({id:g.id,l:g.l,i:g.i,val:mode==='plan'?g.planned:g.spent,planned:g.planned,col:PZ[i%PZ.length]})).filter(g=>g.val>0);
+  const base=v.plannedIncome>0?v.plannedIncome:v.inc;
+  const used=gs.reduce((a,g)=>a+g.val,0),free=mode==='plan'?Math.max(0,base-used):Math.max(0,v.inc-used);
+  return{v,hasPlan,mode,gs,base,free,used};
+}
+function pizzaHTML(){
+  const d=pzData();if(!d)return '';
+  const f=d.v.fmt;
+  if(!d.gs.length&&!d.hasPlan)return '<section class="bk-card pz-card"><div class="bk-ch"><h2>Tu presupuesto en pizza</h2></div><p class="bk-empty">Crea tu presupuesto y aquí verás cómo se reparte tu ingreso por categoría, antes de gastar nada.</p></section>';
+  const tot=d.used+d.free;
+  const segs=d.gs.map(g=>({l:g.l,i:g.i,v:g.val,c:g.col}));if(d.free>0)segs.push({l:d.mode==='plan'?'Sin asignar (ahorro)':'Te quedó',i:'💰',v:d.free,c:'#0D9488'});
+  let a=0;const stops=segs.map(x=>{const p=tot>0?x.v/tot*100:0;const s=a+'% '+(a+p)+'%';a+=p;return x.c+' '+s}).join(',');
+  const leg=segs.map(x=>'<div class="pz-r"><i style="background:'+x.c+'"></i><span class="pz-n">'+esc(x.i)+' '+esc(x.l)+'</span><b>'+f(x.v)+'</b><em>'+(tot>0?Math.round(x.v/tot*100):0)+'%</em></div>').join('');
+  return '<section class="bk-card pz-card"><div class="bk-ch"><h2>Tu presupuesto en pizza</h2><div class="pz-seg" role="group" aria-label="Qué mostrar"><button type="button" data-pz="plan" aria-pressed="'+(d.mode==='plan')+'">Plan</button><button type="button" data-pz="real" aria-pressed="'+(d.mode==='real')+'">Gastado</button></div></div>'
+   +'<p class="pz-sub">'+(d.mode==='plan'?'Cómo reparte tu ingreso previsto de '+f(d.base)+', antes de anotar nada.':'En qué se fue tu dinero este mes.')+'</p>'
+   +'<div class="pz-w"><div class="pz-ring" style="background:conic-gradient('+stops+')" role="img" aria-label="Gráfico de pizza de tu presupuesto"><div><strong>'+f(tot)+'</strong><small>'+(d.mode==='plan'?'en total':'este mes')+'</small></div></div><div class="pz-leg">'+leg+'</div></div></section>';
+}
+function simHTML(){
+  const d=pzData();if(!d||!d.hasPlan)return '';
+  const f=d.v.fmt,gs=d.v.groups.filter(g=>g.planned>0&&g.id!=='ahorro');if(!gs.length)return '';
+  const rows=gs.map((g,i)=>{const cur=Math.min(SIMK.cut[g.id]==null?g.planned:SIMK.cut[g.id],g.planned),step=Math.max(1,Math.round(g.planned/100));
+    return '<div class="sm-r"><div class="sm-t"><span>'+esc(g.i)+' '+esc(g.l)+'</span><b data-smv="'+esc(g.id)+'"></b></div><input type="range" min="0" max="'+g.planned+'" step="'+step+'" value="'+cur+'" data-sim="'+esc(g.id)+'" aria-label="Monto de '+esc(g.l)+'"></div>'}).join('');
+  return '<section class="bk-card sm-card"><div class="bk-ch"><h2>Regula tu mes y mira qué pasa</h2></div><p class="pz-sub">Mueve las categorías. Es una simulación: tu plan no cambia hasta que lo edites.</p>'+rows+'<div id="sm-out"></div></section>';
+}
+function simPaint(){
+  const d=pzData();if(!d)return;const f=d.v.fmt,gs=d.v.groups.filter(g=>g.planned>0&&g.id!=='ahorro');
+  let freed=0;const changes=[];
+  gs.forEach(g=>{const cur=Math.min(SIMK.cut[g.id]==null?g.planned:SIMK.cut[g.id],g.planned),dlt=g.planned-cur;freed+=dlt;if(dlt>0)changes.push(g.l+' '+f(g.planned)+' → '+f(cur));const el=document.querySelector('[data-smv="'+g.id+'"]');if(el){el.textContent=dlt>0?f(g.planned)+' → '+f(cur):f(g.planned);el.className=dlt>0?'cut':''}});
+  const out=$('sm-out');if(!out)return;
+  const ah=d.v.groups.filter(g=>g.id==='ahorro').reduce((a,g)=>a+g.planned,0),free0=Math.max(0,d.base-d.v.plannedExpense),save0=ah+free0,tot=Math.max(d.base,d.v.plannedExpense)||1;
+  const spend0=d.v.plannedExpense-ah,bar=(sp,sv)=>'<div class="sm-bar"><span style="width:'+(sp/tot*100)+'%;background:#F59E0B" title="Gastos"></span><span style="width:'+(sv/tot*100)+'%;background:#0D9488" title="Ahorro e inversión"></span></div>';
+  out.innerHTML='<div class="sm-cmp"><div><small>Hoy</small>'+bar(spend0,save0)+'<em>Ahorro e inversión: <b>'+f(save0)+'</b></em></div><div><small>Con ajustes</small>'+bar(spend0-freed,save0+freed)+'<em>Ahorro e inversión: <b>'+f(save0+freed)+'</b></em></div></div>'
+   +(freed>0?'<div class="sm-gain">Liberas <b>'+f(freed)+' al mes</b> para ahorro e inversión.<br>En un año: <b>'+f(freed*12)+' más</b> para tus metas.</div><div class="sm-acts"><button type="button" class="sm-apply" data-sm="apply">Aplicar a mi plan</button><button type="button" class="sm-reset" data-sm="reset">Volver a empezar</button></div>':'<p class="pz-sub">Baja alguna categoría para ver cuánto crece tu ahorro.</p>');
+  out.dataset.changes=changes.join('|');
+}
+function pzClick(e){
+  const m=e.target.closest('[data-pz]');if(m){SIMK.mode=m.dataset.pz;$('bk-main').dataset.h='';paintBank();return;}
+  const b=e.target.closest('[data-sm]');if(!b)return;
+  if(b.dataset.sm==='reset'){SIMK.cut={};$('bk-main').dataset.h='';paintBank();return;}
+  if(b.dataset.sm==='apply'){const out=$('sm-out'),ch=(out&&out.dataset.changes||'').split('|').filter(Boolean);
+    const dlg=document.createElement('div');dlg.className='sm-dlg';dlg.innerHTML='<div class="sm-box" role="dialog" aria-modal="true"><h3>Ajusta así tu plan</h3><ul>'+ch.map(c=>'<li>'+esc(c)+'</li>').join('')+'</ul><p>Se abrirá tu plan para que cambies esos montos. Tu plan actual no se modificó todavía.</p><div class="sm-acts"><button type="button" class="sm-apply" data-sm="go">Abrir mi plan</button><button type="button" class="sm-reset" data-sm="close">Ahora no</button></div></div>';document.body.append(dlg);return;}
+  if(b.dataset.sm==='close'||b.dataset.sm==='go'){const w=b.closest('.sm-dlg');if(w)w.remove();if(b.dataset.sm==='go')bkClick({target:{closest:()=>({dataset:{bk:'plan'}})}});}
+}
+document.addEventListener('click',pzClick);
+document.addEventListener('input',e=>{const t=e.target;if(t&&t.dataset&&t.dataset.sim!==undefined){SIMK.cut[t.dataset.sim]=Number(t.value);simPaint();}});
 function bankHTML(compact){const x=bankParts(true);return x.hero+x.acts+'<div class="bk-two">'+x.groups+x.mv+'</div>';}
 function bkClick(e){
   const b=e.target.closest('[data-bk]');if(!b)return;const a=b.dataset.bk;
@@ -124,8 +176,8 @@ function paintBank(){
     const mn=p.querySelector('.mnav');if(mn)$('bk-month').append(mn);
     const side=$('bk-side');['.savings-card','#chart-card'].forEach(q=>{const e=p.querySelector(q);if(e){e.hidden=false;side.append(e);}});
   }
-  const x=bankParts(false);const m=x.hero+x.acts+x.groups;
-  if($('bk-main').dataset.h!==m){$('bk-main').dataset.h=m;$('bk-main').innerHTML=m;}
+  const x=bankParts(false);const m=x.hero+x.acts+pizzaHTML()+simHTML()+x.groups;
+  if($('bk-main').dataset.h!==m){$('bk-main').dataset.h=m;$('bk-main').innerHTML=m;simPaint();}
   if($('bk-mv').dataset.h!==x.mv){$('bk-mv').dataset.h=x.mv;$('bk-mv').innerHTML=x.mv;}
 }
 /* ---------- Primeros pasos: 4 pasos claros, un solo contador ---------- */

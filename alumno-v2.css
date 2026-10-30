@@ -175,3 +175,15 @@
 .fp-st em{font-style:normal;font-weight:700;color:#12805C;font-size:13px}
 .fp-off{margin-top:6px;background:none;border:0;color:#6B6486;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer}
 @media(max-width:520px){.fp-st{grid-template-columns:30px 1fr}.fp-st>button,.fp-st>em{grid-column:2}}
+
+/* Presupuesto: pizza del plan y regulación */
+.pz-card,.sm-card{margin-top:16px}.pz-sub{margin:-4px 0 12px;color:var(--mut,#6b6486);font-size:13.5px}
+.pz-seg{display:inline-flex;background:#F2EEFC;border-radius:12px;padding:3px}.pz-seg button{border:0;background:none;border-radius:9px;padding:6px 12px;font:700 13px 'DM Sans',sans-serif;color:#6b6486;cursor:pointer}.pz-seg button[aria-pressed=true]{background:#fff;color:#4B2FB8;box-shadow:0 1px 4px rgba(60,40,130,.15)}
+.pz-w{display:flex;gap:18px;align-items:center;flex-wrap:wrap}.pz-ring{width:170px;height:170px;border-radius:50%;position:relative;flex:none}
+.pz-ring::after{content:"";position:absolute;inset:38px;border-radius:50%;background:#fff}.pz-ring>div{position:absolute;inset:0;z-index:2;display:grid;place-content:center;text-align:center}.pz-ring strong{font:800 15px Sora,'DM Sans',sans-serif}.pz-ring small{font-size:11px;color:#6b6486}
+.pz-leg{flex:1;min-width:200px;display:grid;gap:6px}.pz-r{display:flex;align-items:center;gap:8px;font-size:13.5px}.pz-r i{width:11px;height:11px;border-radius:3px;flex:none}.pz-n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pz-r em{font-style:normal;color:#6b6486;width:38px;text-align:right}
+.sm-r{margin:10px 0}.sm-t{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:700}.sm-t b.cut{color:#B45309}.sm-r input[type=range]{width:100%;accent-color:#7A5AF0;min-height:32px}
+.sm-cmp{display:grid;gap:10px;margin-top:12px}.sm-cmp small{font-weight:800;font-size:12px;color:#6b6486}.sm-bar{display:flex;height:22px;border-radius:8px;overflow:hidden;background:#EEE9FA;margin:3px 0}.sm-bar span{display:block;min-width:0}.sm-cmp em{font-style:normal;font-size:13px}
+.sm-gain{background:#E6F7EF;color:#0B6B47;border-radius:14px;padding:12px 14px;margin-top:12px;font-size:14px;line-height:1.45}.sm-gain b{font-size:16px}
+.sm-acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.sm-apply{border:0;border-radius:12px;background:#5B2EE8;color:#fff;font:700 14px 'DM Sans',sans-serif;padding:11px 16px;cursor:pointer;min-height:44px}.sm-reset{border:2px solid #DCD3F7;border-radius:12px;background:#fff;color:#4B2FB8;font:700 14px 'DM Sans',sans-serif;padding:9px 16px;cursor:pointer;min-height:44px}
+.sm-dlg{position:fixed;inset:0;background:rgba(20,10,60,.5);display:grid;place-items:center;z-index:9999;padding:16px}.sm-box{background:#fff;border-radius:18px;padding:20px;max-width:420px;width:100%}.sm-box h3{margin:0 0 8px}.sm-box li{margin:4px 0}
