@@ -114,8 +114,10 @@ function hbars(rows,methods){
 
 /* ---------- vistas ---------- */
 var view='inicio',cobTab='resumen',cobPer='Mes',alF='Todos',agFilter='Todo';
-var NAV=[['inicio','Inicio','home'],['agenda','Agenda','cal'],['cursos','Cursos','cap'],['cobros','Cobros','cash'],['cierre','Cierre de caja','doc'],['alumnos','Alumnos','users'],['interesados','Ventas','chat']];
-function navFor(){var n=manager()?NAV.slice():NAV.slice(0,2);if(role==='owner')n.push(['admin','Administración','gear']);return n}
+/* recorrido de principio a fin: venta → alumno → curso → agenda → cobro → cierre. Inicio y Administración van aparte */
+var HOME=['inicio','Inicio','home'],NAV=[['interesados','Ventas','chat'],['alumnos','Alumnos','users'],['cursos','Cursos','cap'],['agenda','Agenda','cal'],['cobros','Cobros','cash'],['cierre','Cierre de caja','doc']];
+function navFor(){var n=manager()?NAV.slice():[NAV[3]];return n}
+function stepNo(v){for(var i=0;i<NAV.length;i++)if(NAV[i][0]===v)return manager()?i+1:0;return 0}
 function kpi(l,v,cls,d,dc){return '<div class="card kpi c3"><small>'+l+'</small><b class="num '+(cls||'')+'">'+v+'</b>'+(d?'<span class="d '+(dc||'flat')+'">'+d+'</span>':'')+'</div>'}
 function head(t,sub,right){return '<div class="head"><div><h1>'+t+'</h1>'+(sub?'<p>'+sub+'</p>':'')+'</div><div style="display:flex;gap:10px;flex-wrap:wrap">'+(right||'')+'</div></div>'}
 function movRow(m){return '<div class="row"><div class="t"><b>'+esc(m.t)+'</b><span>'+esc(m.m)+' · '+esc(dl(m.f))+'</span></div><span class="v num '+(m.v>0?'in':'out')+'">'+(m.v>0?'+ ':'− ')+R(Math.abs(m.v))+'</span></div>'}
@@ -338,22 +340,26 @@ function render(){
   var n=avisos().length,dot=$('#nAv');dot.textContent=n>9?'9+':String(n);dot.hidden=!n;
   if(keep&&$('#'+keep)){var el=$('#'+keep);el.focus();try{el.setSelectionRange(pos,pos)}catch(e){}}
 }
-function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['cierre','alumnos','interesados','ajustes','avisos','admin'].indexOf(view)>-1))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')})}
+function mark(){document.querySelectorAll('[data-v]').forEach(function(b){if(b.dataset.v===view||(b.dataset.v==='mas'&&['cierre','alumnos','interesados','ajustes','avisos','admin','cursos','agenda'].indexOf(view)>-1&&!document.querySelector('#bnav [data-v="'+view+'"]')))b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')});var c=document.querySelector('#steps [aria-current=page]');if(c&&c.scrollIntoView){try{c.scrollIntoView({inline:'center',block:'nearest'})}catch(e){}}}
 function buildNav(){
-  var nv=navFor();
-  $('#tabs').innerHTML=nv.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
-  var first=nv.slice(0,manager()?4:2);
+  var nv=navFor(),mg=manager();
+  function btn(n,num){return '<button data-v="'+n[0]+'">'+(num?'<span class="stn" aria-hidden="true">'+num+'</span>':ico(n[2]))+n[1]+'</button>'}
+  $('#tabs').innerHTML=btn(HOME)+(mg?'<span class="tsep" aria-hidden="true"></span>':'')+nv.map(function(n,i){return btn(n,mg?i+1:0)}).join('')+(role==='owner'?'<span class="tsep" aria-hidden="true"></span>'+btn(['admin','Administración','gear']):'');
+  var first=mg?[HOME,NAV[0],NAV[1],NAV[4]]:[HOME,NAV[3]];
   $('#bnav').style.gridTemplateColumns='repeat('+(first.length+1)+',1fr)';
   $('#bnav').innerHTML=first.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+'<span>'+n[1]+'</span></button>'}).join('')+'<button data-v="mas">'+ico('more')+'<span>Más</span></button>';
+  var st=$('#steps');if(st){st.hidden=!mg;st.innerHTML=mg?NAV.map(function(n,i){return '<button data-v="'+n[0]+'"><b>'+(i+1)+'</b>'+(n[0]==='cierre'?'Cierre':n[1])+'</button>'}).join('<i aria-hidden="true">›</i>'):''}
 }
+
 var NAVK='forma-gs-nav';
 function navSave(y){try{localStorage.setItem(NAVK,JSON.stringify({v:view,ct:cobTab,cp:cobPer,y:y==null?window.scrollY:y,t:Date.now()}))}catch(e){}}
 function navLoad(){try{var o=JSON.parse(localStorage.getItem(NAVK)||'null');return o&&Date.now()-o.t<7*864e5?o:null}catch(e){return null}}
 function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure();navSave(0)}
 function openMas(){
-  $('#sheetIn').innerHTML=(manager()?'<button data-v="cierre">'+ico('doc')+'Cierre de caja</button><button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Ir a mi espacio de alumno</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
+  $('#sheetIn').innerHTML=(manager()?'<button data-v="cursos">'+ico('cap')+'3 · Cursos</button><button data-v="agenda">'+ico('cal')+'4 · Agenda</button><button data-v="cierre">'+ico('doc')+'6 · Cierre de caja</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Ir a mi espacio de alumno</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
 }
+
 function dlg(title,body,wide){$('#dlg').style.width=wide?'min(900px,calc(100vw - 24px))':'';$('#dlg').innerHTML='<div class="dh"><h2>'+title+'</h2><button data-act="cerrar" aria-label="Cerrar">×</button></div><div class="db">'+body+'</div>';$('#dlg').showModal()}
 
 /* ---------- ficha del alumno (solo lectura) ---------- */

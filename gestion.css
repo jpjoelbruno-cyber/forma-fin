@@ -21,8 +21,20 @@ h1,h2,h3{font-family:var(--f1);margin:0;text-wrap:balance}
 .tabs{display:none;gap:2px}
 .tabs button,.bnav button{border:0;background:none;display:flex;align-items:center;gap:8px;font-weight:700}
 .tabs button{color:#fff;padding:0 14px;min-height:44px;border-radius:12px;font-size:15px}
-.tabs button[aria-current=page]{background:rgba(255,255,255,.22)}
-.tabs button:hover{background:rgba(255,255,255,.14)}
+.tabs button[aria-current=page]{background:#fff;color:#4A12C8;position:relative}
+.tabs button[aria-current=page]::after{content:"";position:absolute;left:12px;right:12px;bottom:3px;height:3px;border-radius:3px;background:#B000D0}
+.tabs .stn{width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,.24);font-size:11px;display:grid;place-items:center;flex:none}
+.tabs button[aria-current=page] .stn{background:#6A00E8;color:#fff}
+.tsep{width:1px;height:26px;background:rgba(255,255,255,.35);margin:0 8px;align-self:center}
+.steps{display:flex;align-items:center;gap:4px;overflow-x:auto;padding:10px max(16px,env(safe-area-inset-left,0px));scrollbar-width:none;background:var(--bg)}.steps::-webkit-scrollbar{display:none}
+.steps[hidden]{display:none}
+.steps button{flex:none;border:0;background:var(--soft);color:var(--ink2);border-radius:999px;padding:7px 12px;font:700 13px var(--f2);display:flex;gap:6px;align-items:center;min-height:36px}
+.steps button b{font-size:11px;opacity:.7}
+.steps button[aria-current=page]{background:var(--brand,#6A00E8);color:#fff}.steps button[aria-current=page] b{opacity:1}
+.steps i{color:var(--ink2);opacity:.5;font-style:normal;flex:none}
+@media(min-width:900px){.steps{display:none!important}}
+.tabs button:not([aria-current=page]):hover{background:rgba(255,255,255,.14)}
+.tabs button{white-space:nowrap}
 .tools{display:flex;gap:6px;align-items:center;position:relative}
 .ic{width:44px;height:44px;border-radius:50%;border:0;background:transparent;color:#fff;display:grid;place-items:center;position:relative}
 .ic:hover{background:rgba(255,255,255,.16)}
@@ -134,7 +146,7 @@ input,select{font:inherit;min-height:48px;border-radius:12px;border:2px solid va
  .tabs{display:flex}#mAdmin{display:none!important}.bnav{display:none}body{padding-block:0 32px}.week{display:grid}.days{display:none}
  .top-in{min-height:72px}
 }
-@media(min-width:900px) and (max-width:1200px){.brand small{display:none}.tabs button{padding:0 9px;font-size:14px}.tabs svg.i{display:none}}
+@media(min-width:900px) and (max-width:1200px){.brand small{display:none}.tabs button{padding:0 7px;font-size:13.5px;gap:5px}.tabs svg.i{display:none}.tsep{margin:0 2px}.tabs .stn{width:18px;height:18px;font-size:10px}.tools .ic{width:36px;height:40px}.brand{font-size:16px;gap:6px}.brand img{width:28px;height:28px}.top-in{gap:6px}}
 @media(min-width:1200px){.c8{grid-column:span 8}.c4{grid-column:span 4}.c3{grid-column:span 3}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
