@@ -280,6 +280,21 @@ function clash(list,gid,courseId){
   })});
   return out;
 }
+/* cruces DENTRO del mismo grupo (el servidor los rechaza): dos encuentros el mismo día con horas que se pisan */
+function selfOverlap(list){
+  var out=[],i,j,a,b;
+  for(i=0;i<list.length;i++)for(j=i+1;j<list.length;j++){a=list[i];b=list[j];
+    if(a.day===b.day&&a.start_min<b.end_min&&b.start_min<a.end_min)out.push({a:a,b:b,past:a.day<X.T&&b.day<X.T})}
+  return out;
+}
+function soHTML(so,resched){
+  var fx=so.filter(function(o){return !o.past}),lock=so.length-fx.length;
+  function one(o){return DOW[dow(o.a.day)]+' '+dm(o.a.day)+' ('+hhmm(o.a.start_min)+'–'+hhmm(o.a.end_min)+' y '+hhmm(o.b.start_min)+'–'+hhmm(o.b.end_min)+')'}
+  return '<div class="err" id="cuSelf" role="alert" style="margin-top:12px"><b>Este grupo tiene '+so.length+' encuentro(s) que se pisan entre sí</b>, y por eso no deja guardar: '+so.slice(0,4).map(one).join('; ')+(so.length>4?'…':'')+'.'
+   +(fx.length&&!resched?' <br>Solución: pulsa «Cambiar los días y el horario de lo que falta», revisa los días y la hora, y guarda.':'')
+   +(fx.length&&resched?' <br>Ajusta los días, la hora o «Desde el día» hasta que no haya cruces.':'')
+   +(lock?' <br>'+lock+' cruce(s) son de clases ya dadas y no se pueden editar desde aquí: avísame para corregirlo en la base.':'')+'</div>';
+}
 function conflicts(w,p){
   var a0=Math.round(parseInt(w.time.slice(0,2),10)*60+parseInt(w.time.slice(3,5),10)),a1=a0+Math.round(Number(w.hours)*60);
   return clash(p.list.filter(function(x){return x.day>=X.T}).map(function(x){var rw=rowOf(w,x);return{day:x.day,start_min:a0,end_min:a1,instructor:rw.instructor,room:rw.room}}),w.gid||null,w.courseId);
@@ -354,6 +369,7 @@ function friendly(e){
     if(/^Servicio:/.test(pt[0]||''))return 'Choca con el servicio «'+pt[0].replace(/^Servicio:\s*/,'')+'»'+(pt[1]?' de '+pt[1]:'')+(pt[2]?' ('+pt[2].toLowerCase()+')':'')+' el '+when+'. Ese horario ya está ocupado en la agenda: prueba otro horario, otro día u otro instructor.';
     return 'Ese horario ya está ocupado el '+when+'. Revisa instructor y sala.';
   }
+  if(/propio grupo se superponen/.test(m))return 'Dos encuentros del grupo se pisan el mismo día. Abre «Cambiar los días y el horario de lo que falta» y corrige días, hora o día de inicio.';
   if(/superan el total/.test(m))return 'Los encuentros de los módulos superan el total previsto del curso.';
   if(/instructor registrado/.test(m))return 'Ese instructor no está registrado.';
   if(e&&e.code==='40001')return 'Otro equipo cambió este dato. Vuelve a Cursos y reintenta.';
@@ -422,9 +438,9 @@ function edView(){
   var opt=function(l,v){var q=l.indexOf(v)<0&&v?l.concat([v]):l;return q.map(function(x){return '<option'+(x===v?' selected':'')+'>'+esc(x)+'</option>'}).join('')};
   var durs=[1,1.5,2,2.5,3,4].map(function(h){return '<option value="'+h+'"'+(Number(e.hours)===h?' selected':'')+'>'+h+' h</option>'}).join('');
   var dchips=[1,2,3,4,5,6,0].map(function(d){return '<button type="button" class="chip" aria-pressed="'+(e.days.indexOf(d)>-1)+'" data-cu="edday" data-d="'+d+'">'+DOW[d]+'</button>'}).join('');
-  var fut=list.filter(function(x){return x.day>=X.T}),pastN=e.past.length;
+  var so=selfOverlap(list),fut=list.filter(function(x){return x.day>=X.T}),pastN=e.past.length;
   var res=e.resched?'<div class="cu-two" style="margin-top:10px"><div class="cu-wide"><label>Días de la semana</label>'+dchips+'</div><label>Hora de inicio<input type="time" data-cue="time" value="'+esc(e.time)+'"></label><label>Duración<select data-cue="hours">'+durs+'</select></label><label>Desde el día<input type="date" data-cue="start" value="'+esc(e.start)+'"></label><label>Encuentros que faltan<input type="number" min="0" max="104" inputmode="numeric" data-nowheel data-cue="count" value="'+esc(e.count)+'"></label></div>':'';
-  var prev=fut.length?'<div class="cu-prev">'+fut.map(function(x,i){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})?' bad':'')+'"><b>'+(pastN+i+1)+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+' '+hhmm(x.start_min)+'</span>'}).join('')+'</div>':'<p class="note">No quedan encuentros por dar.</p>';
+  var prev=fut.length?'<div class="cu-prev">'+fut.map(function(x,i){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})||so.some(function(k){return k.a.day===x.day})?' bad':'')+'"><b>'+(pastN+i+1)+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+' '+hhmm(x.start_min)+'</span>'}).join('')+'</div>':'<p class="note">No quedan encuentros por dar.</p>';
   var wasNum=e.fut.length;
   return X.head('Editar grupo · '+esc(c.name),'«'+esc(g.name)+'» · '+Number(g.students)+' alumno(s). Los encuentros ya dados no se tocan.','<button class="btn s" data-cu="edcancel">Volver</button>')
    +(e.msg?'<div class="err" id="cuErr" role="alert">'+esc(e.msg)+'</div>':'')
@@ -435,7 +451,7 @@ function edView(){
    +'<label>Precio de referencia (R$)<input inputmode="decimal" data-cue="price" value="'+esc(e.price)+'"></label></div>'
    +'<div class="cu-sum" style="margin-top:14px"><b>Horario actual:</b> '+(pastN?pastN+' ya dado'+(pastN===1?'':'s')+' · ':'')+wasNum+' por dar'+(e.fut[0]?' · próximo '+DOW[dow(e.fut[0].day)]+' '+dm(e.fut[0].day)+' '+hhmm(e.fut[0].start_min)+'–'+hhmm(e.fut[0].end_min):'')+'</div>'
    +'<div style="margin-top:10px"><button type="button" class="btn s" data-cu="edres" aria-pressed="'+e.resched+'">'+(e.resched?'✓ Cambiando los días y el horario de lo que falta':'Cambiar los días y el horario de lo que falta')+'</button><p class="note" style="margin:6px 0 0">Reprograma solo los encuentros que aún no se dieron, conservando su módulo y su asistencia. Si el horario estaba mal, hazlo aquí.</p></div>'
-   +res+(cf.length?cfHTML(cf):(fut.length?'<div class="cu-ok" style="margin-top:12px">Sin cruces con otros grupos ✓</div>':''))+prev
+   +res+(so.length?soHTML(so,e.resched):'')+(cf.length?cfHTML(cf):(fut.length&&!so.length?'<div class="cu-ok" style="margin-top:12px">Sin cruces con otros grupos ✓</div>':''))+prev
    +'<div class="cu-foot"><button class="btn s" type="button" data-cu="edcancel">Cancelar</button><button class="btn p" type="submit"'+(C.busy?' disabled':'')+'>'+(C.busy?'Guardando…':'Guardar cambios')+'</button></div></form>';
 }
 function readEd(){var e=C.ed;document.querySelectorAll('[data-cue]').forEach(function(el){e[el.dataset.cue]=el.value});e.hours=Number(e.hours)}
@@ -451,6 +467,7 @@ function edSave(){
   if(e.resched&&(a0<0||a0+Math.round(e.hours*60)>1440))return bad('Revisa la hora de inicio y la duración.');
   var sessions=edSessions(e);if(!sessions.length)return bad('El grupo debe tener al menos un encuentro.');
   if(sessions.length>104)return bad('Máximo 104 encuentros por grupo.');
+  var so=selfOverlap(sessions);if(so.length){var q=so[0];return bad('Dos encuentros del propio grupo se pisan el '+DOW[dow(q.a.day)]+' '+dm(q.a.day)+' ('+hhmm(q.a.start_min)+'–'+hhmm(q.a.end_min)+' y '+hhmm(q.b.start_min)+'–'+hhmm(q.b.end_min)+')'+(so.length>1?' y '+(so.length-1)+' más':'')+'. '+(so.some(function(o){return !o.past})&&!e.resched?'Pulsa «Cambiar los días y el horario de lo que falta» para corregirlo.':'Cambia los días, la hora o el día de inicio.')+' No se guardó nada.')}
   var cf=clash(sessions.filter(function(x){return x.day>=X.T}).map(function(x){return{day:x.day,start_min:x.start_min,end_min:x.end_min,instructor:x.instructor||e.instr,room:x.room||e.room}}),e.gid,g.course_id);
   if(cf.length)return bad('Hay '+cf.length+' cruce(s) de horario con otros grupos. Corrígelos antes de guardar.');
   var same=e.price===e.priceBase;
