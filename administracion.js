@@ -173,16 +173,23 @@ function ceClick(b){
 }
 
 /* ---- Cierres de caja (solo lectura): qué días se cerraron, diferencias de caja, y reenviar el resumen por WhatsApp o PDF ---- */
-var AC={month:'',days:null,period:null,closing:null,detail:null,err:'',loading:false,seq:0};
+var AC={noSql:false,fail:[],month:'',days:null,period:null,closing:null,detail:null,err:'',loading:false,seq:0};
 function acMonth(){if(!AC.month){var t=new Date();AC.month=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')}return AC.month}
 function acLoad(){
   var n=++AC.seq,m=acMonth(),first=m+'-01',last=m+'-'+String(new Date(Number(m.slice(0,4)),Number(m.slice(5,7)),0).getDate()).padStart(2,'0');
-  AC.loading=true;AC.err='';AC.days=null;AC.period=null;AC.closing=null;AC.detail=null;
+  AC.loading=true;AC.err='';AC.days=null;AC.period=null;AC.closing=null;AC.detail=null;AC.noSql=false;AC.fail=[];
+  var part=function(label,p,fallback){return p.then(function(x){return x},function(e){AC.fail.push(label+(e&&e.code?' ('+e.code+')':''));if(label==='cierres diarios'&&e&&(e.code==='PGRST202'||e.code==='42883'||/Could not find the function/i.test(e.message||'')))AC.noSql=true;return fallback})};
   Promise.all([
-    rpc('forma_day_close',{p_action:'list',p_data:{from:first,to:last}}),
-    rpc('forma_finance_reports',{p_action:'period',p_data:{from:first,to:last,bucket:'day'}}),
-    rpc('forma_finance_reports',{p_action:'closing_preview',p_data:{month:first}}).catch(function(){return null})
-  ]).then(function(r){if(n!==AC.seq)return;AC.days=r[0];AC.period=r[1];AC.closing=r[2];AC.loading=false;render()},function(e){if(n!==AC.seq)return;AC.loading=false;AC.err=(e&&(e.code==='PGRST202'||e.code==='42883'))?'Falta activar el cierre diario en Supabase: ejecuta forma-cierre-diario.sql (una sola vez).':'No se pudieron cargar los cierres. Vuelve a intentar.';render()});
+    part('cierres diarios',rpc('forma_day_close',{p_action:'list',p_data:{from:first,to:last}}),{items:[]}),
+    part('movimientos del mes',rpc('forma_finance_reports',{p_action:'period',p_data:{from:first,to:last,bucket:'day'}}),null),
+    part('cierre del mes',rpc('forma_finance_reports',{p_action:'closing_preview',p_data:{month:first}}),null)
+  ]).then(function(r){
+    if(n!==AC.seq)return;
+    AC.days=r[0]||{items:[]};AC.period=r[1];AC.closing=r[2];AC.loading=false;
+    if(!AC.period)AC.err='No se pudieron cargar los movimientos del mes.'+(AC.fail.length?' Falló: '+AC.fail.join(', ')+'.':'')+' Vuelve a intentar.';
+    try{render()}catch(e){AC.err='No se pudo mostrar la pantalla: '+((e&&e.message)||'error');AC.period=null;try{render()}catch(x){}}
+  });
+  setTimeout(function(){if(n===AC.seq&&AC.loading){AC.loading=false;AC.err='La carga está tardando demasiado. Revisa tu conexión y vuelve a intentar.';render()}},20000);
 }
 function acShift(d){var y=Number(acMonth().slice(0,4)),m=Number(acMonth().slice(5,7))-1+d,x=new Date(y,m,1);AC.month=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');acLoad();render()}
 V.cierres=function(){
@@ -190,8 +197,9 @@ V.cierres=function(){
   if(!L)return head('Cierres')+'<p class="note">No se cargó el módulo de cierres. Actualiza la página.</p>';
   if(!AC.days&&!AC.loading&&!AC.err)acLoad();
   var nav='<div style="display:flex;gap:8px;align-items:center;margin:0 0 16px"><button class="btn s sm" data-acn="-1" aria-label="Mes anterior">‹</button><b style="min-width:180px;text-align:center">'+esc(L.monthLong(m).charAt(0).toUpperCase()+L.monthLong(m).slice(1))+'</b><button class="btn s sm" data-acn="1" aria-label="Mes siguiente">›</button></div>';
-  if(AC.err)return head('Cierres de caja','')+nav+'<div class="err">'+esc(AC.err)+'</div>';
+  if(AC.err)return head('Cierres de caja','')+nav+'<div class="err" role="alert">'+esc(AC.err)+'</div><button class="btn s" data-acr="1">Reintentar</button>';
   if(AC.loading||!AC.days||!AC.period)return head('Cierres de caja','')+nav+'<p class="note">Cargando…</p>';
+  var warn=AC.noSql?'<div class="err" role="alert">Falta activar el cierre diario en Supabase: ejecuta forma-cierre-diario.sql (una sola vez). Mientras tanto se muestran los movimientos, sin estado de cierre.</div>':'';
   var closed={};(AC.days.items||[]).forEach(function(i){closed[i.day]=i});
   var tl=(AC.period.timeline||[]).filter(function(t){return Number(t.incoming)>0||Number(t.outgoing)>0});
   var open=tl.filter(function(t){return !closed[t.day]&&t.day<=new Date().toISOString().slice(0,10)});
@@ -200,7 +208,7 @@ V.cierres=function(){
     return '<tr><td><b>'+esc(L.dayShort(t.day))+'</b></td><td class="r">'+R0(Number(t.incoming||0))+'</td><td class="r">'+R0(Number(t.outgoing||0))+'</td><td>'+(c?'<span class="pill up">Cerrado '+esc(L.hhmm(c.created_at))+(c.revision>1?' · corr. '+c.revision:'')+'</span>':'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Sin cerrar</span>')+'</td><td>'+(diff==null?'—':diff===0?'Cuadra ✓':'<b style="color:var(--bad)">'+(diff>0?'+':'−')+' '+R0(Math.abs(diff))+'</b>')+'</td><td>'+(c?'<button class="btn s sm" data-acd="'+esc(t.day)+'">Ver / reenviar</button>':'')+'</td></tr>'}).join('');
   var cl=AC.closing,mrev=cl&&Number(cl.latest_revision)||0;
   var mes='<section class="card c12"><h2>Cierre del mes</h2><p style="margin:0 0 8px">'+(mrev?'<span class="pill up">Mes cerrado · revisión '+mrev+'</span>':'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Mes sin cerrar</span>')+' · Días cerrados: <b>'+Object.keys(closed).length+'</b> de <b>'+tl.length+'</b> con movimientos</p>'+(mrev?'<button class="btn s sm" data-acm="1">Ver / reenviar resumen del mes</button>':'<p class="note" style="margin:0">René cierra el mes desde Cobros › Cierre.</p>')+'</section>';
-  var body=head('Cierres de caja','Qué días se cerraron y qué se informó.')+nav+'<div class="grid">'+kpi('Días con movimiento',String(tl.length),'','','flat')+kpi('Cerrados',String(Object.keys(closed).length),'in','','flat')+kpi('Sin cerrar',String(open.length),open.length?'out':'','Faltan por cerrar','flat')+kpi('Entró en el mes',R0(Number(AC.period.received_cents||0)),'in','','flat')+mes
+  var body=head('Cierres de caja','Qué días se cerraron y qué se informó.')+nav+warn+'<div class="grid">'+kpi('Días con movimiento',String(tl.length),'','','flat')+kpi('Cerrados',String(Object.keys(closed).length),'in','','flat')+kpi('Sin cerrar',String(open.length),open.length?'out':'','Faltan por cerrar','flat')+kpi('Entró en el mes',R0(Number(AC.period.received_cents||0)),'in','','flat')+mes
    +'<section class="card c12"><h2>Días del mes</h2><div class="tw"><table><thead><tr><th>Día</th><th class="r">Entró</th><th class="r">Salió</th><th>Estado</th><th>Caja en efectivo</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" class="note">Sin movimientos este mes.</td></tr>')+'</tbody></table></div></section></div>'
    +'<div id="ac-det">'+(AC.detail?acDetail():'')+'</div>';
   return body;
@@ -221,6 +229,7 @@ function acOpenMonth(){
 }
 function acClick(e){
   var L=window.FormaCierresLib;
+  var rr=e.target.closest('[data-acr]');if(rr){acLoad();render();return true}
   var n=e.target.closest('[data-acn]');if(n){acShift(Number(n.dataset.acn));return true}
   var d=e.target.closest('[data-acd]');if(d){acOpenDay(d.dataset.acd);return true}
   var m=e.target.closest('[data-acm]');if(m){acOpenMonth();return true}
@@ -242,7 +251,7 @@ function render(){
   if(EMBED)document.querySelectorAll('[data-av]').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.av===view))});
   if(keep){var el=$('#apq');el.focus();el.setSelectionRange(el.value.length,el.value.length)}
 }
-function go(v){if(!V[v])v='resumen';view=v;if(!EMBED){try{history.replaceState(null,'','#'+v)}catch(e){}}render();if(!EMBED)window.scrollTo(0,0)}
+function go(v){if(!V[v])v='resumen';view=v;if(EMBED){try{localStorage.setItem('forma-adm-view',v)}catch(e){}}if(!EMBED){try{history.replaceState(null,'','#'+v)}catch(e){}}render();if(!EMBED)window.scrollTo(0,0)}
 function nav(){
   $('#tabs').innerHTML=NAV.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
   $('#bnav').style.gridTemplateColumns='repeat('+NAV.length+',1fr)';
@@ -313,6 +322,7 @@ function demoRpc(name,a){
   return null;
 }
 var loaded=false,LAB={resumen:'Resumen',personas:'Personas',cursos:'Cursos online',cierres:'Cierres de caja',ajustes:'Ajustes'};
+if(EMBED){try{var svw=localStorage.getItem('forma-adm-view');if(V[svw])view=svw}catch(e){}}
 if(EMBED){
   /* Dentro de Gestión: Gestión da el cliente de sesión y pinta este bloque; aquí no hay cabecera ni menú propios. */
   window.FormaAdmin={

@@ -97,7 +97,7 @@ function esc(s){return X.esc(s)}
 function uuid(){return crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,function(c){var r=Math.random()*16|0;return(c==='x'?r:(r&3|8)).toString(16)})}
 function cents(v){var s=String(v||'').trim().replace(/[^\d.,]/g,'');if(!s)return null;var lc=s.lastIndexOf(','),ld=s.lastIndexOf('.');if(lc>-1&&ld>-1)s=lc>ld?s.replace(/\./g,'').replace(',','.'):s.replace(/,/g,'');else if(lc>-1)s=s.replace(',','.');var n=Number(s);if(!isFinite(n)||n<0||n>999999999)throw Error('Revisa el efectivo contado: usa solo números, por ejemplo 350,00.');return Math.round(n*100)}
 function ymd(d){return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0')}
-function init(ctx){X=ctx;CI.day=X.T;CI.month=X.T.slice(0,7)}
+function init(ctx){X=ctx;CI.day=X.T;CI.month=X.T.slice(0,7);try{var m=localStorage.getItem('forma-ci-mode');if(m==='day'||m==='month')CI.mode=m}catch(e){}}
 function demoDay(day){
   return{day:day,latest_revision:0,cash_expected_cents:35000,closings:[],snapshot:{received_cents:128000,payment_count:3,outflow_cents:30000,expense_cents:30000,refund_cents:0,
     by_method:[{label:'pix',cents:80000},{label:'efectivo',cents:48000}],by_activity:[{label:'Bolsa de Valores',cents:80000},{label:'Computación Informática',cents:48000}],by_outflow_category:[{label:'Alquiler',cents:30000}],by_outflow_method:[{label:'efectivo',cents:13000},{label:'pix',cents:17000}]}};
@@ -199,7 +199,7 @@ function doClose(){
 function click(e){
   var b=e.target.closest('[data-ci]');if(!b)return false;
   var k=b.dataset.ci;
-  if(k==='mode'){CI.mode=b.dataset.m;CI.redo=false;CI.pending=null;load();X.render();return true}
+  if(k==='mode'){CI.mode=b.dataset.m;try{localStorage.setItem('forma-ci-mode',CI.mode)}catch(e){}CI.redo=false;CI.pending=null;load();X.render();return true}
   if(k==='prev'||k==='next'){
     var dir=k==='prev'?-1:1;
     if(CI.mode==='day'){var dd=new Date(CI.day+'T12:00:00Z');dd.setUTCDate(dd.getUTCDate()+dir);var n=ymd(dd);if(n>X.T)return true;CI.day=n}

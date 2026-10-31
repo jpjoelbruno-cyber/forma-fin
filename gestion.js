@@ -345,7 +345,10 @@ function buildNav(){
   $('#bnav').style.gridTemplateColumns='repeat('+(first.length+1)+',1fr)';
   $('#bnav').innerHTML=first.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+'<span>'+n[1]+'</span></button>'}).join('')+'<button data-v="mas">'+ico('more')+'<span>Más</span></button>';
 }
-function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure()}
+var NAVK='forma-gs-nav';
+function navSave(y){try{localStorage.setItem(NAVK,JSON.stringify({v:view,ct:cobTab,cp:cobPer,y:y==null?window.scrollY:y,t:Date.now()}))}catch(e){}}
+function navLoad(){try{var o=JSON.parse(localStorage.getItem(NAVK)||'null');return o&&Date.now()-o.t<7*864e5?o:null}catch(e){return null}}
+function go(v){if(!V[v])v='inicio';view=v;$('#sheet').hidden=true;$('#menu').hidden=true;try{history.replaceState(null,'','#'+v)}catch(e){}render();mark();window.scrollTo(0,0);ensure();navSave(0)}
 function openMas(){
   $('#sheetIn').innerHTML=(manager()?'<button data-v="alumnos">'+ico('users')+'Alumnos</button><button data-v="interesados">'+ico('chat')+'Ventas</button>':'')+'<button data-go="avisos">'+ico('chat')+'Avisos</button><button data-act="presupuesto">'+ico('cash')+'Ir a mi espacio de alumno</button>'+(role==='owner'?'<button data-v="admin">'+ico('gear')+'Administración</button>':'')+'<button data-go="ajustes">'+ico('gear')+'Ajustes</button><button data-act="theme">Cambiar claro / oscuro</button><button data-act="out" style="color:var(--bad);border-color:var(--badbg)">Cerrar sesión</button>';
   $('#sheet').hidden=false;
@@ -423,8 +426,8 @@ document.addEventListener('click',function(e){
   var g=e.target.closest('[data-go]');if(g){go(g.dataset.go);return}
   var a=e.target.closest('[data-act]');if(a){act(a.dataset.act,a);return}
   var c=e.target.closest('[data-ct]'),p=e.target.closest('[data-cp]'),al=e.target.closest('[data-al]'),ag=e.target.closest('[data-ag]'),wk=e.target.closest('[data-wk]');
-  if(c){cobTab=c.dataset.ct;render();ensure();return}
-  if(p){cobPer=p.dataset.cp;render();ensure();return}
+  if(c){cobTab=c.dataset.ct;render();ensure();navSave();return}
+  if(p){cobPer=p.dataset.cp;render();ensure();navSave();return}
   if(al){alF=al.dataset.al;render();return}
   if(ag){agFilter=ag.dataset.ag;render();return}
   if(wk){agNav(Number(wk.dataset.wk));return}
@@ -452,7 +455,9 @@ function gate(msg,showLogin){
   var gi=$('#gin');if(gi)gi.onclick=function(){try{sessionStorage.setItem('forma-return-agenda','1')}catch(e){}};
 }
 function boot(){
-  var h=(location.hash||'').slice(1);
+  var h=(location.hash||'').slice(1),sv=navLoad();
+  if(sv){if(!h&&sv.v)h=sv.v;if(sv.ct)cobTab=sv.ct;if(sv.cp)cobPer=sv.cp;window.__navY=(sv.v===h?sv.y:0)||0}
+
   if(demo){role=new URLSearchParams(location.search).get('rol')==='propietario'?'owner':'manager';return start(h)}
   var cfg=window.FORMA_CONFIG;
   if(!cfg||cfg.supabaseUrl!=='https://irsuevjqmgpwunvymxbc.supabase.co'||!cfg.publishableKey){gate('La configuración de FORMÁ no está disponible.');return}
@@ -473,7 +478,8 @@ function start(h){
   buildNav();$('#bnav').hidden=false;if($('#mAdmin'))$('#mAdmin').hidden=role!=='owner';
   view=V[h]&&(manager()||['inicio','agenda','avisos','ajustes'].indexOf(h)>-1)&&(h!=='admin'||role==='owner')?h:'inicio';
   render();mark();
-  loadCore().then(function(){render();mark();ensure()});
+  loadCore().then(function(){render();mark();ensure();if(window.__navY){var yy=window.__navY;window.__navY=0;setTimeout(function(){window.scrollTo(0,yy)},350)}});
+  var sT=null;window.addEventListener('scroll',function(){clearTimeout(sT);sT=setTimeout(function(){navSave()},400)},{passive:true});window.addEventListener('pagehide',function(){navSave()});
   document.addEventListener('visibilitychange',function(){if(!document.hidden&&!demo&&role){D.reports={};loadCore().then(function(){render()})}});
 }
 

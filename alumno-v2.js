@@ -267,11 +267,12 @@ function start(){
   if(typeof orig==='function'){window.showApp=function(...a){const r=orig.apply(this,a);setTimeout(land,0);return r;};}
   if(getComputedStyle($('app-screen')).display!=='none')land();
 }
+(function(){const prev=goPanel;goPanel=function(id){const r=prev(id);try{localStorage.setItem('forma-alumno-panel',JSON.stringify({id:id,t:Date.now()}))}catch(e){}return r}})();
 function land(){
   if(landed)return;landed=true;
   const more=document.querySelector('.ia-more');if(more&&!more.open)more.open=true;
   const a=document.querySelector('#app-screen .panel.active');
-  if(!a||a.id==='p-resumo'){goPanel('camino');}
+  if(!a||a.id==='p-resumo'){let sv=null;try{const o=JSON.parse(localStorage.getItem('forma-alumno-panel')||'null');if(o&&Date.now()-o.t<12*36e5&&document.getElementById('p-'+o.id)&&['admin','more'].indexOf(o.id)<0)sv=o.id}catch(e){}goPanel(sv||'camino');}
   const demo=!!window.FORMA_DEMO;
   if(!demo){setTimeout(()=>{try{window.FormaLearningView?.load?.()}catch(e){}try{window.FormaStudent?.load?.()}catch(e){}},400);}
   else{setTimeout(()=>{try{window.FormaLearningView?.load?.()}catch(e){}},400);}
