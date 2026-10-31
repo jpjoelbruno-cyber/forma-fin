@@ -438,3 +438,15 @@ textarea{font:inherit;border-radius:12px;border:2px solid var(--line);background
 
 /* Cierre de caja */
 .ci-pre{white-space:pre-wrap;word-break:break-word;background:var(--soft);border-radius:14px;padding:12px 14px;font:13px/1.5 'DM Sans',system-ui,sans-serif;margin:0 0 12px;max-height:50vh;overflow:auto}
+/* editor de encuentros uno por uno */
+.cu-gen{margin-top:12px;border:1px solid var(--line,#E3DEF5);border-radius:12px;padding:10px 12px;background:var(--soft,#F6F3FF)}
+.cu-gen summary{cursor:pointer;font-size:14px}
+.cu-mhead{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin:16px 0 8px}
+.cu-mlist{display:flex;flex-direction:column;gap:8px}
+.cu-mrow{display:grid;grid-template-columns:32px minmax(130px,1.3fr) minmax(90px,1fr) minmax(90px,1fr) minmax(0,1.4fr) auto;gap:8px;align-items:end;padding:8px 10px;border:1px solid var(--line,#E3DEF5);border-radius:12px;background:var(--card,#fff)}
+.cu-mrow label{display:flex;flex-direction:column;gap:2px;font-size:11px;margin:0}
+.cu-mrow input{min-width:0;width:100%}
+.cu-mrow.bad{border-color:var(--bad,#C0392B);background:var(--badbg,#FDECEA)}
+.cu-mn{font-weight:700;color:var(--brand2,#5B21B6);align-self:center}
+.cu-mt{font-size:12px;color:var(--mut,#6B6488);align-self:center;min-width:0;overflow-wrap:anywhere}
+@media(max-width:700px){.cu-mrow{grid-template-columns:28px 1fr 1fr}.cu-mrow label:first-of-type{grid-column:2/4}.cu-mrow .cu-mt{grid-column:2/4}.cu-mrow .btn{grid-column:2/4}}

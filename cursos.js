@@ -419,7 +419,7 @@ function startEdit(gid){
   var g=C.cat.groups.filter(function(x){return x.id===gid})[0];if(!g)return;
   var s=span(g),past=s.list.filter(function(x){return x.day<X.T}),fut=s.list.filter(function(x){return x.day>=X.T}),ref=fut[0]||s.list[0];
   var t=Math.round((Number(g.fee_cents)+Number(g.installments)*Number(g.monthly_cents))/100);
-  C.ed={gid:gid,g:g,version:g.version,name:g.name,cap:String(g.capacity),instr:g.instructor||'Joel',room:g.room||'Sala 3',price:String(t),priceBase:String(t),resched:false,days:fut.length?(function(){var d=[];fut.forEach(function(x){var k=dow(x.day);if(d.indexOf(k)<0)d.push(k)});return d})():[4],time:ref?hhmm(ref.start_min):'15:00',hours:ref?(ref.end_min-ref.start_min)/60:2,start:fut.length?fut[0].day:X.T,count:fut.length||10,include:{},past:past,fut:fut,msg:'',rid:uuid()};
+  C.ed={gid:gid,g:g,version:g.version,name:g.name,cap:String(g.capacity),instr:g.instructor||'Joel',room:g.room||'Sala 3',price:String(t),priceBase:String(t),resched:false,man:null,dt:{},days:fut.length?(function(){var d=[];fut.forEach(function(x){var k=dow(x.day);if(d.indexOf(k)<0)d.push(k)});return d})():[4],time:ref?hhmm(ref.start_min):'15:00',hours:ref?(ref.end_min-ref.start_min)/60:2,start:fut.length?fut[0].day:X.T,count:fut.length||10,include:{},past:past,fut:fut,msg:'',rid:uuid()};
   C.wiz=null;C.msg='';X.render();window.scrollTo(0,0);
 }
 function edSessions(e){
@@ -427,6 +427,7 @@ function edSessions(e){
   function ins(x){return(ni&&(x.instructor===e.g.instructor||!x.instructor))?e.instr:(x.instructor||e.instr)}
   function rm(x){return(nr&&(x.room===e.g.room||!x.room))?e.room:(x.room||e.room)}
   var a0=parseInt(e.time.slice(0,2),10)*60+parseInt(e.time.slice(3,5),10),a1=a0+Math.round(Number(e.hours)*60);
+  if(e.man)return e.man.map(function(x){return{id:x.id,day:x.day,start_min:x.start_min,end_min:x.end_min,module:x.module||'',instructor:x.instructor||e.instr,room:x.room||e.room}});
   if(!e.resched){e.fut.forEach(function(x){out.push(sessOut(x,ins(x),rm(x)))});return out}
   var p=plan0({start:e.start,days:e.days,count:e.count,include:e.include});
   p.list.forEach(function(it,i){var old=e.fut[i];var o={day:it.day,start_min:a0,end_min:a1,module:old?(old.module||''):'',instructor:old?ins(old):e.instr,room:old?rm(old):e.room};if(old)o.id=old.id;out.push(o)});
@@ -439,7 +440,7 @@ function edView(){
   var durs=[1,1.5,2,2.5,3,4].map(function(h){return '<option value="'+h+'"'+(Number(e.hours)===h?' selected':'')+'>'+h+' h</option>'}).join('');
   var dchips=[1,2,3,4,5,6,0].map(function(d){return '<button type="button" class="chip" aria-pressed="'+(e.days.indexOf(d)>-1)+'" data-cu="edday" data-d="'+d+'">'+DOW[d]+'</button>'}).join('');
   var so=selfOverlap(list),fut=list.filter(function(x){return x.day>=X.T}),pastN=e.past.length;
-  var res=e.resched?'<div class="cu-two" style="margin-top:10px"><div class="cu-wide"><label>Días de la semana</label>'+dchips+'</div><label>Hora de inicio<input type="time" data-cue="time" value="'+esc(e.time)+'"></label><label>Duración<select data-cue="hours">'+durs+'</select></label><label>Desde el día<input type="date" data-cue="start" value="'+esc(e.start)+'"></label><label>Encuentros que faltan<input type="number" min="0" max="104" inputmode="numeric" data-nowheel data-cue="count" value="'+esc(e.count)+'"></label></div>':'';
+  var manual=!!e.man,res=manual?'':e.resched?'<div class="cu-two" style="margin-top:10px"><div class="cu-wide"><label>Días de la semana</label>'+dchips+'</div><label>Hora de inicio<input type="time" data-cue="time" value="'+esc(e.time)+'"></label><label>Duración<select data-cue="hours">'+durs+'</select></label><label>Desde el día<input type="date" data-cue="start" value="'+esc(e.start)+'"></label><label>Encuentros que faltan<input type="number" min="0" max="104" inputmode="numeric" data-nowheel data-cue="count" value="'+esc(e.count)+'"></label></div>':'';
   var prev=fut.length?'<div class="cu-prev">'+fut.map(function(x,i){return '<span class="cu-d'+(cf.some(function(k){return k.day===x.day})||so.some(function(k){return k.a.day===x.day})?' bad':'')+'"><b>'+(pastN+i+1)+'</b> '+DOW[dow(x.day)]+' '+dm(x.day)+' '+hhmm(x.start_min)+'</span>'}).join('')+'</div>':'<p class="note">No quedan encuentros por dar.</p>';
   var wasNum=e.fut.length;
   return X.head('Editar grupo · '+esc(c.name),'«'+esc(g.name)+'» · '+Number(g.students)+' alumno(s). Los encuentros ya dados no se tocan.','<button class="btn s" data-cu="edcancel">Volver</button>')
@@ -450,11 +451,36 @@ function edView(){
    +'<label>Instructor<select data-cue="instr">'+opt(instructors(),e.instr)+'</select></label><label>Sala<select data-cue="room">'+opt(rooms(),e.room)+'</select></label>'
    +'<label>Precio de referencia (R$)<input inputmode="decimal" data-cue="price" value="'+esc(e.price)+'"></label></div>'
    +'<div class="cu-sum" style="margin-top:14px"><b>Horario actual:</b> '+(pastN?pastN+' ya dado'+(pastN===1?'':'s')+' · ':'')+wasNum+' por dar'+(e.fut[0]?' · próximo '+DOW[dow(e.fut[0].day)]+' '+dm(e.fut[0].day)+' '+hhmm(e.fut[0].start_min)+'–'+hhmm(e.fut[0].end_min):'')+'</div>'
-   +'<div style="margin-top:10px"><button type="button" class="btn s" data-cu="edres" aria-pressed="'+e.resched+'">'+(e.resched?'✓ Cambiando los días y el horario de lo que falta':'Cambiar los días y el horario de lo que falta')+'</button><p class="note" style="margin:6px 0 0">Reprograma solo los encuentros que aún no se dieron, conservando su módulo y su asistencia. Si el horario estaba mal, hazlo aquí.</p></div>'
-   +res+(so.length?soHTML(so,e.resched):'')+(cf.length?cfHTML(cf):(fut.length&&!so.length?'<div class="cu-ok" style="margin-top:12px">Sin cruces con otros grupos ✓</div>':''))+prev
+   +'<div style="margin-top:10px"><button type="button" class="btn '+(manual?'p':'s')+'" data-cu="edman" aria-pressed="'+manual+'">'+(manual?'✓ Editando cada encuentro (fecha y hora)':'Editar fechas y horas encuentro por encuentro')+'</button><p class="note" style="margin:6px 0 0">Para grupos que ya empezaron: cambia la fecha de cualquier encuentro (también los ya dados), agrega o quita, o rehaz el calendario con el total de encuentros.</p></div>'
+   +(manual?manHTML(e,list):'<div style="margin-top:10px"><button type="button" class="btn s" data-cu="edres" aria-pressed="'+e.resched+'">'+(e.resched?'✓ Cambiando los días y el horario de lo que falta':'Cambiar los días y el horario de lo que falta')+'</button><p class="note" style="margin:6px 0 0">Reprograma solo los encuentros que aún no se dieron, conservando su módulo y su asistencia. Si el horario estaba mal, hazlo aquí.</p></div>')
+   +res+(so.length?soHTML(so,e.resched):'')+(cf.length?cfHTML(cf):(fut.length&&!so.length?'<div class="cu-ok" style="margin-top:12px">Sin cruces con otros grupos ✓</div>':''))+(manual?'':prev)
    +'<div class="cu-foot"><button class="btn s" type="button" data-cu="edcancel">Cancelar</button><button class="btn p" type="submit"'+(C.busy?' disabled':'')+'>'+(C.busy?'Guardando…':'Guardar cambios')+'</button></div></form>';
 }
-function readEd(){var e=C.ed;document.querySelectorAll('[data-cue]').forEach(function(el){e[el.dataset.cue]=el.value});e.hours=Number(e.hours)}
+function t2m(v){return/^\d{2}:\d{2}$/.test(v||'')?parseInt(v.slice(0,2),10)*60+parseInt(v.slice(3,5),10):NaN}
+function readEd(){var e=C.ed;document.querySelectorAll('[data-cue]').forEach(function(el){e[el.dataset.cue]=el.value});e.hours=Number(e.hours);
+  document.querySelectorAll('[data-cud]').forEach(function(el){e.dt[el.dataset.cud]=el.value});
+  if(e.man)document.querySelectorAll('[data-cum]').forEach(function(el){var q=el.dataset.cum.split(':'),row=e.man[Number(q[0])];if(!row)return;
+    if(q[1]==='day'){if(/^\d{4}-\d{2}-\d{2}$/.test(el.value))row.day=el.value}
+    else{var m=t2m(el.value);if(!isNaN(m)){if(q[1]==='start'){var d=row.end_min-row.start_min;row.start_min=m;if(row.end_min<=m)row.end_min=Math.min(1440,m+(d>0?d:120))}else row.end_min=m}}})}
+function manGen(e){
+  var cnt=Math.max(1,Math.min(104,Number(e.count)||0)),dt=e.dt||{},hrs=Math.round(Number(e.hours)*60);
+  var p=plan0({start:e.start,days:e.days,count:cnt,include:{}}),old=e.man||[];
+  var all=e.past.concat(e.fut).sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min});
+  var out=p.list.map(function(it,i){var m=t2m(dt[dow(it.day)]||e.time);if(isNaN(m))m=t2m(e.time);var o=all[i];
+    return{id:o?o.id:undefined,day:it.day,start_min:m,end_min:Math.min(1440,m+hrs),module:o?(o.module||''):'',instructor:o?(o.instructor||e.instr):e.instr,room:o?(o.room||e.room):e.room}});
+  e.man=out;e.genSkip=p.skipped;
+}
+function manHTML(e,list){
+  var so=selfOverlap(list),bad={};so.forEach(function(o){bad[list.indexOf(o.a)]=1;bad[list.indexOf(o.b)]=1});
+  var tot=list.length,past=list.filter(function(x){return x.day<X.T}).length;
+  var dchips=[1,2,3,4,5,6,0].map(function(d){return '<button type="button" class="chip" aria-pressed="'+(e.days.indexOf(d)>-1)+'" data-cu="edday" data-d="'+d+'">'+DOW[d]+'</button>'}).join('');
+  var durs=[1,1.5,2,2.5,3,4].map(function(h){return '<option value="'+h+'"'+(Number(e.hours)===h?' selected':'')+'>'+h+' h</option>'}).join('');
+  var dtimes=e.days.slice().sort(function(a,b){return((a+6)%7)-((b+6)%7)}).map(function(d){return '<label>Hora del '+DOW[d]+'<input type="time" data-cud="'+d+'" value="'+esc(e.dt[d]||e.time)+'"></label>'}).join('');
+  var gen='<details class="cu-gen"'+(e.genOpen?' open':'')+'><summary data-cu="edgenopen"><b>Rehacer el calendario completo</b> (fecha de inicio, días y cantidad de encuentros)</summary><div class="cu-two" style="margin-top:10px"><div class="cu-wide"><label>Días de la semana (por ejemplo 2 veces por semana)</label>'+dchips+'</div>'+dtimes+'<label>Duración<select data-cue="hours">'+durs+'</select></label><label>Primer encuentro (puede ser una fecha pasada)<input type="date" data-cue="start" value="'+esc(e.start)+'"></label><label>Total de encuentros del curso<input type="number" min="1" max="104" inputmode="numeric" data-nowheel data-cue="count" value="'+esc(e.count)+'"></label></div><div style="margin-top:10px"><button type="button" class="btn s" data-cu="edgen">Generar las '+esc(e.count)+' fechas</button> <span class="note">Reemplaza la lista de abajo; conserva módulo y asistencia por orden. Después puedes ajustar cada fecha.</span></div>'+(e.genSkip&&e.genSkip.length?'<p class="note">Se saltaron feriados: '+e.genSkip.map(function(k){return dm(k.day)}).join(', ')+'.</p>':'')+'</details>';
+  var rows=list.map(function(x,i){var done=x.day<X.T;return '<div class="cu-mrow'+(bad[i]?' bad':'')+'"><span class="cu-mn">'+(i+1)+'</span><label>Fecha<input type="date" data-cum="'+i+':day" value="'+esc(x.day)+'"></label><label>Desde<input type="time" data-cum="'+i+':start" value="'+hhmm(x.start_min)+'"></label><label>Hasta<input type="time" data-cum="'+i+':end" value="'+hhmm(x.end_min)+'"></label><span class="cu-mt">'+DOW[dow(x.day)]+(done?' · ya dado':'')+(x.module?' · '+esc(x.module):'')+'</span><button type="button" class="btn s sm" data-cu="edmdel" data-i="'+i+'" aria-label="Quitar el encuentro '+(i+1)+'">Quitar</button></div>'}).join('');
+  return '<div class="cu-sum" style="margin-top:14px"><b>Calendario del grupo:</b> '+tot+' encuentro(s) en total · '+past+' ya dado(s) · '+(tot-past)+' por dar'+(list.length?' · del '+dm(list[0].day)+' al '+dm(list[list.length-1].day)+'/'+list[list.length-1].day.slice(0,4):'')+'</div>'+gen
+   +'<div class="cu-mhead"><b>Cada encuentro</b><span><button type="button" class="btn s sm" data-cu="edmadd">+ Agregar un encuentro</button> <button type="button" class="btn s sm" data-cu="edmsort">Ordenar por fecha</button></span></div><div class="cu-mlist">'+rows+'</div>';
+}
 function edSave(){
   if(C.busy)return;var e=C.ed;readEd();e.msg='';var g=e.g;
   function bad(t){e.msg=t;X.render();var x=document.getElementById('cuErr');if(x)x.scrollIntoView({block:'center'})}
@@ -465,6 +491,7 @@ function edSave(){
   if(isNaN(total))return bad('Revisa el precio de referencia.');
   var a0=parseInt(e.time.slice(0,2),10)*60+parseInt(e.time.slice(3,5),10);if(e.resched&&(!/^\d{4}-\d{2}-\d{2}$/.test(e.start||'')||!e.days.length))return bad('Elige el día de inicio y los días de la semana.');
   if(e.resched&&(a0<0||a0+Math.round(e.hours*60)>1440))return bad('Revisa la hora de inicio y la duración.');
+  if(e.man){for(var qi=0;qi<e.man.length;qi++){var qm=e.man[qi];if(!/^\d{4}-\d{2}-\d{2}$/.test(qm.day||'')||!(qm.start_min>=0&&qm.start_min<qm.end_min&&qm.end_min<=1440))return bad('Revisa la fecha y la hora del encuentro '+(qi+1)+'.')}e.man.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min})}
   var sessions=edSessions(e);if(!sessions.length)return bad('El grupo debe tener al menos un encuentro.');
   if(sessions.length>104)return bad('Máximo 104 encuentros por grupo.');
   var so=selfOverlap(sessions);if(so.length){var q=so[0];return bad('Dos encuentros del propio grupo se pisan el '+DOW[dow(q.a.day)]+' '+dm(q.a.day)+' ('+hhmm(q.a.start_min)+'–'+hhmm(q.a.end_min)+' y '+hhmm(q.b.start_min)+'–'+hhmm(q.b.end_min)+')'+(so.length>1?' y '+(so.length-1)+' más':'')+'. '+(so.some(function(o){return !o.past})&&!e.resched?'Pulsa «Cambiar los días y el horario de lo que falta» para corregirlo.':'Cambia los días, la hora o el día de inicio.')+' No se guardó nada.')}
@@ -549,6 +576,12 @@ function click(e){
   if(k==='gopen'){var gd=document.getElementById('dlg');if(gd&&gd.open)gd.close();C.wiz=null;C.ed=null;C.selG=b.dataset.id;C.msg='';X.render();window.scrollTo(0,0);return true}
   if(k==='fclear'){C.flt={c:'',st:'',m:'',h:''};X.render();return true}
   if(k==='edcancel'){C.ed=null;X.render();return true}
+  if(k==='edman'){readEd();var E0=C.ed;if(E0.man){E0.man=null}else{E0.man=E0.past.concat(E0.fut).sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min}).map(function(x){return sessOut(x)});E0.count=String(E0.man.length);var f0=E0.man[0];if(f0){E0.start=f0.day;E0.time=hhmm(f0.start_min);E0.hours=(f0.end_min-f0.start_min)/60}var dd0=[];E0.man.forEach(function(x){var k2=dow(x.day);if(dd0.indexOf(k2)<0){dd0.push(k2);E0.dt[k2]=hhmm(x.start_min)}});E0.days=dd0.length?dd0:[4]}E0.msg='';X.render();return true}
+  if(k==='edgen'){readEd();manGen(C.ed);C.ed.msg='';C.ed.genOpen=true;X.render();return true}
+  if(k==='edgenopen'){C.ed.genOpen=!C.ed.genOpen;return false}
+  if(k==='edmdel'){readEd();C.ed.man.splice(Number(b.dataset.i),1);C.ed.count=String(C.ed.man.length);X.render();return true}
+  if(k==='edmadd'){readEd();var m0=C.ed.man,l0=m0[m0.length-1]||{day:X.T,start_min:900,end_min:1020};m0.push({day:X.M.plus(l0.day,7),start_min:l0.start_min,end_min:l0.end_min,module:'',instructor:C.ed.instr,room:C.ed.room});C.ed.count=String(m0.length);X.render();return true}
+  if(k==='edmsort'){readEd();C.ed.man.sort(function(a,b){return a.day<b.day?-1:a.day>b.day?1:a.start_min-b.start_min});X.render();return true}
   if(k==='edres'){readEd();C.ed.resched=!C.ed.resched;X.render();return true}
   if(k==='edday'){readEd();var E=C.ed,dd=Number(b.dataset.d),ix=E.days.indexOf(dd);if(ix>-1){if(E.days.length>1)E.days.splice(ix,1)}else E.days.push(dd);X.render();return true}
   if(!w)return false;
@@ -564,7 +597,7 @@ function click(e){
   return false;
 }
 document.addEventListener('change',function(e){if(e.target.dataset&&e.target.dataset.cuflt&&X&&X.view()==='cursos'){C.flt[e.target.dataset.cuflt]=e.target.value;X.render();return}
-if(C.ed&&e.target.dataset&&e.target.dataset.cue&&X&&X.view()==='cursos'){readEd();C.ed.msg='';X.render();return}
+if(C.ed&&e.target.dataset&&(e.target.dataset.cue||e.target.dataset.cum||e.target.dataset.cud)&&X&&X.view()==='cursos'){readEd();C.ed.msg='';X.render();return}
 if(C.wiz&&e.target.dataset&&e.target.dataset.cuo&&X&&X.view()==='cursos'){var pr=e.target.dataset.cuo.split('|'),W=C.wiz;W.ov=W.ov||{};(W.ov[pr[0]]=W.ov[pr[0]]||{})[pr[1]]=e.target.value;W.msg='';X.render();return}
 if(C.wiz&&e.target.dataset&&e.target.dataset.cuf&&X&&X.view()==='cursos'){readForm();C.wiz.msg='';X.render()}});
 document.addEventListener('submit',function(e){if(e.target.id==='cuForm'){e.preventDefault();save()}if(e.target.id==='edForm'){e.preventDefault();edSave()}});
