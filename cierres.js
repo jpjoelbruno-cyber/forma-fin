@@ -111,7 +111,7 @@ function load(){
     p=X.demo?Promise.resolve({can_close:false,latest_revision:0,snapshot:demoDay(m).snapshot,history:[]}).then(function(d){CI.days={items:[{day:m,revision:1,cash_expected_cents:1,cash_counted_cents:1}]};return d})
       :Promise.all([X.rpc('forma_finance_reports',{p_action:'closing_preview',p_data:{month:m}}),X.rpc('forma_day_close',{p_action:'list',p_data:{from:m,to:last}}).catch(function(){return{items:[],unavailable:true}})]).then(function(r){CI.days=r[1];return r[0]});
   }
-  p.then(function(d){if(n!==CI.seq)return;CI.data=d;CI.loading=false;if(X.view()==='cobros')X.render()},function(e){if(n!==CI.seq)return;CI.loading=false;CI.err=errText(e);if(X.view()==='cobros')X.render()});
+  p.then(function(d){if(n!==CI.seq)return;CI.data=d;CI.loading=false;if(X.view()==='cierre')X.render()},function(e){if(n!==CI.seq)return;CI.loading=false;CI.err=errText(e);if(X.view()==='cierre')X.render()});
 }
 function errText(e){
   var m=(e&&e.message)||'',c=e&&e.code;
