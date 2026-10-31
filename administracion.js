@@ -7,8 +7,8 @@ var demo=new URLSearchParams(location.search).get('vista')==='ejemplo';
 var CS=document.currentScript,EMBED=!!(CS&&CS.hasAttribute('data-embed'));
 var client=null,view='resumen',errors=[];
 var D={report:null,access:null,pending:null,period:null,crm:null,edu:null,courses:null,lessons:null,phone:null,days:30,q:''};
-var IC={home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',users:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a3 3 0 0 0 0-6M21 20c0-2.5-1.5-4.6-4-5.5"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'};
-var NAV=[['resumen','Resumen','home'],['personas','Personas','users'],['cursos','Cursos','cap'],['ajustes','Ajustes','gear']];
+var IC={doc:'<path d="M7 3h8l4 4v14H7zM15 3v4h4M10 12h6M10 16h6"/>',home:'<path d="M4 11l8-7 8 7v9a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z"/>',users:'<circle cx="9" cy="8" r="3"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M17 11a3 3 0 0 0 0-6M21 20c0-2.5-1.5-4.6-4-5.5"/>',cap:'<path d="M3 10l9-5 9 5-9 5zM7 12v5c3 2 7 2 10 0v-5"/>',gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/>'};
+var NAV=[['resumen','Resumen','home'],['personas','Personas','users'],['cursos','Cursos','cap'],['cierres','Cierres','doc'],['ajustes','Ajustes','gear']];
 function ico(n){return '<svg class="i" viewBox="0 0 24 24" aria-hidden="true">'+IC[n]+'</svg>'}
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
 function R0(c){return 'R$ '+Math.round(Number(c||0)/100).toLocaleString('pt-BR')}
@@ -171,6 +171,63 @@ function ceClick(b){
   if(k==='vnew'){ceReset(true);render();return}
   if(k==='vedit'){var l=(D.lessons||[]).filter(function(x){return x.id===b.dataset.id})[0];if(!l)return;ceReset(true);CE.lid=l.id;CE.mod=l.module_title;CE.title=l.title;CE.url=l.youtube_id?'https://www.youtube.com/watch?v='+l.youtube_id:'';CE.pub=l.status==='published';CE.body=l.body||'';CE.act=l.action_text||'';CE.pos=String(l.position==null?'':l.position);CE.more=!!(l.body||l.action_text);render();var f=document.getElementById('ce-title');if(f)f.scrollIntoView({behavior:'smooth',block:'center'})}
 }
+
+/* ---- Cierres de caja (solo lectura): qué días se cerraron, diferencias de caja, y reenviar el resumen por WhatsApp o PDF ---- */
+var AC={month:'',days:null,period:null,closing:null,detail:null,err:'',loading:false,seq:0};
+function acMonth(){if(!AC.month){var t=new Date();AC.month=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')}return AC.month}
+function acLoad(){
+  var n=++AC.seq,m=acMonth(),first=m+'-01',last=m+'-'+String(new Date(Number(m.slice(0,4)),Number(m.slice(5,7)),0).getDate()).padStart(2,'0');
+  AC.loading=true;AC.err='';AC.days=null;AC.period=null;AC.closing=null;AC.detail=null;
+  Promise.all([
+    rpc('forma_day_close',{p_action:'list',p_data:{from:first,to:last}}),
+    rpc('forma_finance_reports',{p_action:'period',p_data:{from:first,to:last,bucket:'day'}}),
+    rpc('forma_finance_reports',{p_action:'closing_preview',p_data:{month:first}}).catch(function(){return null})
+  ]).then(function(r){if(n!==AC.seq)return;AC.days=r[0];AC.period=r[1];AC.closing=r[2];AC.loading=false;render()},function(e){if(n!==AC.seq)return;AC.loading=false;AC.err=(e&&(e.code==='PGRST202'||e.code==='42883'))?'Falta activar el cierre diario en Supabase: ejecuta forma-cierre-diario.sql (una sola vez).':'No se pudieron cargar los cierres. Vuelve a intentar.';render()});
+}
+function acShift(d){var y=Number(acMonth().slice(0,4)),m=Number(acMonth().slice(5,7))-1+d,x=new Date(y,m,1);AC.month=x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0');acLoad();render()}
+V.cierres=function(){
+  var L=window.FormaCierresLib,m=acMonth();
+  if(!L)return head('Cierres')+'<p class="note">No se cargó el módulo de cierres. Actualiza la página.</p>';
+  if(!AC.days&&!AC.loading&&!AC.err)acLoad();
+  var nav='<div style="display:flex;gap:8px;align-items:center;margin:0 0 16px"><button class="btn s sm" data-acn="-1" aria-label="Mes anterior">‹</button><b style="min-width:180px;text-align:center">'+esc(L.monthLong(m).charAt(0).toUpperCase()+L.monthLong(m).slice(1))+'</b><button class="btn s sm" data-acn="1" aria-label="Mes siguiente">›</button></div>';
+  if(AC.err)return head('Cierres de caja','')+nav+'<div class="err">'+esc(AC.err)+'</div>';
+  if(AC.loading||!AC.days||!AC.period)return head('Cierres de caja','')+nav+'<p class="note">Cargando…</p>';
+  var closed={};(AC.days.items||[]).forEach(function(i){closed[i.day]=i});
+  var tl=(AC.period.timeline||[]).filter(function(t){return Number(t.incoming)>0||Number(t.outgoing)>0});
+  var open=tl.filter(function(t){return !closed[t.day]&&t.day<=new Date().toISOString().slice(0,10)});
+  var rows=tl.slice().sort(function(a,b){return a.day<b.day?1:-1}).map(function(t){
+    var c=closed[t.day],diff=c&&c.cash_counted_cents!=null?Number(c.cash_counted_cents)-Number(c.cash_expected_cents):null;
+    return '<tr><td><b>'+esc(L.dayShort(t.day))+'</b></td><td class="r">'+R0(Number(t.incoming||0))+'</td><td class="r">'+R0(Number(t.outgoing||0))+'</td><td>'+(c?'<span class="pill up">Cerrado '+esc(L.hhmm(c.created_at))+(c.revision>1?' · corr. '+c.revision:'')+'</span>':'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Sin cerrar</span>')+'</td><td>'+(diff==null?'—':diff===0?'Cuadra ✓':'<b style="color:var(--bad)">'+(diff>0?'+':'−')+' '+R0(Math.abs(diff))+'</b>')+'</td><td>'+(c?'<button class="btn s sm" data-acd="'+esc(t.day)+'">Ver / reenviar</button>':'')+'</td></tr>'}).join('');
+  var cl=AC.closing,mrev=cl&&Number(cl.latest_revision)||0;
+  var mes='<section class="card c12"><h2>Cierre del mes</h2><p style="margin:0 0 8px">'+(mrev?'<span class="pill up">Mes cerrado · revisión '+mrev+'</span>':'<span class="pill" style="background:var(--warnbg);color:var(--warn)">Mes sin cerrar</span>')+' · Días cerrados: <b>'+Object.keys(closed).length+'</b> de <b>'+tl.length+'</b> con movimientos</p>'+(mrev?'<button class="btn s sm" data-acm="1">Ver / reenviar resumen del mes</button>':'<p class="note" style="margin:0">René cierra el mes desde Cobros › Cierre.</p>')+'</section>';
+  var body=head('Cierres de caja','Qué días se cerraron y qué se informó.')+nav+'<div class="grid">'+kpi('Días con movimiento',String(tl.length),'','','flat')+kpi('Cerrados',String(Object.keys(closed).length),'in','','flat')+kpi('Sin cerrar',String(open.length),open.length?'out':'','Faltan por cerrar','flat')+kpi('Entró en el mes',R0(Number(AC.period.received_cents||0)),'in','','flat')+mes
+   +'<section class="card c12"><h2>Días del mes</h2><div class="tw"><table><thead><tr><th>Día</th><th class="r">Entró</th><th class="r">Salió</th><th>Estado</th><th>Caja en efectivo</th><th></th></tr></thead><tbody>'+(rows||'<tr><td colspan="6" class="note">Sin movimientos este mes.</td></tr>')+'</tbody></table></div></section></div>'
+   +'<div id="ac-det">'+(AC.detail?acDetail():'')+'</div>';
+  return body;
+};
+function acDetail(){
+  var L=window.FormaCierresLib,d=AC.detail,t=L.text(d.kind,d.o);
+  return '<section class="card" style="margin-top:12px"><h2>'+esc(d.kind==='day'?'Cierre del '+L.dayShort(d.o.day):'Cierre de '+L.monthLong(d.o.month))+'</h2><pre class="ci-pre">'+esc(t)+'</pre><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn p" data-acs="wa">Enviar por WhatsApp</button><button class="btn s" data-acs="pdf">Descargar PDF</button><button class="btn s" data-acs="copy">Copiar texto</button></div></section>';
+}
+function acOpenDay(day){
+  rpc('forma_day_close',{p_action:'preview',p_data:{day:day}}).then(function(d){var c=d.closings&&d.closings[0];if(!c){toast('Ese día no tiene cierre.');return}
+    AC.detail={kind:'day',o:{day:day,snap:c.snapshot,cashExp:c.cash_expected_cents,cashCnt:c.cash_counted_cents,note:c.note,rev:c.revision,at:c.created_at}};render();var e=$('#ac-det');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},function(){toast('No se pudo abrir el cierre.')});
+}
+function acOpenMonth(){
+  var cl=AC.closing;if(!cl)return;
+  rpc('forma_finance_reports',{p_action:'closing_get',p_data:{month:acMonth()+'-01',revision:cl.latest_revision}}).then(function(d){
+    var items=(AC.days&&AC.days.items)||[],tl=((AC.period&&AC.period.timeline)||[]).filter(function(t){return Number(t.incoming)>0||Number(t.outgoing)>0}),diff=0;items.forEach(function(i){if(i.cash_counted_cents!=null)diff+=Number(i.cash_counted_cents)-Number(i.cash_expected_cents)});
+    AC.detail={kind:'month',o:{month:acMonth(),snap:d.snapshot,daysClosed:items.length,daysWith:Math.max(tl.length,items.length),cashDiff:diff,note:d.reason,rev:d.revision,at:d.created_at}};render();var e=$('#ac-det');if(e)e.scrollIntoView({behavior:'smooth',block:'center'})},function(){toast('No se pudo abrir el cierre del mes.')});
+}
+function acClick(e){
+  var L=window.FormaCierresLib;
+  var n=e.target.closest('[data-acn]');if(n){acShift(Number(n.dataset.acn));return true}
+  var d=e.target.closest('[data-acd]');if(d){acOpenDay(d.dataset.acd);return true}
+  var m=e.target.closest('[data-acm]');if(m){acOpenMonth();return true}
+  var s=e.target.closest('[data-acs]');if(s&&AC.detail&&L){var t=L.text(AC.detail.kind,AC.detail.o),k=s.dataset.acs;
+    if(k==='wa')window.open(L.waUrl(t),'_blank','noopener');else if(k==='copy')L.copy(t).then(function(ok){toast(ok?'Texto copiado':'No se pudo copiar')});else L.sharePdf(L.pdf(AC.detail.kind,AC.detail.o),'cierre-'+(AC.detail.kind==='day'?AC.detail.o.day:AC.detail.o.month)+'.pdf');return true}
+  return false;
+}
 V.ajustes=function(){
   return head('Ajustes')+'<div class="grid"><section class="card c6"><h2>WhatsApp de ayuda</h2><p style="margin:0 0 6px"><b class="num">'+(D.phone?'+'+esc(D.phone):'Sin configurar')+'</b></p><p class="note">Es el número que abre el botón «Me interesa» y la ayuda. Para cambiarlo, abre «Validar accesos y editar cursos» aquí abajo.</p></section>'
    +'<section class="card c6"><h2>Otras pantallas</h2><div class="list"><div class="row"><div class="t"><b>Validar accesos y editar cursos</b><span>Herramientas de administración dentro de la app</span></div><button class="btn s sm" data-aact="clasica">Abrir</button></div><div class="row"><div class="t"><b>Gestión (René)</b><span>Agenda, cobros, alumnos, interesados</span></div><button class="btn s sm" data-aact="gestion">Abrir</button></div><div class="row"><div class="t"><b>Mi presupuesto y cursos</b><span>Vista del alumno</span></div><button class="btn s sm" data-aact="presupuesto">Abrir</button></div></div></section></div>';
@@ -188,7 +245,7 @@ function render(){
 function go(v){if(!V[v])v='resumen';view=v;if(!EMBED){try{history.replaceState(null,'','#'+v)}catch(e){}}render();if(!EMBED)window.scrollTo(0,0)}
 function nav(){
   $('#tabs').innerHTML=NAV.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+n[1]+'</button>'}).join('');
-  $('#bnav').style.gridTemplateColumns='repeat(4,1fr)';
+  $('#bnav').style.gridTemplateColumns='repeat('+NAV.length+',1fr)';
   $('#bnav').innerHTML=NAV.map(function(n){return '<button data-v="'+n[0]+'">'+ico(n[2])+'<span>'+n[1]+'</span></button>'}).join('');
   $('#bnav').hidden=false;
 }
@@ -202,6 +259,7 @@ function act(k){
 }
 function onClick(e){
   if(EMBED&&!e.target.closest('#adm-root'))return;
+  if(acClick(e))return;
   var ce=e.target.closest('[data-ce]');if(ce){ceClick(ce);return}
   var b=e.target.closest('[data-v],[data-av]');if(b){go(b.dataset.v||b.dataset.av);return}
   var a=e.target.closest('[data-aact]');if(a){if(a.tagName==='A')e.preventDefault();act(a.dataset.aact);return}
@@ -244,6 +302,9 @@ function demoTable(n){
 }
 function demoRpc(name,a){
   if(name==='forma_agenda_access')return{role:'owner'};
+  if(name==='forma_day_close'){var td=new Date().toISOString().slice(0,10);if(a.p_action==='list')return{items:[{day:td,revision:1,created_at:new Date().toISOString(),received_cents:128000,outflow_cents:30000,cash_expected_cents:35000,cash_counted_cents:35000,note:''}]};return{day:a.p_data.day,latest_revision:1,cash_expected_cents:35000,closings:[{revision:1,created_at:new Date().toISOString(),note:'',cash_expected_cents:35000,cash_counted_cents:35000,snapshot:{received_cents:128000,payment_count:3,outflow_cents:30000,refund_cents:0,by_method:[{label:'pix',cents:80000},{label:'efectivo',cents:48000}],by_activity:[{label:'Bolsa de Valores',cents:80000},{label:'Computación Informática',cents:48000}],by_outflow_category:[{label:'Alquiler',cents:30000}]}}]}}
+  if(name==='forma_finance_reports'&&a.p_action==='period')return{received_cents:128000,outflow_cents:30000,timeline:[{day:new Date().toISOString().slice(0,10),incoming:128000,outgoing:30000}]};
+  if(name==='forma_finance_reports'&&a.p_action==='closing_preview')return{can_close:false,latest_revision:0,history:[]};
   if(name==='forma_admin_report')return{total:42,activated:31,verified_entries:27,historical_only:9,active:18,budget:25,movements:22,goals:12,learning:8,sections:[{section:'resumo',users:17},{section:'registrar',users:11},{section:'aprender',users:9},{section:'metas',users:5}],daily:[],users:[{name:'Ana Pérez',first_entry:'2026-10-06',last_seen:'2026-10-25',budget:true,movements:true,goals:true,learning:true},{name:'Luis Gómez',first_entry:'2026-10-08',last_seen:'2026-10-24',budget:true,movements:true,goals:false,learning:false},{name:'Marta Díaz',first_entry:'2026-10-20',last_seen:'2026-10-21',budget:true,movements:false,goals:false,learning:true}]};
   if(name==='forma_admin_access_review')return{active:36,pending_count:2,staff:2,pending:[{id:'a1b2c3d4',name:'Rita Campos',email:'rita@ejemplo.com',requested_at:'2026-10-24T10:00:00Z'},{id:'e5f6a7b8',name:'Pablo Vera',email:'pablo@ejemplo.com',requested_at:'2026-10-25T16:00:00Z'}]};
   if(name==='forma_finance_reports')return a.p_action==='pending'?{total_cents:880289,total_count:4,items:[]}:{received_cents:1245000,timeline:[]};
@@ -251,7 +312,7 @@ function demoRpc(name,a){
   if(name==='forma_education')return{count:12,items:[]};
   return null;
 }
-var loaded=false,LAB={resumen:'Resumen',personas:'Personas',cursos:'Cursos online',ajustes:'Ajustes'};
+var loaded=false,LAB={resumen:'Resumen',personas:'Personas',cursos:'Cursos online',cierres:'Cierres de caja',ajustes:'Ajustes'};
 if(EMBED){
   /* Dentro de Gestión: Gestión da el cliente de sesión y pinta este bloque; aquí no hay cabecera ni menú propios. */
   window.FormaAdmin={

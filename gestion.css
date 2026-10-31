@@ -435,3 +435,6 @@ dialog .cu-foot{bottom:0;padding-bottom:4px}
 .ce-pick b{display:block}.ce-pick span{color:var(--ink2);font-size:13px}
 .ce-th{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:14px;padding:8px}.ce-th img{border-radius:10px;flex:none;height:auto}.ce-th b{display:block}.ce-th span{font-size:13px;color:var(--ink2)}
 textarea{font:inherit;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);padding:10px 14px;width:100%}
+
+/* Cierre de caja */
+.ci-pre{white-space:pre-wrap;word-break:break-word;background:var(--soft);border-radius:14px;padding:12px 14px;font:13px/1.5 'DM Sans',system-ui,sans-serif;margin:0 0 12px;max-height:50vh;overflow:auto}

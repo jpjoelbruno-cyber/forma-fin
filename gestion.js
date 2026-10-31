@@ -128,7 +128,7 @@ var V={};
 V.inicio=function(){
   var h=spNow().hour,sal=h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches';
   var mine=sessionsOn(T,D.work&&D.work.bookings),av=avisos(),p=D.pending,cur=D.month,prev=D.prevMonth;
-  var acts=manager()?'<div class="acts" style="margin-bottom:16px"><button class="act a1" data-act="cobrar">'+ico('cash')+'<span>Cobrar un pago<small>Y dar su comprobante</small></span></button><button class="act a2" data-act="matricular">'+ico('cap')+'<span>Matricular un alumno<small>Paso a paso</small></span></button><button class="act a3" data-act="agendar">'+ico('cal')+'<span>Agendar un servicio<small>Elige día y hora</small></span></button><button class="act a4" data-act="interesado">'+ico('chat')+'<span>Nuevo interesado<small>Guardar contacto</small></span></button><button class="act a1" data-act="salida">'+ico('cash')+'<span>Registrar una salida<small>Gasto o pago que sale</small></span></button></div>':'';
+  var acts=manager()?'<div class="acts" style="margin-bottom:16px"><button class="act a1" data-act="cobrar">'+ico('cash')+'<span>Cobrar un pago<small>Y dar su comprobante</small></span></button><button class="act a2" data-act="matricular">'+ico('cap')+'<span>Matricular un alumno<small>Paso a paso</small></span></button><button class="act a3" data-act="agendar">'+ico('cal')+'<span>Agendar un servicio<small>Elige día y hora</small></span></button><button class="act a4" data-act="interesado">'+ico('chat')+'<span>Nuevo interesado<small>Guardar contacto</small></span></button><button class="act a1" data-act="salida">'+ico('cash')+'<span>Registrar una salida<small>Gasto o pago que sale</small></span></button><button class="act a2" data-act="cerrarcaja">'+ico('cash')+'<span>Cerrar caja del día<small>Resumen y envío por WhatsApp</small></span></button></div>':'';
   var k='';
   if(manager()){
     var dm=cur&&prev?delta(Number(cur.received_cents),Number(prev.received_cents),'vs mes anterior'):null,w=((D.crmAlerts&&D.crmAlerts.total_count)||0),ov=overdue();
@@ -253,9 +253,10 @@ function openBooking(id,day){
   dlg(esc(b.client),h,false);
 }
 V.cobros=function(){
-  var tabs='<div class="seg" role="tablist">'+[['resumen','Resumen'],['porcobrar','Por cobrar'],['salidas','Salidas'],['mov','Movimientos']].map(function(t){return '<button data-ct="'+t[0]+'" aria-pressed="'+(cobTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
+  var tabs='<div class="seg" role="tablist">'+[['resumen','Resumen'],['porcobrar','Por cobrar'],['salidas','Salidas'],['cierre','Cierre'],['mov','Movimientos']].map(function(t){return '<button data-ct="'+t[0]+'" aria-pressed="'+(cobTab===t[0])+'">'+t[1]+'</button>'}).join('')+'</div>';
   var per='<div class="seg" role="group" aria-label="Período">'+['Hoy','Semana','Mes','Año'].map(function(p){return '<button data-cp="'+p+'" aria-pressed="'+(cobPer===p)+'">'+p+'</button>'}).join('')+'</div>';
-  var h=head('Cobros','Lo que entra, lo que sale y lo que falta cobrar.','<button class="btn p" data-act="cobrar">'+ico('plus')+'Cobrar un pago</button><button class="btn s" data-act="salida">'+ico('plus')+'Registrar una salida</button>')+'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px">'+tabs+(cobTab==='porcobrar'?'':per)+'</div>';
+  var h=head('Cobros','Lo que entra, lo que sale y lo que falta cobrar.','<button class="btn p" data-act="cobrar">'+ico('plus')+'Cobrar un pago</button><button class="btn s" data-act="salida">'+ico('plus')+'Registrar una salida</button>')+'<div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between;margin-bottom:16px">'+tabs+(cobTab==='porcobrar'||cobTab==='cierre'?'':per)+'</div>';
+  if(cobTab==='cierre'&&window.GestionCierres)return window.GestionCierres.html();
   var rr=periodRange(cobPer),d=D.reports[rr.cur.from+'|'+rr.cur.to+'|'+rr.cur.bucket],pv=D.reports[rr.prev.from+'|'+rr.prev.to+'|'+rr.prev.bucket];
   if(cobTab==='porcobrar'){
     var p=D.pending,items=(p&&p.items)||[];
@@ -307,6 +308,7 @@ V.ajustes=function(){
 
 /* ---------- carga perezosa por vista ---------- */
 function ensure(){
+  if(view==='cobros'&&manager()&&cobTab==='cierre'&&window.GestionCierres){window.GestionCierres.ensure();return}
   if(view==='cobros'&&manager()&&cobTab!=='porcobrar'){var rr=periodRange(cobPer);Promise.all([getReport(rr.cur),getReport(rr.prev)]).then(function(){if(view==='cobros')render()},function(){errors.push('cobros');toast('No se pudo cargar ese período.')})}
   if(view==='alumnos'&&manager()&&!D.edu)loadEdu(false);
   if(view==='agenda')loadWeek();
@@ -395,6 +397,7 @@ function act(k,el){
   if(k==='interesados'){go('interesados');return}
   if(k==='instructores'){window.GestionCursos.insDialog();return}
   if(k==='cobrar'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.cobrar(el&&el.dataset.pid?{person_id:el.dataset.pid,enrolment_id:el.dataset.eid||null}:null);return}
+  if(k==='cerrarcaja'&&manager()){$('#sheet').hidden=true;cobTab='cierre';go('cobros');return}
   if(k==='salida'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.salida();return}
   if(k==='voidout'&&manager()){var oo=null,rp=D.reports,kk;for(kk in rp){((rp[kk]&&rp[kk].outflows)||[]).forEach(function(x){if(x.id===(el&&el.dataset.oid))oo=x})}if(oo)window.GestionAcciones.anularSalida(oo);else toast('No se encontró la salida. Actualiza.');return}
   if(k==='matricular'&&manager()){$('#sheet').hidden=true;window.GestionAcciones.matricular(el&&el.dataset.pid?{person_id:el.dataset.pid}:null);return}
@@ -506,6 +509,7 @@ function demoRpc(name,a){
   if(name==='forma_education'&&act==='list')return{version:1,count:3,has_more:false,items:[{id:'s1',name:'Ana Pérez',phone:'+55 11 90000-0001',courses:[{course:'Educación financiera',state:'activo',total_cents:120000,paid_cents:80000}]},{id:'s2',name:'Luis Gómez',phone:'+55 11 90000-0002',courses:[{course:'Inversiones básicas',state:'activo',total_cents:90000,paid_cents:90000}]},{id:'s3',name:'Carlos Rojas',phone:'',courses:[{course:'Mentoría particular',state:'activo',total_cents:240000,paid_cents:120000}]}]};
   return null;
 }
+window.GestionCierres&&window.GestionCierres.init({esc:esc,rpc:rpc,R:R,T:T,demo:demo,dlg:dlg,toast:toast,render:function(){render()},view:function(){return view},refresh:function(){D.reports={}},M:M});
 window.GestionAcciones.init({M:M,plus:M.plus,rpc:rpc,edu:edu,esc:esc,dlg:dlg,dl:dl,R:R,T:T,demo:demo,cursos:window.GestionCursos,reficha:function(id){openFicha(id)},refresh:function(){D.edu=null;D.reports={};loadCore().then(function(){render();ensure()})}});
 window.GestionEmbudo=window.GestionEmbudo||{init:function(){},click:function(){},html:function(s,h){return h('Ventas','','')+'<p class="skel">Recarga la página para ver el embudo.</p>'}};
 window.GestionEmbudo.init({crm:crm,esc:esc,dl:dl,dlg:dlg,plus:ico('plus'),data:function(){return D.crmSales},manager:manager,close:function(){var d=$('#dlg');if(d&&d.open)d.close()},render:function(){if(view==='interesados')render()},reload:function(){crm('sales',{stage:'',offset:0}).then(function(d){D.crmSales=d;D.crmAlerts=null;if(view==='interesados')render()},function(){toast('No se pudo actualizar la lista.')})}});
